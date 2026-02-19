@@ -3,7 +3,7 @@
 @theme {
   --color-primary: #30e87a;
   --color-background-light: #f6f8f7;
-  --color-background-dark: #112117;
+  /* --color-background-dark: #112117; */
 
   --font-sans: "Manrope", sans-serif;
 }
