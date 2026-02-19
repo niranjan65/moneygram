@@ -3,7 +3,7 @@
 @theme {
   --color-primary: #30e87a;
   --color-background-light: #f6f8f7;
-  --color-background-dark: #f6f8f7;
+  --color-background-dark: #112117;
 
   --font-sans: "Manrope", sans-serif;
 }
@@ -20,7 +20,7 @@
   border-radius: 10px;
 }
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: #374151;
 }
 
 
