@@ -1,77 +1,4 @@
-// import { useEffect, useState } from "react";
 
-// export default function RatesSection() {
-//   const [rates, setRates] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-
-//   const baseCurrency = "USD";
-//   const currenciesToShow = ["EUR", "INR", "GBP", "JPY", "AUD", "CAD"];
-
-//   useEffect(() => {
-//     const fetchRates = async () => {
-//       try {
-//         setLoading(true);
-
-//         const response = await fetch(
-//           `https://open.er-api.com/v6/latest/${baseCurrency}`
-//         );
-
-//         const data = await response.json();
-
-//         if (data.result !== "success") {
-//           throw new Error("API Error");
-//         }
-
-//         const formattedRates = currenciesToShow.map((currency) => ({
-//           currency,
-//           rate: data.rates[currency],
-//         }));
-
-//         setRates(formattedRates);
-//         setLoading(false);
-//       } catch (err) {
-//         console.error(err);
-//         setError("Failed to fetch exchange rates.");
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchRates();
-//   }, []);
-
-//   return (
-//     <section className="section rates-section">
-//       <div className="container">
-//         <h2>Live Exchange Rates</h2>
-
-//         {loading && <p>Loading live rates...</p>}
-//         {error && <p>{error}</p>}
-
-//         {!loading && !error && (
-//           <div className="rates-table-wrapper">
-//             <table className="rates-table">
-//               <thead>
-//                 <tr>
-//                   <th>Currency</th>
-//                   <th>1 {baseCurrency} equals</th>
-//                 </tr>
-//               </thead>
-//               <tbody>
-//                 {rates.map((item) => (
-//                   <tr key={item.currency}>
-//                     <td>{item.currency}</td>
-//                     <td>{item.rate.toFixed(4)}</td>
-//                   </tr>
-//                 ))}
-//               </tbody>
-//             </table>
-//           </div>
-//         )}
-//       </div>
-//     </section>
-//   );
-// }
 import { useEffect, useState, useRef } from "react";
 import { Sparklines, SparklinesLine } from "react-sparklines";
 
@@ -86,6 +13,9 @@ const currencyFlags = {
   CNY: "cn",
   CHF: "ch",
 };
+
+const SPREAD_PERCENT = 0.5; // 0.5% margin
+
 
 export default function RatesSection() {
   const [baseCurrency, setBaseCurrency] = useState("USD");
@@ -141,107 +71,199 @@ export default function RatesSection() {
   );
 
   return (
-    <section className="section rates-section">
-      <div className="container">
-        <h2>Live Exchange Rates</h2>
+  <section className="bg-background-light dark:bg-background-dark py-16 px-6 transition-colors">
+    <div className="max-w-6xl mx-auto">
 
-        {/* Base Currency Selector */}
-        <div className="rates-controls">
-          <div>
-            <label>Base Currency: </label>
-            <select
-              value={baseCurrency}
-              onChange={(e) => setBaseCurrency(e.target.value)}
-            >
-              {currenciesToShow.map((cur) => (
-                <option key={cur} value={cur}>
-                  {cur}
-                </option>
-              ))}
-            </select>
-          </div>
+      {/* Title */}
+      <div className="text-center mb-10">
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+          Live Exchange Rates
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          Real-time mid-market currency rates
+        </p>
+      </div>
 
-          {/* Search */}
-          <input
-            type="text"
-            placeholder="Search currency..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      {/* Controls */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+
+        {/* Base Currency */}
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Base Currency:
+          </label>
+
+          <select
+            value={baseCurrency}
+            onChange={(e) => setBaseCurrency(e.target.value)}
+            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-background-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            {currenciesToShow.map((cur) => (
+              <option key={cur} value={cur}>
+                {cur}
+              </option>
+            ))}
+          </select>
         </div>
 
-        {loading && <p>Loading rates...</p>}
-
-        {!loading && (
-          <>
-            <table className="rates-table">
-              <thead>
-                <tr>
-                  <th>Currency</th>
-                  <th>Rate</th>
-                  <th>Trend</th>
-                  <th>Chart</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCurrencies.map((cur) => {
-                  const rate = rates[cur];
-                  const previous = previousRates[cur];
-
-                  const change =
-                    previous && rate
-                      ? rate > previous
-                        ? "up"
-                        : rate < previous
-                        ? "down"
-                        : "same"
-                      : null;
-
-                  return (
-                    <tr key={cur}>
-                      <td>
-                        <img
-                          src={`https://flagcdn.com/w40/${currencyFlags[cur]}.png`}
-                          alt={cur}
-                          style={{ marginRight: "8px", width: "24px" }}
-                        />
-                        {cur}
-                      </td>
-
-                      <td>{rate?.toFixed(4)}</td>
-
-                      <td>
-                        {change === "up" && (
-                          <span style={{ color: "green" }}>▲</span>
-                        )}
-                        {change === "down" && (
-                          <span style={{ color: "red" }}>▼</span>
-                        )}
-                        {change === "same" && <span>–</span>}
-                      </td>
-
-                      <td>
-                        {history[cur] && (
-                          <Sparklines data={history[cur]} width={100} height={30}>
-                            <SparklinesLine />
-                          </Sparklines>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-
-            {/* Last Updated */}
-            <p style={{ marginTop: "20px", fontSize: "14px" }}>
-              Last updated at:{" "}
-              {lastUpdated &&
-                lastUpdated.toLocaleTimeString()}
-            </p>
-          </>
-        )}
+        {/* Search */}
+        <input
+          type="text"
+          placeholder="Search currency..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="px-4 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-background-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary md:w-64"
+        />
       </div>
-    </section>
-  );
+
+      {/* Loading */}
+      {loading && (
+        <p className="text-center text-gray-500 dark:text-gray-400">
+          Loading rates...
+        </p>
+      )}
+
+      {/* Table */}
+      {/* Table */}
+{!loading && (
+  <div className="overflow-x-auto bg-white dark:bg-background-dark rounded-2xl shadow-lg border border-gray-100 dark:border-white/10">
+
+    <table className="w-full text-sm">
+      <thead className="bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300">
+        <tr>
+          <th className="text-left px-6 py-4">Currency</th>
+          <th className="text-left px-6 py-4">Mid</th>
+          <th className="text-left px-6 py-4">Buy</th>
+          <th className="text-left px-6 py-4">Sell</th>
+          <th className="text-left px-6 py-4">Spread</th>
+          <th className="text-left px-6 py-4">Trend</th>
+          <th className="text-left px-6 py-4">Chart</th>
+          <th className="text-left px-6 py-4">Suggestion</th>
+        </tr>
+      </thead>
+
+      <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+        {filteredCurrencies.map((cur) => {
+          const midRate = rates[cur];
+          const previousMid = previousRates[cur];
+
+          const buyRate =
+            midRate ? midRate * (1 - SPREAD_PERCENT / 100) : null;
+
+          const sellRate =
+            midRate ? midRate * (1 + SPREAD_PERCENT / 100) : null;
+
+          const spread =
+            midRate ? (sellRate - buyRate).toFixed(4) : null;
+
+          // Trend logic
+          let change = null;
+          if (previousMid && midRate) {
+            if (midRate > previousMid) change = "up";
+            else if (midRate < previousMid) change = "down";
+            else change = "same";
+          }
+
+          // Profit suggestion logic
+          let profitSignal = "-";
+          if (previousMid && midRate) {
+            if (midRate > previousMid) {
+              profitSignal = "Sell Today 📈";
+            } else if (midRate < previousMid) {
+              profitSignal = "Buy Today 📉";
+            } else {
+              profitSignal = "Stable";
+            }
+          }
+
+          return (
+            <tr
+              key={cur}
+              className="hover:bg-gray-50 dark:hover:bg-white/5 transition"
+            >
+              {/* Currency */}
+              <td className="px-6 py-4 flex items-center gap-3">
+                <img
+                  src={`https://flagcdn.com/w40/${currencyFlags[cur]}.png`}
+                  alt={cur}
+                  className="w-6 h-4 object-cover rounded-sm"
+                />
+                <span className="font-medium text-gray-800 dark:text-gray-200">
+                  {cur}
+                </span>
+              </td>
+
+              {/* Mid */}
+              <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                {midRate?.toFixed(4)}
+              </td>
+
+              {/* Buy */}
+              <td className="px-6 py-4 text-red-500 font-medium">
+                {buyRate?.toFixed(4)}
+              </td>
+
+              {/* Sell */}
+              <td className="px-6 py-4 text-green-500 font-medium">
+                {sellRate?.toFixed(4)}
+              </td>
+
+              {/* Spread */}
+              <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
+                {spread}
+              </td>
+
+              {/* Trend */}
+              <td className="px-6 py-4">
+                {change === "up" && (
+                  <span className="text-green-500 font-semibold">▲</span>
+                )}
+                {change === "down" && (
+                  <span className="text-red-500 font-semibold">▼</span>
+                )}
+                {change === "same" && (
+                  <span className="text-gray-400">–</span>
+                )}
+              </td>
+
+              {/* Chart */}
+              <td className="px-6 py-4">
+                {history[cur] && (
+                  <Sparklines data={history[cur]} width={100} height={30}>
+                    <SparklinesLine />
+                  </Sparklines>
+                )}
+              </td>
+
+              {/* Suggestion */}
+              <td className="px-6 py-4 font-medium">
+                {profitSignal === "Sell Today 📈" && (
+                  <span className="text-green-500">{profitSignal}</span>
+                )}
+                {profitSignal === "Buy Today 📉" && (
+                  <span className="text-red-500">{profitSignal}</span>
+                )}
+                {profitSignal === "Stable" && (
+                  <span className="text-gray-400">{profitSignal}</span>
+                )}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+)}
+
+
+      {/* Last Updated */}
+      {!loading && lastUpdated && (
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-6 text-center">
+          Last updated at {lastUpdated.toLocaleTimeString()}
+        </p>
+      )}
+    </div>
+  </section>
+);
+
 }
