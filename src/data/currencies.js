@@ -1,3 +1,4 @@
+//currencies.js
 export const currencies = [
   {
     code: "USD",

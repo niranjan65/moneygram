@@ -1,18 +1,26 @@
 import React, { useState } from "react";
-import { Menu, X, Zap } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
+import mhlogo from "../../assets/mhlogo.png"; // adjust path if needed
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
 
+  const session = JSON.parse(localStorage.getItem("erpnext_session"));
+  const isLoggedIn = session && session.sessionActive;
+
   const isLoginPage = location.pathname === "/";
+
+  const handleLogout = () => {
+    localStorage.removeItem("erpnext_session");
+    window.location.href = "/";
+  };
 
   const navItems = [
     { label: "Money Transfer", href: "/money-transfer" },
     { label: "Currency Exchange", href: "/exchange" },
-    { label: "Contact Us", href: "/home" },
-    { label: "Log In", href: "/" },
+    { label: "Contact Us", href: "/contact-us" },
   ];
 
   return (
@@ -20,17 +28,22 @@ export default function Navbar() {
       <div className="flex items-center justify-between">
 
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-3 text-gray-900 dark:text-white">
-          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
-            <Zap size={24} />
-          </div>
-          <h2 className="text-xl font-extrabold tracking-tight">
+        <Link
+          to={isLoggedIn ? "/home" : "/"}
+          className="flex items-center gap-3"
+        >
+          <img
+            src={mhlogo}
+            alt="MH Logo"
+            className="h-10 w-auto object-contain"
+          />
+          {/* <h2 className="text-xl font-extrabold tracking-tight text-gray-900 dark:text-white">
             MoneyGram
-          </h2>
+          </h2> */}
         </Link>
 
-        {/* Hide Everything If Login Page */}
-        {!isLoginPage && (
+        {/* Hide nav on login page */}
+        {!isLoginPage && isLoggedIn && (
           <>
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-8">
@@ -43,6 +56,13 @@ export default function Navbar() {
                   {item.label}
                 </Link>
               ))}
+
+              <button
+                onClick={handleLogout}
+                className="text-sm font-semibold text-red-500 hover:text-red-600 transition"
+              >
+                Logout
+              </button>
             </div>
 
             {/* Mobile Toggle */}
@@ -57,7 +77,7 @@ export default function Navbar() {
       </div>
 
       {/* Mobile Dropdown */}
-      {!isLoginPage && (
+      {!isLoginPage && isLoggedIn && (
         <div
           className={`md:hidden overflow-hidden transition-all duration-300 ${
             menuOpen ? "max-h-96 mt-4 opacity-100" : "max-h-0 opacity-0"
@@ -74,6 +94,13 @@ export default function Navbar() {
                 {item.label}
               </Link>
             ))}
+
+            <button
+              onClick={handleLogout}
+              className="block text-red-500 font-semibold text-sm"
+            >
+              Logout
+            </button>
           </div>
         </div>
       )}

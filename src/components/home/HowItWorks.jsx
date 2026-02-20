@@ -21,7 +21,7 @@ export default function HowItWorks() {
   ];
 
   return (
-    <section className="bg-background-light dark:bg-background-dark py-16 px-6 transition-colors">
+    <section className="bg-background-light dark:bg-background-dark py-5 px-6 transition-colors">
       <div className="max-w-6xl mx-auto">
 
         {/* Section Title */}
