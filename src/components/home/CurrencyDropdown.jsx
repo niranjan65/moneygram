@@ -60,23 +60,31 @@ export default function CurrencyDropdown({ selected, onSelect }) {
     <div className="relative w-full" ref={dropdownRef}>
       {/* Selected */}
       <div
-        onClick={() => setOpen(!open)}
-        className="flex items-center justify-between gap-3 border border-gray-300 rounded-lg px-4 py-3 cursor-pointer bg-white hover:border-primary transition"
-      >
-        <div className="flex items-center gap-3">
-          <img
-            src={selected.flag}
-            alt={selected.code}
-            className="w-6 h-4 object-cover rounded-sm"
-          />
-          <span className="text-sm font-medium text-gray-800">
-            {selected.code} - {selected.name}
-          </span>
-        </div>
-        <span className="text-gray-500 text-sm">
-          {open ? "▲" : "▼"}
-        </span>
-      </div>
+  onClick={() => setOpen(!open)}
+  className="flex items-center justify-between gap-3 border border-gray-300 rounded-lg px-4 py-3 cursor-pointer bg-white hover:border-primary transition"
+>
+  {selected ? (
+    <div className="flex items-center gap-3">
+      <img
+        src={selected.flag}
+        alt={selected.code}
+        className="w-6 h-4 object-cover rounded-sm"
+      />
+      <span className="text-sm font-medium text-gray-800">
+        {selected.code} - {selected.name}
+      </span>
+    </div>
+  ) : (
+    <span className="text-sm text-gray-500">
+      Select Currency
+    </span>
+  )}
+
+  <span className="text-gray-500 text-sm">
+    {open ? "▲" : "▼"}
+  </span>
+</div>
+
 
       {/* Dropdown */}
       <div

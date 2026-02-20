@@ -1,8 +1,10 @@
-//MoneyTransfer.jsx
+// //MoneyTransfer.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
+import Select from "react-select";
+import { getNames } from "country-list";
 
 const MoneyTransfer = () => {
   const [sendAmount, setSendAmount] = useState("");
@@ -21,6 +23,11 @@ const MoneyTransfer = () => {
   const [receiverEmail, setReceiverEmail] = useState("");
   const [receiverPhone, setReceiverPhone] = useState("");
   const [receiverCountry, setReceiverCountry] = useState("");
+
+  const countryOptions = getNames().map(country => ({
+  label: country,
+  value: country
+}));
 
   const [step, setStep] = useState("form");
   const [previewData, setPreviewData] = useState(null);
@@ -291,13 +298,13 @@ const [receiverIFSC, setReceiverIFSC] = useState("");
                 />
               </div>
 
-              <input
-                type="text"
-                placeholder="Receiver Country"
-                value={receiverCountry}
-                onChange={(e) => setReceiverCountry(e.target.value)}
-                className="w-full border rounded-xl px-4 py-3"
-              />
+             
+              <Select
+  options={countryOptions}
+  value={countryOptions.find(c => c.value === receiverCountry)}
+  onChange={(selected) => setReceiverCountry(selected.value)}
+  placeholder="Select Receiver Country"
+/>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <input
@@ -416,25 +423,29 @@ const [receiverIFSC, setReceiverIFSC] = useState("");
             <div className="flex justify-between">
               <span>Send Amount</span>
               <span className="font-semibold">
-                ${sendAmount || "0.00"}
-              </span>
+  {sendAmount || "0.00"} {fromCurrency}
+</span>
+
             </div>
 
             <div className="flex justify-between">
               <span>Service Fee</span>
-              <span>${serviceFee}</span>
+              <span>{serviceFee} {fromCurrency}</span>
+
             </div>
 
             <div className="flex justify-between">
               <span>GST</span>
-              <span>${gstTax}</span>
+              <span>{gstTax} {fromCurrency}</span>
+
             </div>
 
             <hr />
 
             <div className="flex justify-between font-bold text-lg">
               <span>Total to Pay</span>
-              <span>${totalPayable}</span>
+              <span>{totalPayable} {fromCurrency}</span>
+
             </div>
           </div>
 
@@ -462,3 +473,63 @@ const [receiverIFSC, setReceiverIFSC] = useState("");
 };
 
 export default MoneyTransfer;
+// pages/MoneyTransfer.jsx
+// import React, { useState } from "react";
+// import Navbar from "../components/layout/Navbar";
+// import Footer from "../components/layout/Footer";
+// import SenderDetails from "../components/moneytransfer/SenderDetails";
+// import ReceiverDetails from "../components/moneytransfer/ReceiverDetails";
+// import TransferDetails from "../components/moneytransfer/TransferDetails";
+// import TransferSummary from "../components/moneytransfer/TransferSummary";
+
+// export default function MoneyTransfer() {
+//   const [formData, setFormData] = useState({
+//     senderName: "",
+//     senderEmail: "",
+//     receiverName: "",
+//     receiverEmail: "",
+
+//     transferType: "bank_to_bank",
+
+//     senderBank: "",
+//     receiverBank: "",
+
+//     amount: "",
+//     sendCurrency: null,
+//     receiveCurrency: null,
+//   });
+
+//   const updateField = (field, value) => {
+//     setFormData((prev) => ({
+//       ...prev,
+//       [field]: value,
+//     }));
+//   };
+
+//   return (
+//     <>
+//   <Navbar />
+
+//   <div className="flex flex-col min-h-screen">
+//     {/* Main content */}
+//     <main className="flex-1 bg-gray-50 px-6 py-10">
+//       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+//         {/* LEFT */}
+//         <div className="space-y-8">
+//           <SenderDetails formData={formData} updateField={updateField} />
+//           <ReceiverDetails formData={formData} updateField={updateField} />
+//           <TransferDetails formData={formData} updateField={updateField} />
+//         </div>
+
+//         {/* RIGHT */}
+//         <TransferSummary formData={formData} />
+//       </div>
+//     </main>
+
+    
+//   </div>
+//   <Footer />
+// </>
+
+//   );
+// }

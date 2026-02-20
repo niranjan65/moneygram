@@ -24,72 +24,44 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/80 backdrop-blur-md px-6 lg:px-10 py-3 dark:bg-background-dark/90 dark:border-white/10 transition-all">
-      <div className="flex items-center justify-between">
+  <header className="sticky top-0 z-50 backdrop-blur-md border-b transition-all
+    bg-white/80 border-gray-200
+    dark:bg-gray-900/80 dark:border-gray-800">
 
-        {/* Logo */}
-        <Link
-          to={isLoggedIn ? "/home" : "/"}
-          className="flex items-center gap-3"
-        >
+    <div className="flex items-center justify-between px-6 lg:px-10 py-3">
+
+      {/* Logo */}
+      {isLoggedIn ? (
+        <Link to="/home" className="flex items-center gap-3">
           <img
             src={mhlogo}
             alt="MH Logo"
             className="h-10 w-auto object-contain"
           />
-          {/* <h2 className="text-xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-            MoneyGram
-          </h2> */}
         </Link>
+      ) : (
+        <div className="flex items-center gap-3">
+          <img
+            src={mhlogo}
+            alt="MH Logo"
+            className="h-10 w-auto object-contain"
+          />
+        </div>
+      )}
 
-        {/* Hide nav on login page */}
-        {!isLoginPage && isLoggedIn && (
-          <>
-            {/* Desktop Nav */}
-            <div className="hidden md:flex items-center gap-8">
-              {navItems.map((item) => (
-                <Link
-                  key={item.label}
-                  to={item.href}
-                  className="text-gray-700 dark:text-gray-200 text-sm font-semibold hover:text-primary transition-colors"
-                >
-                  {item.label}
-                </Link>
-              ))}
-
-              <button
-                onClick={handleLogout}
-                className="text-sm font-semibold text-red-500 hover:text-red-600 transition"
-              >
-                Logout
-              </button>
-            </div>
-
-            {/* Mobile Toggle */}
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="md:hidden p-2 text-gray-800 dark:text-white"
-            >
-              {menuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* Mobile Dropdown */}
+      {/* Navigation */}
       {!isLoginPage && isLoggedIn && (
-        <div
-          className={`md:hidden overflow-hidden transition-all duration-300 ${
-            menuOpen ? "max-h-96 mt-4 opacity-100" : "max-h-0 opacity-0"
-          }`}
-        >
-          <div className="space-y-4 bg-white dark:bg-background-dark px-4 py-4 rounded-xl shadow-lg">
+        <>
+          {/* Desktop */}
+          <div className="hidden md:flex items-center gap-8">
+
             {navItems.map((item) => (
               <Link
                 key={item.label}
                 to={item.href}
-                onClick={() => setMenuOpen(false)}
-                className="block text-gray-700 dark:text-gray-200 text-sm font-semibold hover:text-primary transition-colors"
+                className="text-sm font-semibold transition-colors
+                  text-gray-700 hover:text-primary
+                  dark:text-gray-300 dark:hover:text-primary"
               >
                 {item.label}
               </Link>
@@ -97,13 +69,66 @@ export default function Navbar() {
 
             <button
               onClick={handleLogout}
-              className="block text-red-500 font-semibold text-sm"
+              className="text-sm font-semibold transition-colors
+                text-red-500 hover:text-red-600
+                dark:text-red-400 dark:hover:text-red-500"
             >
               Logout
             </button>
           </div>
-        </div>
+
+          {/* Mobile Toggle */}
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden p-2 transition-colors
+              text-gray-700 dark:text-gray-300"
+          >
+            {menuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </>
       )}
-    </header>
-  );
+    </div>
+
+    {/* Mobile Dropdown */}
+    {!isLoginPage && isLoggedIn && (
+      <div
+        className={`md:hidden overflow-hidden transition-all duration-300 ${
+          menuOpen ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="mx-6 mb-4 rounded-xl shadow-lg border
+          bg-white border-gray-200
+          dark:bg-gray-900 dark:border-gray-800">
+
+          <div className="flex flex-col p-4 space-y-4">
+
+            {navItems.map((item) => (
+              <Link
+                key={item.label}
+                to={item.href}
+                onClick={() => setMenuOpen(false)}
+                className="text-sm font-semibold transition-colors
+                  text-gray-700 hover:text-primary
+                  dark:text-gray-300 dark:hover:text-primary"
+              >
+                {item.label}
+              </Link>
+            ))}
+
+            <button
+              onClick={handleLogout}
+              className="text-sm font-semibold transition-colors
+                text-red-500 hover:text-red-600
+                dark:text-red-400 dark:hover:text-red-500 text-left"
+            >
+              Logout
+            </button>
+
+          </div>
+        </div>
+      </div>
+    )}
+  </header>
+);
+
 }
