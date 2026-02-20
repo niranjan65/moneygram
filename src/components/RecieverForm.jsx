@@ -6,7 +6,9 @@ import {
   CheckCircle2, MinusCircle, PlusCircle, X
 } from 'lucide-react';
 import { useCurrencies } from '../hooks/UseCurrencies';
-import CurrencyDropdown from '../hooks/CurrencyDropdown';
+import CurrencyDropdown from './home/CurrencyDropdown';
+import { DENOMINATION_DATA, SUPPORTED_COUNTRIES } from '../hooks/Denomination';
+// import CurrencyDropdown from '../hooks/CurrencyDropdown';
 
 
 
@@ -36,7 +38,8 @@ function buildRows(amount, notes) {
 
 
 const CashDenominationPanel = ({ country, receivedAmount, senderCurrency, onRowsChange }) => {
-  const info = COUNTRY_CASH_INFO[country];
+  // const info = COUNTRY_CASH_INFO[country];
+  const info = DENOMINATION_DATA[country];
   if (!info) return null;
 
   const [tab, setTab] = useState('counter');
@@ -265,11 +268,11 @@ const CashDenominationPanel = ({ country, receivedAmount, senderCurrency, onRows
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-black text-gray-400 hover:text-gray-700 transition-colors">
                 <RefreshCw size={11} strokeWidth={2.5} /> Reset
               </button>
-              <button onClick={handlePrint} type="button"
+              {/* <button onClick={handlePrint} type="button"
                 style={{ background:PRIMARY, color:'#111' }}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black hover:opacity-90 transition-opacity">
                 <Printer size={12} strokeWidth={2.5} /> Print
-              </button>
+              </button> */}
             </div>
           </div>
 
@@ -407,7 +410,7 @@ export const ReceiverForm = ({
   onSummaryChange,  
 }) => {
   const [formData, setFormData] = useState({
-    country:       'Spain',
+    country:       'India',
     deliveryMethod:'BANK_DEPOSIT',
     firstName:     '',
     lastName:      '',
@@ -681,7 +684,8 @@ export const ReceiverForm = ({
             <div className="relative group">
               <select name="country" value={formData.country} onChange={handleChange}
                 className={`${inputBase} appearance-none pl-12 pr-12`}>
-                {Object.keys(COUNTRY_CASH_INFO).map(c => <option key={c}>{c}</option>)}
+                {/* {Object.keys(COUNTRY_CASH_INFO).map(c => <option key={c}>{c}</option>)} */}
+                {SUPPORTED_COUNTRIES.map(c => <option key={c}>{c}</option>)}
               </select>
               <div style={{ color:PRIMARY }} className="pointer-events-none absolute inset-y-0 left-0 flex items-center px-4"><Globe size={20}/></div>
               <div style={{ color:PRIMARY }} className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 group-hover:scale-110 transition-transform"><ChevronDown size={20}/></div>
