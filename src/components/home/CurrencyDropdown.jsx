@@ -1,10 +1,42 @@
+//CurrencyDropdown.jsx
 import { useState, useRef, useEffect } from "react";
-import { currencies } from "../../data/currencies.js";
+import { currencies as defaultCurrencies } from "../../data/currencies.js";
 
 export default function CurrencyDropdown({ selected, onSelect }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [currencies, setCurrencies] = useState(defaultCurrencies);
+  const [showAll, setShowAll] = useState(false);
+  const [loadingAll, setLoadingAll] = useState(false);
   const dropdownRef = useRef(null);
+
+  // Fetch all currencies from API
+  const fetchAllCurrencies = async () => {
+    try {
+      setLoadingAll(true);
+      const res = await fetch("https://open.er-api.com/v6/latest/USD");
+      const data = await res.json();
+
+      if (data.result === "success") {
+        const allCodes = Object.keys(data.rates);
+
+        const formatted = allCodes.map((code) => ({
+          code,
+          name: code, // API doesn't return full names, so fallback to code
+          flag: `https://flagcdn.com/${code
+            .slice(0, 2)
+            .toLowerCase()}.svg`,
+        }));
+
+        setCurrencies(formatted);
+        setShowAll(true);
+      }
+    } catch (err) {
+      console.error("Error fetching currencies:", err);
+    } finally {
+      setLoadingAll(false);
+    }
+  };
 
   const filtered = currencies.filter(
     (c) =>
@@ -26,7 +58,6 @@ export default function CurrencyDropdown({ selected, onSelect }) {
 
   return (
     <div className="relative w-full" ref={dropdownRef}>
-
       {/* Selected */}
       <div
         onClick={() => setOpen(!open)}
@@ -90,6 +121,16 @@ export default function CurrencyDropdown({ selected, onSelect }) {
           ) : (
             <div className="p-4 text-sm text-gray-500 text-center">
               No currency found
+            </div>
+          )}
+
+          {/* See All Option */}
+          {!showAll && (
+            <div
+              onClick={fetchAllCurrencies}
+              className="px-4 py-3 text-sm text-primary font-semibold hover:bg-gray-50 cursor-pointer border-t border-gray-100"
+            >
+              {loadingAll ? "Loading..." : "See All Currencies"}
             </div>
           )}
         </div>
