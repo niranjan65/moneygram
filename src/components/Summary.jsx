@@ -8,37 +8,37 @@ export const Summary = ({ summary }) => {
   const total = summary.sendAmount + summary.fee;
 
   return (
-    // Fixed: changed 'class' to 'className' throughout the component
+   
     <div className="sticky top-24 flex flex-col gap-5">
-      <div className="rounded-2xl border border-gray-200 bg-white dark:bg-gray-900 dark:border-white/10 shadow-xl shadow-primary/5 overflow-hidden">
+      <div className="rounded-2xl border border-gray-200 bg-white  shadow-xl shadow-primary/5 overflow-hidden">
         <div className="bg-primary/5 p-5 border-b border-primary/10">
-          <h4 className="text-gray-900 dark:text-white font-extrabold text-lg flex items-center gap-2">
+          <h4 className="text-gray-900  font-extrabold text-lg flex items-center gap-2">
             Summary
           </h4>
         </div>
         
         <div className="p-6 flex flex-col gap-5">
           {/* Main Amounts */}
-          <div className="flex justify-between items-center pb-4 border-b border-dashed border-gray-200 dark:border-gray-800">
-            <span className="text-gray-500 dark:text-gray-400 text-sm font-semibold">Send Amount</span>
-            <span className="text-gray-900 dark:text-white font-extrabold text-lg">
+          <div className="flex justify-between items-center pb-4 border-b border-dashed border-gray-200 ">
+            <span className="text-gray-500  text-sm font-semibold">Send Amount</span>
+            <span className="text-gray-900  font-extrabold text-lg">
               {summary.sendAmount.toLocaleString('en-US', { style: 'currency', currency: summary.currency })}
             </span>
           </div>
 
-          <div className="flex flex-col gap-3 pb-4 border-b border-dashed border-gray-200 dark:border-gray-800">
+          <div className="flex flex-col gap-3 pb-4 border-b border-dashed border-gray-200 ">
             <div className="flex justify-between items-center">
-              <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-sm">
+              <div className="flex items-center gap-1.5 text-gray-500  text-sm">
                 <span>Transfer Fee</span>
                 <Info size={14} className="text-gray-400 cursor-help" />
               </div>
-              <span className="text-gray-900 dark:text-white font-bold text-sm">
+              <span className="text-gray-900  font-bold text-sm">
                 + {summary.fee.toLocaleString('en-US', { style: 'currency', currency: summary.currency })}
               </span>
             </div>
             
             <div className="flex justify-between items-center">
-              <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-sm">
+              <div className="flex items-center gap-1.5 text-gray-500  text-sm">
                 <span>Exchange Rate</span>
                 <TrendingUp size={14} className="text-primary" />
               </div>
@@ -78,7 +78,7 @@ export const Summary = ({ summary }) => {
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 text-xs font-semibold">
+      <div className="flex items-center justify-center gap-2 text-gray-500  text-xs font-semibold">
         <ShieldCheck size={16} className="text-primary" />
         Encrypted & Secure Transaction
       </div>

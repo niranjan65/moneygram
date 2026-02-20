@@ -1,42 +1,9 @@
-//CurrencyDropdown.jsx
 import { useState, useRef, useEffect } from "react";
-import { currencies as defaultCurrencies } from "../../data/currencies.js";
 
-export default function CurrencyDropdown({ selected, onSelect }) {
+export default function CurrencyDropdown({ selected, onSelect, currencies = [], loading = false }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [currencies, setCurrencies] = useState(defaultCurrencies);
-  const [showAll, setShowAll] = useState(false);
-  const [loadingAll, setLoadingAll] = useState(false);
   const dropdownRef = useRef(null);
-
-  // Fetch all currencies from API
-  const fetchAllCurrencies = async () => {
-    try {
-      setLoadingAll(true);
-      const res = await fetch("https://open.er-api.com/v6/latest/USD");
-      const data = await res.json();
-
-      if (data.result === "success") {
-        const allCodes = Object.keys(data.rates);
-
-        const formatted = allCodes.map((code) => ({
-          code,
-          name: code, // API doesn't return full names, so fallback to code
-          flag: `https://flagcdn.com/${code
-            .slice(0, 2)
-            .toLowerCase()}.svg`,
-        }));
-
-        setCurrencies(formatted);
-        setShowAll(true);
-      }
-    } catch (err) {
-      console.error("Error fetching currencies:", err);
-    } finally {
-      setLoadingAll(false);
-    }
-  };
 
   const filtered = currencies.filter(
     (c) =>
@@ -52,12 +19,22 @@ export default function CurrencyDropdown({ selected, onSelect }) {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Loading state — shown while useCurrencies hook is fetching
+  if (loading || !selected) {
+    return (
+      <div className="flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-3 bg-gray-50 animate-pulse">
+        <div className="w-6 h-4 bg-gray-200 rounded-sm" />
+        <div className="h-3 w-32 bg-gray-200 rounded" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full" ref={dropdownRef}>
+
       {/* Selected */}
       <div
         onClick={() => setOpen(!open)}
@@ -65,17 +42,15 @@ export default function CurrencyDropdown({ selected, onSelect }) {
       >
         <div className="flex items-center gap-3">
           <img
-            src={selected?.flag}
-            alt={selected?.code}
+            src={selected.flag}
+            alt={selected.code}
             className="w-6 h-4 object-cover rounded-sm"
           />
           <span className="text-sm font-medium text-gray-800">
-            {selected?.code} - {selected?.name}
+            {selected.code} - {selected.name}
           </span>
         </div>
-        <span className="text-gray-500 text-sm">
-          {open ? "▲" : "▼"}
-        </span>
+        <span className="text-gray-500 text-sm">{open ? "▲" : "▼"}</span>
       </div>
 
       {/* Dropdown */}
@@ -121,16 +96,6 @@ export default function CurrencyDropdown({ selected, onSelect }) {
           ) : (
             <div className="p-4 text-sm text-gray-500 text-center">
               No currency found
-            </div>
-          )}
-
-          {/* See All Option */}
-          {!showAll && (
-            <div
-              onClick={fetchAllCurrencies}
-              className="px-4 py-3 text-sm text-primary font-semibold hover:bg-gray-50 cursor-pointer border-t border-gray-100"
-            >
-              {loadingAll ? "Loading..." : "See All Currencies"}
             </div>
           )}
         </div>
