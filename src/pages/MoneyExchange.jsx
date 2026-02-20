@@ -19,9 +19,9 @@ const MoneyExchange = () => {
   const [currentStep, setCurrentStep] = useState(Step.DETAILS);
 
   const [senderInfo] = useState({
-    name:  'Michael Johnson',
-    email: 'm.johnson@example.com',
-    phone: '+1 (555) 123-4567',
+    name:  'Niranjan Singh',
+    email: 'niranjan.ks@anantdv.com',
+    phone: '+91 1234567890',
   });
 
   
@@ -96,11 +96,11 @@ const MoneyExchange = () => {
             <div className="lg:col-span-8 flex flex-col gap-10">
 
               <div className="flex flex-col gap-3">
-                <h1 className="text-gray-900 dark:text-white text-3xl sm:text-5xl font-black tracking-tight leading-none">
+                <h1 className="text-gray-900  text-3xl sm:text-5xl font-black tracking-tight leading-none">
                   Who are you sending <span className="text-primary italic">money</span> to?
                 </h1>
                 <p className="text-primary font-black text-sm uppercase tracking-widest opacity-80">
-                  Step 02: Recipient Information
+                  Step {currentStep}: Recipient Information
                 </p>
               </div>
 
@@ -114,7 +114,7 @@ const MoneyExchange = () => {
                 onSummaryChange={handleSummaryChange}  
               />
 
-              <div className="text-gray-400 dark:text-gray-600 text-xs font-semibold max-w-2xl px-2 leading-relaxed">
+              <div className="text-gray-400  text-xs font-semibold max-w-2xl px-2 leading-relaxed">
                 By clicking continue, you agree to MoneyFlow's Terms of Service and Privacy Policy.
                 Funds are usually delivered within minutes, subject to bank processing times and
                 holiday schedules in the destination country.
@@ -131,7 +131,7 @@ const MoneyExchange = () => {
         </div>
       </main>
 
-      <footer className="py-8 px-10 border-t border-gray-100 dark:border-gray-800 text-center text-gray-400 text-xs font-bold uppercase tracking-[0.2em]">
+      <footer className="py-8 px-10 border-t border-gray-100  text-center text-gray-400 text-xs font-bold uppercase tracking-[0.2em]">
         © 2024 MoneyGram Technologies Inc. • Built for Secure Global Commerce
       </footer>
     </div>

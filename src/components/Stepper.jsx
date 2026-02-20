@@ -29,17 +29,17 @@ export const Stepper = ({ currentStep }) => {
                 className={`flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all
                   ${currentStep > step.id ? 'bg-primary/10 border-primary text-primary' : 
                     currentStep === step.id ? 'bg-primary border-primary text-gray-900 shadow-lg shadow-primary/30' : 
-                    'border-gray-200 dark:border-gray-700 text-gray-400'}
+                    'border-gray-200  text-gray-400'}
                 `}
               >
                 {currentStep > step.id ? <Check size={16} strokeWidth={3} /> : step.id}
               </div>
-              <span className={`hidden md:inline ${currentStep === step.id ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
+              <span className={`hidden md:inline ${currentStep === step.id ? 'text-gray-900 ' : 'text-gray-400'}`}>
                 {step.label}
               </span>
             </div>
             {index < steps.length - 1 && (
-              <div className={`h-0.5 w-6 sm:w-12 rounded-full ${currentStep > step.id ? 'bg-primary/30' : 'bg-gray-100 dark:bg-gray-800'}`} />
+              <div className={`h-0.5 w-6 sm:w-12 rounded-full ${currentStep > step.id ? 'bg-primary/30' : 'bg-gray-100 '}`} />
             )}
           </React.Fragment>
         ))}

@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { currencies } from "../../data/currencies.js";
 
-export default function CurrencyDropdown({ selected, onSelect }) {
+export default function CurrencyDropdown({ selected, onSelect, currencies = [], loading = false }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const dropdownRef = useRef(null);
@@ -20,9 +19,18 @@ export default function CurrencyDropdown({ selected, onSelect }) {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Loading state — shown while useCurrencies hook is fetching
+  if (loading || !selected) {
+    return (
+      <div className="flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-3 bg-gray-50 animate-pulse">
+        <div className="w-6 h-4 bg-gray-200 rounded-sm" />
+        <div className="h-3 w-32 bg-gray-200 rounded" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full" ref={dropdownRef}>
@@ -34,17 +42,15 @@ export default function CurrencyDropdown({ selected, onSelect }) {
       >
         <div className="flex items-center gap-3">
           <img
-            src={selected?.flag}
-            alt={selected?.code}
+            src={selected.flag}
+            alt={selected.code}
             className="w-6 h-4 object-cover rounded-sm"
           />
           <span className="text-sm font-medium text-gray-800">
-            {selected?.code} - {selected?.name}
+            {selected.code} - {selected.name}
           </span>
         </div>
-        <span className="text-gray-500 text-sm">
-          {open ? "▲" : "▼"}
-        </span>
+        <span className="text-gray-500 text-sm">{open ? "▲" : "▼"}</span>
       </div>
 
       {/* Dropdown */}
