@@ -87,33 +87,36 @@ export default function RatesSection() {
       {/* Controls */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
 
-        {/* Base Currency */}
         <div className="flex items-center gap-3">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Base Currency:
-          </label>
+  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+    Base Currency:
+  </label>
 
           <select
-            value={baseCurrency}
-            onChange={(e) => setBaseCurrency(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-background-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            {currenciesToShow.map((cur) => (
-              <option key={cur} value={cur}>
-                {cur}
-              </option>
-            ))}
-          </select>
+    value={baseCurrency}
+    onChange={(e) => setBaseCurrency(e.target.value)}
+    className="px-4 py-2 rounded-lg border border-gray-300 dark:border-white/10
+      bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-sm
+      focus:outline-none focus:ring-2 focus:ring-primary"
+  >
+    {currenciesToShow.map((cur) => (
+      <option key={cur} value={cur}>
+        {cur}
+      </option>
+    ))}
+  </select>
         </div>
 
         {/* Search */}
-        <input
-          type="text"
-          placeholder="Search currency..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="px-4 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-background-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary md:w-64"
-        />
+       <input
+  type="text"
+  placeholder="Search currency..."
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  className="px-4 py-2 rounded-lg border border-gray-300 dark:border-white/10
+    bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-sm
+    focus:outline-none focus:ring-2 focus:ring-primary md:w-64"
+/>
       </div>
 
       {/* Loading */}
