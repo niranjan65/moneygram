@@ -24,7 +24,7 @@ const MoneyExchange = () => {
     phone: '+1 (555) 123-4567',
   });
 
-  // Receiver form initial defaults
+  
   const [receiverInfo, setReceiverInfo] = useState({
     firstName:        '',
     lastName:         '',
@@ -61,7 +61,7 @@ const MoneyExchange = () => {
 
  
   const handleContinue = useCallback((data) => {
-    // Persist everything the next steps will need
+    
     setReceiverInfo(data);
     console.log(data);
     
@@ -108,10 +108,10 @@ const MoneyExchange = () => {
 
               <ReceiverForm
                 initialData={receiverInfo}
-                sendAmount={summary.sendAmount}   // pass current summary amount as starting value
+                sendAmount={summary.sendAmount}   
                 onContinue={handleContinue}
                 onBack={handleBack}
-                onSummaryChange={handleSummaryChange}  // ← live sidebar updates
+                onSummaryChange={handleSummaryChange}  
               />
 
               <div className="text-gray-400 dark:text-gray-600 text-xs font-semibold max-w-2xl px-2 leading-relaxed">
@@ -123,16 +123,7 @@ const MoneyExchange = () => {
 
             {/* ── Sidebar ── */}
             <div className="lg:col-span-4 relative">
-              {/*
-                Summary now receives live-updated numbers.
-                Make sure your <Summary> component reads these props:
-                  summary.sendAmount       — what the sender types
-                  summary.currency         — sender currency code
-                  summary.fee              — fixed transfer fee
-                  summary.exchangeRate     — live calculated rate
-                  summary.receiverGets     — converted amount
-                  summary.receiverCurrency — receiver currency code
-              */}
+            
               <Summary summary={summary} />
             </div>
 
