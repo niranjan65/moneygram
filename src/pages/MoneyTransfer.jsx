@@ -184,288 +184,277 @@ const [receiverIFSC, setReceiverIFSC] = useState("");
     <>
       <Navbar />
 
-      <section className="min-h-screen py-8 px-6 bg-gray-50">
-        <div className="max-w-3xl mx-auto bg-white p-10 rounded-3xl shadow-lg space-y-8">
+     <section className="min-h-screen bg-gray-100 py-6 px-4 sm:px-6">
+  <div className="max-w-6xl mx-auto">
 
-          {responseMessage && (
-            <div className="p-4 bg-gray-100 rounded-xl">
-              {responseMessage}
+    <div className="flex flex-col lg:grid lg:grid-cols-3 gap-8">
+
+      {/* LEFT SIDE - FORM */}
+      <div className="lg:col-span-2 space-y-6">
+
+        {step === "form" && (
+          <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8 space-y-8">
+
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-snug">
+              Who are you sending{" "}
+              <span className="text-green-500 italic">money</span> to?
+            </h1>
+
+        
+
+            {/* Sender Details */}
+            <div className="bg-gray-50 p-6 rounded-2xl space-y-4">
+              <h3 className="font-semibold text-lg">
+                Sender Details
+              </h3>
+
+              <input
+                type="text"
+                placeholder="Sender Name"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="w-full border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-400"
+              />
+
+              <select
+                value={payMode}
+                onChange={(e) => setPayMode(e.target.value)}
+                className="w-full border rounded-xl px-4 py-3"
+              >
+                <option>Cash to Bank</option>
+                <option>Bank to Bank</option>
+              </select>
+
+              {payMode === "Bank to Bank" && (
+                <div className="grid md:grid-cols-2 gap-4">
+                  <input
+                    type="text"
+                    placeholder="Sender Bank Name"
+                    value={senderBankName}
+                    onChange={(e) => setSenderBankName(e.target.value)}
+                    className="border rounded-xl px-4 py-3"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Sender Account Number"
+                    value={senderAccountNumber}
+                    onChange={(e) => setSenderAccountNumber(e.target.value)}
+                    className="border rounded-xl px-4 py-3"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Sender IFSC"
+                    value={senderIFSC}
+                    onChange={(e) => setSenderIFSC(e.target.value)}
+                    className="border rounded-xl px-4 py-3 md:col-span-2"
+                  />
+                </div>
+              )}
+
+              <input
+                type="date"
+                value={transferDate}
+                onChange={(e) => setTransferDate(e.target.value)}
+                className="w-full border rounded-xl px-4 py-3"
+              />
             </div>
-          )}
 
-          {step === "form" && (
-            <>
-              <h1 className="text-3xl font-bold">
-                Money Transfer
-              </h1>
+            {/* Receiver Details */}
+            <div className="bg-gray-50 p-6 rounded-2xl space-y-4">
+              <h3 className="font-semibold text-lg">
+                Receiver Details
+              </h3>
 
-              {/* Sender Details */}
-              <div className="bg-gray-50 p-6 rounded-2xl space-y-4">
-                <h3 className="font-semibold text-lg">
-                  Sender Details
-                </h3>
+              <input
+                type="text"
+                placeholder="Receiver Name"
+                value={receiverName}
+                onChange={(e) => setReceiverName(e.target.value)}
+                className="w-full border rounded-xl px-4 py-3"
+              />
 
-                <input
-                  type="text"
-                  placeholder="Sender Name"
-                  value={customerName}
-                  onChange={(e) =>
-                    setCustomerName(e.target.value)
-                  }
-                  className="w-full border rounded-xl px-4 py-3"
-                />
-
-                <select
-                  value={payMode}
-                  onChange={(e) => setPayMode(e.target.value)}
-                  className="w-full border rounded-xl px-4 py-3"
-                >
-                  <option>Cash to Bank</option>
-                  <option>Bank to Bank</option>
-                </select>
-
-                {payMode === "Bank to Bank" && (
-  <div className="space-y-3">
-    <input
-      type="text"
-      placeholder="Sender Bank Name"
-      value={senderBankName}
-      onChange={(e) => setSenderBankName(e.target.value)}
-      className="w-full border rounded-xl px-4 py-3"
-    />
-
-    <input
-      type="text"
-      placeholder="Sender Account Number"
-      value={senderAccountNumber}
-      onChange={(e) => setSenderAccountNumber(e.target.value)}
-      className="w-full border rounded-xl px-4 py-3"
-    />
-
-    <input
-      type="text"
-      placeholder="Sender IFSC Code"
-      value={senderIFSC}
-      onChange={(e) => setSenderIFSC(e.target.value)}
-      className="w-full border rounded-xl px-4 py-3"
-    />
-  </div>
-)}
-
-
-                <input
-                  type="date"
-                  value={transferDate}
-                  onChange={(e) =>
-                    setTransferDate(e.target.value)
-                  }
-                  className="w-full border rounded-xl px-4 py-3"
-                />
-              </div>
-
-              {/* Receiver Details */}
-              <div className="bg-gray-50 p-6 rounded-2xl space-y-4">
-                <h3 className="font-semibold text-lg">
-                  Receiver Details
-                </h3>
-
-                <input
-                  type="text"
-                  placeholder="Receiver Name"
-                  value={receiverName}
-                  onChange={(e) =>
-                    setReceiverName(e.target.value)
-                  }
-                  className="w-full border rounded-xl px-4 py-3"
-                />
-
+              <div className="grid md:grid-cols-2 gap-4">
                 <input
                   type="email"
                   placeholder="Receiver Email"
                   value={receiverEmail}
-                  onChange={(e) =>
-                    setReceiverEmail(e.target.value)
-                  }
-                  className="w-full border rounded-xl px-4 py-3"
+                  onChange={(e) => setReceiverEmail(e.target.value)}
+                  className="border rounded-xl px-4 py-3"
                 />
 
                 <input
                   type="text"
                   placeholder="Receiver Phone"
                   value={receiverPhone}
-                  onChange={(e) =>
-                    setReceiverPhone(e.target.value)
-                  }
-                  className="w-full border rounded-xl px-4 py-3"
+                  onChange={(e) => setReceiverPhone(e.target.value)}
+                  className="border rounded-xl px-4 py-3"
                 />
+              </div>
 
+              <input
+                type="text"
+                placeholder="Receiver Country"
+                value={receiverCountry}
+                onChange={(e) => setReceiverCountry(e.target.value)}
+                className="w-full border rounded-xl px-4 py-3"
+              />
+
+              <div className="grid md:grid-cols-2 gap-4">
                 <input
                   type="text"
-                  placeholder="Receiver Country"
-                  value={receiverCountry}
-                  onChange={(e) =>
-                    setReceiverCountry(e.target.value)
-                  }
-                  className="w-full border rounded-xl px-4 py-3"
+                  placeholder="Receiver Bank Name"
+                  value={receiverBankName}
+                  onChange={(e) => setReceiverBankName(e.target.value)}
+                  className="border rounded-xl px-4 py-3"
                 />
+                <input
+                  type="text"
+                  placeholder="Receiver Account Number"
+                  value={receiverAccountNumber}
+                  onChange={(e) => setReceiverAccountNumber(e.target.value)}
+                  className="border rounded-xl px-4 py-3"
+                />
+                <input
+                  type="text"
+                  placeholder="Receiver IFSC"
+                  value={receiverIFSC}
+                  onChange={(e) => setReceiverIFSC(e.target.value)}
+                  className="border rounded-xl px-4 py-3 md:col-span-2"
+                />
+              </div>
+            </div>
+            {/* Amount Section */}
+<div className="bg-green-50 p-6 rounded-2xl space-y-4">
 
-                <div className="space-y-3">
-  <input
-    type="text"
-    placeholder="Receiver Bank Name"
-    value={receiverBankName}
-    onChange={(e) => setReceiverBankName(e.target.value)}
-    className="w-full border rounded-xl px-4 py-3"
-  />
+  <h3 className="font-semibold text-lg">
+    Transfer Amount
+  </h3>
 
-  <input
-    type="text"
-    placeholder="Receiver Account Number"
-    value={receiverAccountNumber}
-    onChange={(e) => setReceiverAccountNumber(e.target.value)}
-    className="w-full border rounded-xl px-4 py-3"
-  />
+  <div className="grid md:grid-cols-2 gap-4">
 
-  <input
-    type="text"
-    placeholder="Receiver IFSC Code"
-    value={receiverIFSC}
-    onChange={(e) => setReceiverIFSC(e.target.value)}
-    className="w-full border rounded-xl px-4 py-3"
-  />
+    {/* Send Amount */}
+    <div>
+      <label className="text-sm text-gray-600">
+        You Send
+      </label>
+      <div className="flex border rounded-xl overflow-hidden">
+        <input
+          type="number"
+          placeholder="0.00"
+          value={sendAmount}
+          onChange={(e) => setSendAmount(e.target.value)}
+          className="flex-1 px-4 py-3 outline-none"
+        />
+        <select
+          value={fromCurrency}
+          onChange={(e) => setFromCurrency(e.target.value)}
+          className="px-4 bg-white border-l"
+        >
+          <option value="USD">USD</option>
+          <option value="INR">INR</option>
+          <option value="AUD">AUD</option>
+        </select>
+      </div>
+    </div>
+
+    {/* Receive Amount */}
+    <div>
+      <label className="text-sm text-gray-600">
+        Receiver Gets
+      </label>
+      <div className="flex border rounded-xl overflow-hidden bg-gray-100">
+        <input
+          type="number"
+          value={receiveAmount}
+          readOnly
+          className="flex-1 px-4 py-3 bg-gray-100"
+        />
+        <select
+          value={toCurrency}
+          onChange={(e) => setToCurrency(e.target.value)}
+          className="px-4 bg-white border-l"
+        >
+          <option value="INR">INR</option>
+          <option value="USD">USD</option>
+          <option value="AUD">AUD</option>
+        </select>
+      </div>
+    </div>
+
+  </div>
+
+  <p className="text-xs text-gray-500">
+    Exchange rate applied automatically.
+  </p>
+
+   {/* Transfer Button */}
+            <button
+              onClick={handlePreview}
+              className="w-full bg-green-500 hover:bg-green-600 text-white py-4 rounded-2xl font-semibold text-lg transition"
+            >
+              Preview Transfer
+            </button>
+
 </div>
 
-              </div>
+          </div>
+        )}
+      </div>
 
-              {/* Transfer Details */}
-              <div className="bg-gray-50 p-6 rounded-2xl space-y-4">
-                <h3 className="font-semibold text-lg">
-                  Transfer Details
-                </h3>
+      {/* RIGHT SIDE - SUMMARY */}
+      <div className="w-full">
 
-                <div className="flex border rounded-xl overflow-hidden">
-                  <input
-                    type="text"
-                    value={sendAmount}
-                    onChange={handleSendAmountChange}
-                    className="flex-1 px-4 py-3"
-                    placeholder="You Send"
-                  />
-                  <select
-                    value={fromCurrency}
-                    onChange={(e) =>
-                      setFromCurrency(e.target.value)
-                    }
-                    className="px-4 border-l"
-                  >
-                    {currencies.map((c) => (
-                      <option key={c.code}>
-                        {c.code}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+        <div className="bg-white rounded-2xl shadow-sm p-6 space-y-6 
+                        lg:sticky lg:top-24">
 
-                <div className="flex border rounded-xl overflow-hidden">
-                  <input
-                    type="text"
-                    value={receiveAmount}
-                    readOnly
-                    className="flex-1 px-4 py-3 bg-gray-100"
-                    placeholder="Receiver Gets"
-                  />
-                  <select
-                    value={toCurrency}
-                    onChange={(e) =>
-                      setToCurrency(e.target.value)
-                    }
-                    className="px-4 border-l"
-                  >
-                    {currencies.map((c) => (
-                      <option key={c.code}>
-                        {c.code}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+          <h3 className="text-lg sm:text-xl font-semibold">
+            Summary
+          </h3>
 
-                <div className="text-sm space-y-2">
-                  <div className="flex justify-between">
-                    <span>Service Fee (2%)</span>
-                    <span>{serviceFee}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>GST (15%)</span>
-                    <span>{gstTax}</span>
-                  </div>
-                  <div className="flex justify-between font-semibold">
-                    <span>Total Payable</span>
-                    <span>{totalPayable}</span>
-                  </div>
-                </div>
-              </div>
+          <div className="space-y-3 text-sm sm:text-base">
 
-              <button
-                onClick={handlePreview}
-                className="w-full bg-blue-600 text-white py-3 rounded-xl"
-              >
-                Preview All Details
-              </button>
-            </>
-          )}
+            <div className="flex justify-between">
+              <span>Send Amount</span>
+              <span className="font-semibold">
+                ${sendAmount || "0.00"}
+              </span>
+            </div>
 
-          {step === "preview" && previewData && (
-            <>
-            <p><strong>Pay Mode:</strong> {previewData.payMode}</p>
+            <div className="flex justify-between">
+              <span>Service Fee</span>
+              <span>${serviceFee}</span>
+            </div>
 
-{previewData.payMode === "Bank to Bank" && (
-  <>
-    <p><strong>Sender Bank:</strong> {previewData.senderBankName}</p>
-    <p><strong>Sender Account:</strong> {previewData.senderAccountNumber}</p>
-    <p><strong>Sender IFSC:</strong> {previewData.senderIFSC}</p>
-  </>
-)}
+            <div className="flex justify-between">
+              <span>GST</span>
+              <span>${gstTax}</span>
+            </div>
 
-<p><strong>Receiver Bank:</strong> {previewData.receiverBankName}</p>
-<p><strong>Receiver Account:</strong> {previewData.receiverAccountNumber}</p>
-<p><strong>Receiver IFSC:</strong> {previewData.receiverIFSC}</p>
+            <hr />
 
-              <h2 className="text-2xl font-bold">
-                Confirm & Proceed
-              </h2>
+            <div className="flex justify-between font-bold text-lg">
+              <span>Total to Pay</span>
+              <span>${totalPayable}</span>
+            </div>
+          </div>
 
-              <div className="bg-gray-50 p-6 rounded-2xl space-y-2 text-sm">
-                {Object.entries(previewData).map(
-                  ([key, value]) => (
-                    <p key={key}>
-                      <strong>{key}:</strong> {value}
-                    </p>
-                  )
-                )}
-              </div>
+          <div className="bg-green-500 text-white rounded-2xl p-5 sm:p-6 text-center">
+            <p className="text-xs tracking-wide uppercase">
+              Receiver Gets
+            </p>
+            <p className="text-2xl sm:text-3xl font-bold">
+              {receiveAmount || "0.00"} {toCurrency}
+            </p>
+          </div>
 
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setStep("form")}
-                  className="flex-1 border py-3 rounded-xl"
-                >
-                  Edit
-                </button>
-
-                <button
-                  onClick={submitToERPNext}
-                  disabled={isLoading}
-                  className="flex-1 bg-green-600 text-white py-3 rounded-xl"
-                >
-                  {isLoading
-                    ? "Processing..."
-                    : "Confirm and Proceed"}
-                </button>
-              </div>
-            </>
-          )}
         </div>
-      </section>
+
+      </div>
+
+    </div>
+  </div>
+</section>
+
 
       <Footer />
     </>
