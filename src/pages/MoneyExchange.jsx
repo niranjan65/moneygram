@@ -119,7 +119,7 @@ const MoneyExchange = () => {
             💳
           </div>
           <h3 className="text-xl font-black text-gray-900">Payment Step</h3>
-          <p className="text-gray-500 text-sm">Your PaymentStep component goes here.</p>
+          <p className="text-gray-500 text-sm">Payment</p>
           <button
             onClick={handleBack}
             className="mt-4 px-6 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
