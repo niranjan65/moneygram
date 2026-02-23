@@ -675,12 +675,22 @@ const stepLabels = {
                 </div>
               </div>
 
-              <button
-                onClick={handlePreview}
-                className="w-full bg-primary text-white rounded-2xl py-4 font-black hover:opacity-90 transition"
-              >
-                Preview Details
-              </button>
+              <div className="flex gap-4">
+  <button
+    onClick={() => setCurrentStep(Step.DETAILS)}
+    className="w-1/3 border border-gray-300 rounded-2xl py-4 font-black hover:bg-gray-50 transition"
+  >
+    ← Back
+  </button>
+
+  <button
+    onClick={handlePreview}
+    className="w-2/3 bg-primary text-white rounded-2xl py-4 font-black hover:opacity-90 transition"
+  >
+    Preview Details
+  </button>
+</div>
+
             </div>
           )}
 
@@ -688,7 +698,19 @@ const stepLabels = {
           {currentStep === Step.PREVIEW && (
             <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-10 space-y-6">
 
-              <h3 className="text-xl font-black">Review & Confirm</h3>
+              <div className="flex justify-between items-center">
+  <h3 className="text-xl font-black">Review & Confirm</h3>
+
+  <button
+    onClick={() => setCurrentStep(Step.DETAILS)}
+    className="flex items-center gap-2 text-sm font-bold text-primary hover:opacity-80 transition"
+  >
+    ✏️ Edit
+  </button>
+  
+
+</div>
+
 
               <div className="space-y-3 text-sm font-semibold">
                 <div><strong>Sender:</strong> {senderFullName}</div>
@@ -707,7 +729,14 @@ const stepLabels = {
               >
                 Confirm & Proceed
               </button>
+              {/* <button
+  onClick={() => setCurrentStep(Step.AMOUNT)}
+  className="w-full border border-gray-300 rounded-2xl py-4 font-black hover:bg-gray-50 transition"
+>
+  ← Back to Amount
+</button> */}
             </div>
+            
           )}
 
         </div>
