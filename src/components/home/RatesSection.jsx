@@ -48,8 +48,12 @@ export default function RatesSection() {
         const updated = { ...prev };
         currenciesToShow.forEach((cur) => {
           const value = data.rates[cur];
-          if (!updated[cur]) updated[cur] = [];
-          updated[cur] = [...updated[cur].slice(-9), value];
+         if (!updated[cur]) {
+  updated[cur] = [value];
+} else {
+  updated[cur] = [...updated[cur].slice(-9), value];
+}
+
         });
         return updated;
       });
@@ -127,7 +131,6 @@ export default function RatesSection() {
       )}
 
       {/* Table */}
-      {/* Table */}
 {!loading && (
   <div className="overflow-x-auto bg-white dark:bg-background-dark rounded-2xl shadow-lg border border-gray-100 dark:border-white/10">
 
@@ -160,16 +163,21 @@ export default function RatesSection() {
             midRate ? (sellRate - buyRate).toFixed(4) : null;
 
           // Trend logic
-          let change = null;
-          if (previousMid && midRate) {
-            if (midRate > previousMid) change = "up";
-            else if (midRate < previousMid) change = "down";
-            else change = "same";
-          }
+        let change = null;
+if (history[cur] && history[cur].length > 1) {
+  const last = history[cur][history[cur].length - 1];
+  const prev = history[cur][history[cur].length - 2];
+
+  if (last > prev) change = "up";
+  else if (last < prev) change = "down";
+  else change = "same";
+}
+
 
           // Profit suggestion logic
           let profitSignal = "-";
-          if (previousMid && midRate) {
+          if (previousMid !== undefined && midRate !== undefined){
+
             if (midRate > previousMid) {
               profitSignal = "Sell Today 📈";
             } else if (midRate < previousMid) {
