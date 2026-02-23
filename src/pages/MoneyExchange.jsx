@@ -5,6 +5,7 @@ import { SenderCard } from '../components/SenderCard';
 import { ReceiverForm } from '../components/RecieverForm';
 import { ReviewStep } from '../components/ReviewStep';
 import Navbar from '../components/layout/Navbar';
+import { TransferSuccess } from '../components/TransferSuccess';
 
 const Step = {
   ESTIMATE: 1,
@@ -17,6 +18,7 @@ const TRANSFER_FEE = 4.99;
 
 const MoneyExchange = () => {
   const [currentStep, setCurrentStep] = useState(Step.DETAILS);
+
 
   const [senderInfo] = useState({
     name:  'Niranjan Singh',
@@ -47,6 +49,8 @@ const MoneyExchange = () => {
 
   // Full transfer payload saved when ReceiverForm submits — used by ReviewStep
   const [transferPayload, setTransferPayload] = useState(null);
+
+  const [transactionId, setTransactionId] = useState(null);
 
   const handleSummaryChange = useCallback((incoming) => {
     setSummary(prev => ({
@@ -89,10 +93,22 @@ const MoneyExchange = () => {
 
   // Called from ReviewStep → Confirm & Send → go to PAYMENT
   const handleConfirm = useCallback(() => {
+    const txId = `#TRX-${Math.floor(100000 + Math.random() * 900000)}`;
+    setTransactionId(txId);
     setCurrentStep(Step.PAYMENT);
     // TODO: trigger your actual payment / API call here
     console.log('Confirmed! Proceeding to payment with:', transferPayload);
   }, [transferPayload]);
+
+   const handleDashboard = useCallback(() => {
+    // TODO: navigate to dashboard route
+    console.log('Navigate to dashboard');
+  }, []);
+
+  const handleDownloadReceipt = useCallback(() => {
+    // TODO: generate PDF receipt
+    console.log('Download receipt for:', transactionId);
+  }, [transactionId]);
 
   // ── Step content ─────────────────────────────────────────────────────────────
   const renderStepContent = () => {
@@ -111,26 +127,21 @@ const MoneyExchange = () => {
     }
 
     if (currentStep === Step.PAYMENT) {
-      // Placeholder — replace with your actual PaymentStep component
+      
       return (
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-10 text-center flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-full flex items-center justify-center text-3xl"
-            style={{ background: '#30e87a22' }}>
-            💳
-          </div>
-          <h3 className="text-xl font-black text-gray-900">Payment Step</h3>
-          <p className="text-gray-500 text-sm">Payment</p>
-          <button
-            onClick={handleBack}
-            className="mt-4 px-6 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            ← Back to Review
-          </button>
-        </div>
+        <TransferSuccess
+            data={transferPayload}
+            transactionId={transactionId}
+            estimatedArrival="Today by 5:00 PM"
+            onDashboard={handleDashboard}
+            onDownloadReceipt={handleDownloadReceipt}
+          />
       );
     }
 
     // Default: DETAILS step (ReceiverForm)
+
+    console.log("current step", currentStep)
     return (
       <>
         <SenderCard sender={senderInfo} />
@@ -192,7 +203,7 @@ const MoneyExchange = () => {
       </main>
 
       <footer className="py-8 px-10 border-t border-gray-100 text-center text-gray-400 text-xs font-bold uppercase tracking-[0.2em]">
-        © 2024 MoneyGram Technologies Inc. • Built for Secure Global Commerce
+        © 2026 MoneyGram Technologies Inc. • Built for Secure Global Commerce
       </footer>
     </div>
   );
