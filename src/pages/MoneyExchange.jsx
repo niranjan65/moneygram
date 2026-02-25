@@ -59,6 +59,9 @@ const MoneyExchange = () => {
 
   const [transactionId, setTransactionId] = useState(null);
 
+  // Stores the created Currency Exchange For Customer doc from ERPNext API
+  const [apiResponseDoc, setApiResponseDoc] = useState(null);
+
   const handleSummaryChange = useCallback((incoming) => {
     setSummary(prev => ({
       ...prev,
@@ -93,6 +96,34 @@ const MoneyExchange = () => {
 
   const handleBack = useCallback(() => {
     setCurrentStep(prev => Math.max(Step.ESTIMATE, prev - 1));
+  }, []);
+
+  // Called from ReviewStep → Cancel → reset everything and go back to DETAILS
+  const handleCancel = useCallback(() => {
+    setReceiverInfo({
+      firstName:        '',
+      lastName:         '',
+      country:          'Spain',
+      city:             '',
+      deliveryMethod:   'BANK_DEPOSIT',
+      bankName:         '',
+      accountNumber:    '',
+      senderCurrency:   'USD',
+      receiverCurrency: 'EUR',
+    });
+    setSummary({
+      sendAmount:       1000.00,
+      currency:         'USD',
+      fee:              TRANSFER_FEE,
+      exchangeRate:     0.02,
+      receiverGets:     920.00,
+      receiverCurrency: 'EUR',
+      exchangeType:     'BUY',
+    });
+    setTransferPayload(null);
+    setTransactionId(null);
+    setApiResponseDoc(null);
+    setCurrentStep(Step.DETAILS);
   }, []);
 
   // Called from ReviewStep → Edit buttons → go back to DETAILS
@@ -215,8 +246,12 @@ if (uploadedFileUrl) {
 
     console.log("API Success:", result);
 
-    // Generate Transaction ID
-    const txId = `#TRX-${Math.floor(100000 + Math.random() * 900000)}`;
+    // Store the created Currency Exchange For Customer doc from API
+    const createdDoc = result?.message || result?.data || result;
+    setApiResponseDoc(createdDoc);
+
+    // Use the doc name from API as transaction ID, fallback to random
+    const txId = createdDoc?.name || `#TRX-${Math.floor(100000 + Math.random() * 900000)}`;
     setTransactionId(txId);
 
     // Move to payment success screen
@@ -248,7 +283,7 @@ if (uploadedFileUrl) {
           paymentLabel="Visa •••• 4242"
           fee={TRANSFER_FEE}
           onEdit={handleEditFromReview}
-          onCancel={handleBack}
+          onCancel={handleCancel}
           onConfirm={handleConfirm}
         />
       );
@@ -259,6 +294,7 @@ if (uploadedFileUrl) {
       return (
         <TransferSuccess
             data={transferPayload}
+            apiDoc={apiResponseDoc}
             transactionId={transactionId}
             estimatedArrival="Today by 5:00 PM"
             onDashboard={handleDashboard}
