@@ -20,13 +20,13 @@ export function useERPNextRates() {
         const response = await fetch(
           "http://192.168.101.182:81/api/method/moneygram.api.get_currency_exchange_rate",
           {
-            method: "POST", // ERPNext whitelisted methods require POST
+            method: "POST", 
             headers: {
               "Content-Type": "application/json",
             },
-            credentials: "include", // IMPORTANT if using session login
+            credentials: "include", 
             body: JSON.stringify({
-              today_date: today,
+              today_date: "2026-02-23",
             }),
           }
         );
@@ -37,8 +37,10 @@ export function useERPNextRates() {
 
         const data = await response.json();
 
-        // ERPNext returns response inside `message`
+        
         const result = data.message;
+
+        console.log("Erp rate.....", result)
 
         if (!result || !result.name) {
           setNoDataForToday(true);
@@ -54,18 +56,23 @@ export function useERPNextRates() {
         const ratesMap = {};
         const currencyList = [];
 
+        
+
         for (const row of rows) {
           const code = row.currency_name;
           const sellingRate = parseFloat(row.selling_price);
           const buyingRate = parseFloat(row.buying_price);
 
-          if (code && !isNaN(sellingRate) && sellingRate > 0) {
+          if (code && !isNaN(sellingRate) && sellingRate >= 0) {
             ratesMap[code] = sellingRate;
             currencyList.push({
               code,
               sellingRate,
               buyingRate: !isNaN(buyingRate) ? buyingRate : null,
+              country: row?.country
             });
+
+            
           }
         }
 
