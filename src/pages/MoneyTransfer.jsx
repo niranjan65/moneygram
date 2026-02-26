@@ -7,7 +7,7 @@ import { getNames } from "country-list";
 import FormInput from "../components/FormInput";
 import { calculateTransfer } from "../utils/transferCalculator";
 import { validateStepOne } from "../utils/validateStepOne";
-
+import { useERPFileUpload } from "../hooks/useERPFileUpload";
 
 const MoneyTransfer = () => {
   const Step = {
@@ -73,6 +73,7 @@ const [receiverFileName, setReceiverFileName] = useState("");
     value: country,
   }));
 
+  const { uploadFile, loading: fileUploading, error: fileError } = useERPFileUpload();
  
     const documentOptions = [ 
      { label: "Passport", value: "Passport" },
@@ -223,9 +224,31 @@ const stepLabels = {
     setCurrentStep(Step.PREVIEW);
   };
 
+  
  
  const handleConfirm = async () => {
   try {
+    let senderFileUrl = null;
+    let receiverFileUrl = null;
+
+    // ======================
+    // Upload Sender File
+    // ======================
+    if (senderDocFile) {
+      senderFileUrl = await uploadFile(senderDocFile, {
+        isPrivate: 1,
+      });
+    }
+
+    // ======================
+    // Upload Receiver File
+    // ======================
+    if (receiverDocFile) {
+      receiverFileUrl = await uploadFile(receiverDocFile, {
+        isPrivate: 1,
+      });
+    }
+
     const payload = {
       data: {
         // ======================
@@ -235,6 +258,7 @@ const stepLabels = {
         sender_phone_number: senderPhone,
         sender_payment_mode: payMode,
         sender_document_type: senderDocType,
+        sender_government_id_type: senderOtherDocType,
         sender_document_number: senderDocNumber,
         sender_email_address: senderEmail,
         sender_country: senderCountry,
@@ -242,6 +266,7 @@ const stepLabels = {
         sender_bank_name: senderBankName || "",
         sender_account_number: senderAccountNumber || "",
         sender_swift_code: senderSwiftCode || "",
+        sender_identity_doc_file: senderFileUrl,
 
         // ======================
         // RECEIVER
@@ -249,19 +274,20 @@ const stepLabels = {
         receiver_full_name: receiverFullName,
         receiver_phone_number: receiverPhone,
         receiver_doc_type: receiverDocType,
+        receiver_government_id_type: receiverOtherDocType,
         receiver_document_number: receiverDocNumber,
         receiver_email_address: receiverEmail,
         receiver_country: receiverCountry,
         receiver_bank_name: receiverBankName || "",
         receiver_account_number: receiverAccountNumber || "",
         receiver_swift_code: receiverSwiftCode || "",
+        receiver_identity_doc_file: receiverFileUrl,
 
         // ======================
         // AMOUNTS
         // ======================
         sending_amount: Number(sendAmount),
         receiving_amount: Number(receiveAmount),
-
         sending_currency: fromCurrency,
         receiving_currency: toCurrency,
         sending_amount_summary: Number(sendAmount),
@@ -272,12 +298,18 @@ const stepLabels = {
       },
     };
 
+    // 🔥 PRINT FULL PAYLOAD
+    console.log("========== FINAL PAYLOAD ==========");
+    console.log(JSON.stringify(payload, null, 2));
+    console.log("===================================");
+
     const response = await fetch(
       "http://192.168.101.182:81/api/method/moneygram.moneygram.api.money_exchange.create_money_transfer",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": "token 661457e17b8612a:32a5ddcc5a9c177",
         },
         body: JSON.stringify(payload),
       }
@@ -286,18 +318,60 @@ const stepLabels = {
     const result = await response.json();
 
     if (response.ok) {
-      alert("Money Transfer Created Successfully ✅");
-      console.log("Payload Sent:", payload);
-      console.log("Server Response:", result);
-      setCurrentStep(Step.DETAILS);
-    } else {
-      console.error("Error:", result);
-      alert(result.message?.message || "Failed to create transfer");
-    }
+  const docName = result?.message?.name || "";
+
+  // Remove "Money Transfer-" prefix
+  const cleanName = docName.replace("Money Transfer-", "");
+
+  alert(`Money Transfer Created: ${cleanName}`);
+
+  console.log("Server Response:", result);
+
+  resetForm();  // 🔥 Clears everything and returns to Step 1
+}
   } catch (error) {
     console.error("API Error:", error);
     alert("Something went wrong while creating transfer.");
   }
+};
+
+const resetForm = () => {
+  // Sender
+  setSenderFullName("");
+  setSenderEmail("");
+  setSenderPhone("");
+  setSenderCountry("");
+  setPayMode("Cash to Bank");
+  setSenderBankName("");
+  setSenderAccountNumber("");
+  setSenderSwiftCode("");
+  setSenderDocType("");
+  setSenderDocNumber("");
+  setSenderDocFile(null);
+  setSenderOtherDocType("");
+  setSenderFileName("");
+
+  // Receiver
+  setReceiverFullName("");
+  setReceiverEmail("");
+  setReceiverPhone("");
+  setReceiverCountry("");
+  setReceiverBankName("");
+  setReceiverAccountNumber("");
+  setReceiverSwiftCode("");
+  setReceiverDocType("");
+  setReceiverDocNumber("");
+  setReceiverDocFile(null);
+  setReceiverOtherDocType("");
+  setReceiverFileName("");
+
+  // Amount
+  setSendAmount("");
+  setFromCurrency("USD");
+  setToCurrency("EUR");
+
+  // Return to Step 1
+  setCurrentStep(Step.DETAILS);
 };
 
   return (
