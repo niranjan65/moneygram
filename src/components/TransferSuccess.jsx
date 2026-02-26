@@ -6,7 +6,9 @@ import {
   FileText,
   HelpCircle,
   TrendingUp,
+  Info,
 } from 'lucide-react';
+import { useExchange } from '../context/ExchangeContext';
 
 const PRIMARY = '#30e87a';
 const PRIMARY_DARK = '#24b35f';
@@ -37,6 +39,11 @@ export const TransferSuccess = ({
   onDashboard,
   onDownloadReceipt,
 }) => {
+
+  console.log("transfer successfull ", data)
+
+  // Pull calculated exchange values from ExchangeContext
+  const exchange = useExchange();
   // Prefer API doc values, fall back to local data
   const sendAmount = apiDoc?.you_send ?? apiDoc?.send_amount ?? data.sendAmount ?? 0;
   const senderCurrency = apiDoc?.you_send_currency_type ?? data.senderCurrency ?? 'USD';
@@ -114,7 +121,7 @@ export const TransferSuccess = ({
           </p>
 
           {/* Reference / Transaction ID chip */}
-          <button
+          {/* <button
             onClick={handleCopy}
             className="mt-6 flex items-center gap-2 px-4 py-2 rounded-full border transition-all group"
             style={{
@@ -131,62 +138,59 @@ export const TransferSuccess = ({
               ? <Check size={16} strokeWidth={3} style={{ color: PRIMARY }} />
               : <Copy size={16} className="text-gray-400 group-hover:text-gray-600 transition-colors" />
             }
-          </button>
+          </button> */}
 
           {/* Details Card */}
           <div className="mt-10 w-full bg-gray-50 rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
 
-            {/* Amount Sent */}
+            {/* Receiver Gets */}
             <div className="flex justify-between items-center p-5">
-              <span className="text-gray-500 font-medium">Amount Sent</span>
+              <span className="text-gray-500 font-medium">Receiver Gets</span>
               <span className="text-gray-900 font-bold text-lg">
-                {fmt(sendAmount)} {senderCurrency}
+                {receiverCurrency} {fmt(exchange.receiverGets)}
               </span>
             </div>
 
-            {/* Exchange Rate */}
+            {/* Service Fee */}
             <div className="flex justify-between items-center p-5">
-              <div className="flex flex-col items-start">
-                <span className="text-gray-500 font-medium">Exchange Rate</span>
-                <span className="text-xs text-gray-400">Includes fees</span>
-              </div>
-              <span className="text-gray-900 font-semibold flex items-center gap-1.5">
-                <TrendingUp size={14} style={{ color: PRIMARY }} />
-                1 {senderCurrency} = {exchangeRate > 0 ? Number(exchangeRate).toFixed(4) : '–'} {receiverCurrency}
+              <span className="text-gray-500 font-medium flex items-center gap-1.5">
+                Service Fee ({(exchange.serviceRate * 100).toFixed(0)}%)
+                <Info size={14} className="text-gray-400" />
+              </span>
+              <span className="text-gray-900 font-bold text-lg">
+                {receiverCurrency} {fmt(exchange.serviceFee)}
               </span>
             </div>
 
-            {/* Transfer Fee — only when available from API */}
-            {transferFee > 0 && (
-              <div className="flex justify-between items-center p-5">
-                <span className="text-gray-500 font-medium">Transfer Fee</span>
-                <span className="text-gray-900 font-bold">
-                  {fmt(transferFee)} {senderCurrency}
-                </span>
-              </div>
-            )}
+            {/* GST */}
+            <div className="flex justify-between items-center p-5">
+              <span className="text-gray-500 font-medium">
+                GST ({(exchange.gstRate * 100).toFixed(0)}%)
+              </span>
+              <span className="text-gray-900 font-bold text-lg">
+                {receiverCurrency} {fmt(exchange.gstAmount)}
+              </span>
+            </div>
 
-            {/* Total Amount — only when available from API */}
-            {totalAmount > 0 && (
-              <div className="flex justify-between items-center p-5">
-                <span className="text-gray-500 font-medium">Total Amount</span>
-                <span className="text-gray-900 font-bold text-lg">
-                  {fmt(totalAmount)} {senderCurrency}
-                </span>
-              </div>
-            )}
+            {/* Total to Pay */}
+            <div className="flex justify-between items-center p-5 border-t border-gray-200">
+              <span className="text-gray-900 font-extrabold text-lg">Total to Pay</span>
+              <span className="text-gray-900 font-extrabold text-2xl">
+                {receiverCurrency} {fmt(exchange.total)}
+              </span>
+            </div>
 
-            {/* Total to Receiver — highlighted */}
+            {/* Final Amount — highlighted */}
             <div
-              className="flex justify-between items-center p-6"
-              style={{ background: `${PRIMARY}0d` }}
+              className="mx-4 mb-4 rounded-xl px-6 py-5 text-center"
+              style={{ background: PRIMARY }}
             >
-              <span className="font-bold" style={{ color: PRIMARY_DARK }}>
-                Total to Receiver
-              </span>
-              <span className="text-2xl font-extrabold" style={{ color: PRIMARY_DARK }}>
-                {toSym}{fmt(finalAmount)} {receiverCurrency}
-              </span>
+              <p className="text-xs font-black uppercase tracking-[0.15em] text-gray-900 mb-1 opacity-80">
+                FINAL AMOUNT
+              </p>
+              <p className="text-3xl font-extrabold text-gray-900 tracking-tight">
+                {receiverCurrency} {fmt(exchange.total)}
+              </p>
             </div>
           </div>
 

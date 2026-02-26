@@ -659,7 +659,7 @@ coins_name: receiverInfo?.coins_name,
         <GovernmentIdSection register={register} errors={errors} setValue={setValue} watch={watch} />
 
         {/* Past Receivers */}
-        <div className="relative group">
+        {/* <div className="relative group">
           <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2.5">
             Select a past receiver
           </label>
@@ -674,7 +674,7 @@ coins_name: receiverInfo?.coins_name,
               <ChevronDown size={20} />
             </div>
           </div>
-        </div>
+        </div> */}
 
         <div className="h-px bg-gray-100" />
 
