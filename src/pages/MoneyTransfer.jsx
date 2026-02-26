@@ -66,7 +66,7 @@ const [receiverFileName, setReceiverFileName] = useState("");
   const [sendAmount, setSendAmount] = useState("");
   const [fromCurrency, setFromCurrency] = useState("USD");
   const [toCurrency, setToCurrency] = useState("EUR");
-  
+  const [gstRate, setGstRate] = useState(0);
 
   const countryOptions = getNames().map((country) => ({
     label: country,
@@ -93,6 +93,39 @@ const [receiverFileName, setReceiverFileName] = useState("");
     setTransferDate(getTodayDate());
   }, []);
 
+  useEffect(() => {
+  const fetchGST = async () => {
+    try {
+      const response = await fetch(
+        "http://192.168.101.182:81/api/method/moneygram.api.get_tax_template_for_company",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            company: "MH Money Express",
+          }),
+        }
+      );
+
+      const result = await response.json();
+      // console.log("GST API FULL RESPONSE:", result);
+
+      const taxRate =
+        result?.message?.taxes?.[0]?.tax_rate ?? 0;
+
+      setGstRate(Number(taxRate));
+
+    } catch (error) {
+      console.error("GST fetch error:", error);
+      setGstRate(0);
+    }
+  };
+
+  fetchGST();
+}, []);
+
   const STATIC_RATES = {
     USD: { USD: 1, INR: 83, AUD: 1.5, EUR: 0.92 },
     INR: { USD: 0.012, INR: 1, AUD: 0.018, EUR: 0.011 },
@@ -112,6 +145,7 @@ const [receiverFileName, setReceiverFileName] = useState("");
   fromCurrency,
   toCurrency,
   rates: STATIC_RATES,
+  gstPercent: gstRate,   
 });
 
 const stepLabels = {
@@ -720,7 +754,7 @@ const stepLabels = {
               </div>
 
               <div className="flex justify-between">
-                <span>GST (15%)</span>
+                <span>GST ({gstRate}%)</span>
                 <span>{gst} {fromCurrency}</span>
               </div>
 
