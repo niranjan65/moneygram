@@ -6,9 +6,11 @@ import {
   FileText,
   HelpCircle,
   TrendingUp,
+  Info,
 } from 'lucide-react';
+import { useExchange } from '../context/ExchangeContext';
 
-const PRIMARY      = '#30e87a';
+const PRIMARY = '#30e87a';
 const PRIMARY_DARK = '#24b35f';
 
 /**
@@ -23,6 +25,7 @@ const PRIMARY_DARK = '#24b35f';
  *      firstName, lastName,
  *      totalDispensed,       // cash pickup only
  *    }
+ *  apiDoc — the created Currency Exchange For Customer doc from ERPNext API
  *  transactionId    — string, e.g. '#TRX-882910' (auto-generated if omitted)
  *  estimatedArrival — string, e.g. 'Today by 5:00 PM'
  *  onDashboard      — () => void
@@ -30,29 +33,37 @@ const PRIMARY_DARK = '#24b35f';
  */
 export const TransferSuccess = ({
   data = {},
+  apiDoc,
   transactionId,
   estimatedArrival = 'Today by 5:00 PM',
   onDashboard,
   onDownloadReceipt,
 }) => {
-  const {
-    sendAmount       = 0,
-    senderCurrency   = 'USD',
-    receiverGets     = 0,
-    receiverCurrency = 'EUR',
-    exchangeRate     = 0,
-    firstName        = '',
-    lastName         = '',
-    totalDispensed,
-  } = data;
 
-  // Auto-generate a transaction ID if none provided
-  const txId = transactionId ?? `#TRX-${Math.floor(100000 + Math.random() * 900000)}`;
+  console.log("transfer successfull ", data)
+
+  // Pull calculated exchange values from ExchangeContext
+  const exchange = useExchange();
+  // Prefer API doc values, fall back to local data
+  const sendAmount = apiDoc?.you_send ?? apiDoc?.send_amount ?? data.sendAmount ?? 0;
+  const senderCurrency = apiDoc?.you_send_currency_type ?? data.senderCurrency ?? 'USD';
+  const receiverGets = apiDoc?.they_receive ?? data.receiverGets ?? 0;
+  const receiverCurrency = apiDoc?.they_receive_currency_type ?? data.receiverCurrency ?? 'EUR';
+  const exchangeRate = apiDoc?.exchange_rate ?? data.exchangeRate ?? 0;
+  const firstName = apiDoc?.first_name ?? data.firstName ?? '';
+  const lastName = apiDoc?.last_name ?? data.lastName ?? '';
+  const totalDispensed = data.totalDispensed;
+  const transferFee = apiDoc?.transfer_fee ?? 0;
+  const totalAmount = apiDoc?.total_amount ?? 0;
+  const docName = apiDoc?.name ?? null;
+
+  // Use doc name as reference, or transactionId prop, or auto-generate
+  const txId = docName || transactionId || `#TRX-${Math.floor(100000 + Math.random() * 900000)}`;
 
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(txId).catch(() => {});
+    navigator.clipboard.writeText(txId).catch(() => { });
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -64,11 +75,11 @@ export const TransferSuccess = ({
     });
 
   const recipientName = `${firstName} ${lastName}`.trim() || 'the recipient';
-  const finalAmount   = totalDispensed ?? receiverGets;
+  const finalAmount = totalDispensed ?? receiverGets;
 
   // Currency symbol helper
-  const symMap = { USD:'$', EUR:'€', GBP:'£', INR:'₹', PHP:'₱', MXN:'$', JPY:'¥' };
-  const toSym  = symMap[receiverCurrency] ?? '';
+  const symMap = { USD: '$', EUR: '€', GBP: '£', INR: '₹', PHP: '₱', MXN: '$', JPY: '¥' };
+  const toSym = symMap[receiverCurrency] ?? '';
 
   return (
     <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6">
@@ -109,8 +120,8 @@ export const TransferSuccess = ({
             <span className="font-bold text-gray-900">{recipientName}</span>.
           </p>
 
-          {/* Transaction ID chip */}
-          <button
+          {/* Reference / Transaction ID chip */}
+          {/* <button
             onClick={handleCopy}
             className="mt-6 flex items-center gap-2 px-4 py-2 rounded-full border transition-all group"
             style={{
@@ -119,48 +130,67 @@ export const TransferSuccess = ({
             }}
             title="Click to copy"
           >
-            <span className="text-sm font-semibold text-gray-500">Transaction ID:</span>
+            <span className="text-sm font-semibold text-gray-500">
+              {docName ? 'Reference No:' : 'Transaction ID:'}
+            </span>
             <span className="text-sm font-bold text-gray-900 font-mono tracking-wide">{txId}</span>
             {copied
               ? <Check size={16} strokeWidth={3} style={{ color: PRIMARY }} />
               : <Copy size={16} className="text-gray-400 group-hover:text-gray-600 transition-colors" />
             }
-          </button>
+          </button> */}
 
           {/* Details Card */}
           <div className="mt-10 w-full bg-gray-50 rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
 
-            {/* Amount Sent */}
+            {/* Receiver Gets */}
             <div className="flex justify-between items-center p-5">
-              <span className="text-gray-500 font-medium">Amount Sent</span>
+              <span className="text-gray-500 font-medium">Receiver Gets</span>
               <span className="text-gray-900 font-bold text-lg">
-                {fmt(sendAmount)} {senderCurrency}
+                {receiverCurrency} {fmt(exchange.receiverGets)}
               </span>
             </div>
 
-            {/* Exchange Rate */}
+            {/* Service Fee */}
             <div className="flex justify-between items-center p-5">
-              <div className="flex flex-col items-start">
-                <span className="text-gray-500 font-medium">Exchange Rate</span>
-                <span className="text-xs text-gray-400">Includes fees</span>
-              </div>
-              <span className="text-gray-900 font-semibold flex items-center gap-1.5">
-                <TrendingUp size={14} style={{ color: PRIMARY }} />
-                1 {senderCurrency} = {exchangeRate > 0 ? exchangeRate.toFixed(4) : '–'} {receiverCurrency}
+              <span className="text-gray-500 font-medium flex items-center gap-1.5">
+                Service Fee ({(exchange.serviceRate * 100).toFixed(0)}%)
+                <Info size={14} className="text-gray-400" />
+              </span>
+              <span className="text-gray-900 font-bold text-lg">
+                {receiverCurrency} {fmt(exchange.serviceFee)}
               </span>
             </div>
 
-            {/* Total to Receiver — highlighted */}
+            {/* GST */}
+            <div className="flex justify-between items-center p-5">
+              <span className="text-gray-500 font-medium">
+                GST ({(exchange.gstRate * 100).toFixed(0)}%)
+              </span>
+              <span className="text-gray-900 font-bold text-lg">
+                {receiverCurrency} {fmt(exchange.gstAmount)}
+              </span>
+            </div>
+
+            {/* Total to Pay */}
+            <div className="flex justify-between items-center p-5 border-t border-gray-200">
+              <span className="text-gray-900 font-extrabold text-lg">Total to Pay</span>
+              <span className="text-gray-900 font-extrabold text-2xl">
+                {receiverCurrency} {fmt(exchange.total)}
+              </span>
+            </div>
+
+            {/* Final Amount — highlighted */}
             <div
-              className="flex justify-between items-center p-6"
-              style={{ background: `${PRIMARY}0d` }}
+              className="mx-4 mb-4 rounded-xl px-6 py-5 text-center"
+              style={{ background: PRIMARY }}
             >
-              <span className="font-bold" style={{ color: PRIMARY_DARK }}>
-                Total to Receiver
-              </span>
-              <span className="text-2xl font-extrabold" style={{ color: PRIMARY_DARK }}>
-                {toSym}{fmt(finalAmount)} {receiverCurrency}
-              </span>
+              <p className="text-xs font-black uppercase tracking-[0.15em] text-gray-900 mb-1 opacity-80">
+                FINAL AMOUNT
+              </p>
+              <p className="text-3xl font-extrabold text-gray-900 tracking-tight">
+                {receiverCurrency} {fmt(exchange.total)}
+              </p>
             </div>
           </div>
 
