@@ -5,6 +5,9 @@ import { SenderCard } from '../components/SenderCard';
 import { ReceiverForm } from '../components/RecieverForm';
 import { ReviewStep } from '../components/ReviewStep';
 import Navbar from '../components/layout/Navbar';
+import { TransferSuccess } from '../components/TransferSuccess';
+import { useERPFileUpload } from '../hooks/useERPFileUpload';
+import { ExchangeProvider } from '../context/ExchangeContext';
 
 const Step = {
   ESTIMATE: 1,
@@ -15,8 +18,13 @@ const Step = {
 
 const TRANSFER_FEE = 4.99;
 
+
+
 const MoneyExchange = () => {
+  const { uploadFile, loading: fileUploading, error: fileError } = useERPFileUpload();
+
   const [currentStep, setCurrentStep] = useState(Step.DETAILS);
+
 
   const [senderInfo] = useState({
     name:  'Niranjan Singh',
@@ -40,13 +48,19 @@ const MoneyExchange = () => {
     sendAmount:       1000.00,
     currency:         'USD',
     fee:              TRANSFER_FEE,
-    exchangeRate:     0.92,
+    exchangeRate:     0.02,
     receiverGets:     920.00,
     receiverCurrency: 'EUR',
+    exchangeType: 'BUY',
   });
 
   // Full transfer payload saved when ReceiverForm submits — used by ReviewStep
   const [transferPayload, setTransferPayload] = useState(null);
+
+  const [transactionId, setTransactionId] = useState(null);
+
+  // Stores the created Currency Exchange For Customer doc from ERPNext API
+  const [apiResponseDoc, setApiResponseDoc] = useState(null);
 
   const handleSummaryChange = useCallback((incoming) => {
     setSummary(prev => ({
@@ -55,7 +69,9 @@ const MoneyExchange = () => {
       currency:         incoming.currency,
       exchangeRate:     incoming.exchangeRate,
       receiverGets:     incoming.receiverGets,
+      fee: incoming.receiverGets * 0.02,
       receiverCurrency: incoming.receiverCurrency,
+      exchangeType: incoming.exchangeType, 
     }));
   }, []);
 
@@ -82,17 +98,180 @@ const MoneyExchange = () => {
     setCurrentStep(prev => Math.max(Step.ESTIMATE, prev - 1));
   }, []);
 
+  // Called from ReviewStep → Cancel → reset everything and go back to DETAILS
+  const handleCancel = useCallback(() => {
+    setReceiverInfo({
+      firstName:        '',
+      lastName:         '',
+      country:          'Spain',
+      city:             '',
+      deliveryMethod:   'BANK_DEPOSIT',
+      bankName:         '',
+      accountNumber:    '',
+      senderCurrency:   'USD',
+      receiverCurrency: 'EUR',
+    });
+    setSummary({
+      sendAmount:       1000.00,
+      currency:         'USD',
+      fee:              TRANSFER_FEE,
+      exchangeRate:     0.02,
+      receiverGets:     920.00,
+      receiverCurrency: 'EUR',
+      exchangeType:     'BUY',
+    });
+    setTransferPayload(null);
+    setTransactionId(null);
+    setApiResponseDoc(null);
+    setCurrentStep(Step.DETAILS);
+  }, []);
+
   // Called from ReviewStep → Edit buttons → go back to DETAILS
   const handleEditFromReview = useCallback(() => {
     setCurrentStep(Step.DETAILS);
   }, []);
 
   // Called from ReviewStep → Confirm & Send → go to PAYMENT
-  const handleConfirm = useCallback(() => {
+  // const handleConfirm = useCallback(() => {
+  //   const txId = `#TRX-${Math.floor(100000 + Math.random() * 900000)}`;
+  //   setTransactionId(txId);
+  //   setCurrentStep(Step.PAYMENT);
+  //   // TODO: trigger your actual payment / API call here
+  //   console.log('Confirmed! Proceeding to payment with:', transferPayload);
+  // }, [transferPayload]);
+
+  const handleConfirm = useCallback(async () => {
+  if (!transferPayload) return;
+
+  let uploadedFileUrl = null;
+
+if (transferPayload.docFile) {
+  uploadedFileUrl = await uploadFile(transferPayload.docFile, {
+    isPrivate: 1, 
+    doctype: "Currency Exchange For Customer",
+  });
+}
+
+  console.log("transfer payload", transferPayload)
+
+  try {
+    // Decide which field to use
+let idDocumentField = {};
+
+if (uploadedFileUrl) {
+  if (transferPayload.idType === "PASSPORT") {
+    idDocumentField.passport_photo__scan = uploadedFileUrl;
+  }
+
+  if (transferPayload.idType === "GOVERNMENT_ID") {
+    idDocumentField.government_id_photo__scan = uploadedFileUrl;
+  }
+}
+    const apiPayload = {
+      data: {
+        verification_id_type: transferPayload.idType,
+        passport_number: transferPayload.idNumber,
+        first_name: transferPayload.firstName,
+        last_name: transferPayload.lastName,
+        receiver_mailid: senderInfo.email, 
+        destination_country: transferPayload.country,
+        city__province: transferPayload.city,
+        id_number: transferPayload.idNumber,
+        ...idDocumentField,
+
+        you_send: transferPayload.sendAmount,
+        you_send_currency_type: transferPayload.senderCurrency,
+
+        they_receive: transferPayload.receiverGets,
+        they_receive_currency_type: transferPayload.receiverCurrency,
+
+        expected: transferPayload.sendAmount,
+        counted: transferPayload.sendAmount,
+        balanced: 0,
+
+        exchange_rate: transferPayload.exchangeRate,
+        transfer_fee: summary.fee,
+        send_amount: transferPayload.sendAmount,
+        total_amount: transferPayload.sendAmount + summary.fee,
+
+        denomination: transferPayload.receiverDenominationRows?.map(row => {
+          const { denomination_value, denomination_type } = row;
+
+          let itemName = denomination_value;
+
+          if (transferPayload.notes && transferPayload.notes_name) {
+            if (denomination_type === "Note") {
+              const index = transferPayload.notes.findIndex(
+                n => n === denomination_value
+              );
+              if (index !== -1) {
+                itemName = transferPayload.notes_name[index];
+              }
+            }
+          }
+
+          if (transferPayload.coins && transferPayload.coins_name) {
+            if (denomination_type === "Coin") {
+              const index = transferPayload.coins.findIndex(
+                c => c === denomination_value
+              );
+              if (index !== -1) {
+                itemName = transferPayload.coins_name[index];
+              }
+            }
+          }
+
+          return {
+            denomination: itemName,
+            qty: row.count,
+            amount: row.subtotal,
+          };
+        }) || [],
+      },
+    };
+
+    const response = await fetch(
+      "http://192.168.101.182:81/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // VERY IMPORTANT for ERPNext session
+        body: JSON.stringify(apiPayload),
+      }
+    );
+
+    const result = await response.json();
+
+    console.log("API Success:", result);
+
+    // Store the created Currency Exchange For Customer doc from API
+    const createdDoc = result?.message || result?.data || result;
+    setApiResponseDoc(createdDoc);
+
+    // Use the doc name from API as transaction ID, fallback to random
+    const txId = createdDoc?.name || `#TRX-${Math.floor(100000 + Math.random() * 900000)}`;
+    setTransactionId(txId);
+
+    // Move to payment success screen
     setCurrentStep(Step.PAYMENT);
-    // TODO: trigger your actual payment / API call here
-    console.log('Confirmed! Proceeding to payment with:', transferPayload);
-  }, [transferPayload]);
+
+  } catch (error) {
+    console.error("API Error:", error);
+    alert("Something went wrong while creating exchange");
+  }
+}, [transferPayload, senderInfo.email, summary, transferPayload?.receiverDenominationRows]);
+
+   const handleDashboard = useCallback(() => {
+    // TODO: navigate to dashboard route
+    console.log('Navigate to dashboard');
+  }, []);
+
+  const handleDownloadReceipt = useCallback(() => {
+    // TODO: generate PDF receipt
+    console.log('Download receipt for:', transactionId);
+  }, [transactionId]);
 
   // ── Step content ─────────────────────────────────────────────────────────────
   const renderStepContent = () => {
@@ -104,33 +283,29 @@ const MoneyExchange = () => {
           paymentLabel="Visa •••• 4242"
           fee={TRANSFER_FEE}
           onEdit={handleEditFromReview}
-          onCancel={handleBack}
+          onCancel={handleCancel}
           onConfirm={handleConfirm}
         />
       );
     }
 
     if (currentStep === Step.PAYMENT) {
-      // Placeholder — replace with your actual PaymentStep component
+      
       return (
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-10 text-center flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-full flex items-center justify-center text-3xl"
-            style={{ background: '#30e87a22' }}>
-            💳
-          </div>
-          <h3 className="text-xl font-black text-gray-900">Payment Step</h3>
-          <p className="text-gray-500 text-sm">Your PaymentStep component goes here.</p>
-          <button
-            onClick={handleBack}
-            className="mt-4 px-6 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            ← Back to Review
-          </button>
-        </div>
+        <TransferSuccess
+            data={transferPayload}
+            apiDoc={apiResponseDoc}
+            transactionId={transactionId}
+            estimatedArrival="Today by 5:00 PM"
+            onDashboard={handleDashboard}
+            onDownloadReceipt={handleDownloadReceipt}
+          />
       );
     }
 
     // Default: DETAILS step (ReceiverForm)
+
+    console.log("current step", currentStep)
     return (
       <>
         <SenderCard sender={senderInfo} />
@@ -152,10 +327,56 @@ const MoneyExchange = () => {
     );
   };
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
+  // return (
+  //   <div className="min-h-screen flex flex-col">
+  //     <Navbar />
 
+  //     <main className="flex-grow py-8 px-4 sm:px-6 lg:px-8 xl:px-12">
+  //       <div className="max-w-7xl mx-auto flex flex-col gap-10">
+
+  //         <Stepper currentStep={currentStep} />
+
+  //         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+
+  //           {/* ── Main Form Column ── */}
+  //           <div className="lg:col-span-8 flex flex-col gap-10">
+
+  //             {/* Header — hide on Review/Payment since ReviewStep has its own header */}
+  //             {currentStep === Step.DETAILS && (
+  //               <div className="flex flex-col gap-3">
+  //                 <h1 className="text-gray-900 text-3xl sm:text-5xl font-black tracking-tight leading-none">
+  //                   Who are you sending{' '}
+  //                   <span className="text-primary italic">money</span> to?
+  //                 </h1>
+  //                 <p className="text-primary font-black text-sm uppercase tracking-widest opacity-80">
+  //                   Step {currentStep}: Recipient Information
+  //                 </p>
+  //               </div>
+  //             )}
+
+  //             {renderStepContent()}
+  //           </div>
+
+  //           {/* ── Sidebar ── */}
+  //           <div className="lg:col-span-4 relative">
+  //             <Summary summary={summary} />
+  //           </div>
+
+  //         </div>
+  //       </div>
+  //     </main>
+
+  //     <footer className="py-8 px-10 border-t border-gray-100 text-center text-gray-400 text-xs font-bold uppercase tracking-[0.2em]">
+  //       © 2026 MoneyGram Technologies Inc. • Built for Secure Global Commerce
+  //     </footer>
+  //   </div>
+  // );
+
+  return (
+  <div className="min-h-screen flex flex-col">
+    <Navbar />
+
+    <ExchangeProvider summary={summary}>
       <main className="flex-grow py-8 px-4 sm:px-6 lg:px-8 xl:px-12">
         <div className="max-w-7xl mx-auto flex flex-col gap-10">
 
@@ -163,39 +384,35 @@ const MoneyExchange = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
 
-            {/* ── Main Form Column ── */}
+            {/* Main Column */}
             <div className="lg:col-span-8 flex flex-col gap-10">
-
-              {/* Header — hide on Review/Payment since ReviewStep has its own header */}
               {currentStep === Step.DETAILS && (
                 <div className="flex flex-col gap-3">
                   <h1 className="text-gray-900 text-3xl sm:text-5xl font-black tracking-tight leading-none">
-                    Who are you sending{' '}
+                    Who are you sending{" "}
                     <span className="text-primary italic">money</span> to?
                   </h1>
-                  <p className="text-primary font-black text-sm uppercase tracking-widest opacity-80">
-                    Step {currentStep}: Recipient Information
-                  </p>
                 </div>
               )}
 
               {renderStepContent()}
             </div>
 
-            {/* ── Sidebar ── */}
+            {/* Sidebar */}
             <div className="lg:col-span-4 relative">
-              <Summary summary={summary} />
+              <Summary />
             </div>
 
           </div>
         </div>
       </main>
+    </ExchangeProvider>
 
-      <footer className="py-8 px-10 border-t border-gray-100 text-center text-gray-400 text-xs font-bold uppercase tracking-[0.2em]">
-        © 2024 MoneyGram Technologies Inc. • Built for Secure Global Commerce
-      </footer>
-    </div>
-  );
+    <footer className="py-8 px-10 border-t border-gray-100 text-center text-gray-400 text-xs font-bold uppercase tracking-[0.2em]">
+      © 2026 MoneyGram Technologies Inc.
+    </footer>
+  </div>
+);
 };
 
 export default MoneyExchange;

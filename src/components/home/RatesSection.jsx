@@ -63,6 +63,11 @@ export default function RatesSection() {
   };
 
   useEffect(() => {
+    console.log("base currency", baseCurrency)
+  }, [])
+  
+
+  useEffect(() => {
     fetchRates();
 
     intervalRef.current = setInterval(fetchRates, 60000);
@@ -73,6 +78,8 @@ export default function RatesSection() {
   const filteredCurrencies = currenciesToShow.filter((cur) =>
     cur.toLowerCase().includes(search.toLowerCase())
   );
+
+ 
 
   return (
   <section className="bg-background-light dark:bg-background-dark py-16 px-6 transition-colors">
