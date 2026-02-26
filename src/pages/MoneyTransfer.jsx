@@ -4,8 +4,10 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import Select from "react-select";
 import { getNames } from "country-list";
+import FormInput from "../components/FormInput";
 import { calculateTransfer } from "../utils/transferCalculator";
-
+import { validateStepOne } from "../utils/validateStepOne";
+import { useERPFileUpload } from "../hooks/useERPFileUpload";
 
 const MoneyTransfer = () => {
   const Step = {
@@ -64,31 +66,66 @@ const [receiverFileName, setReceiverFileName] = useState("");
   const [sendAmount, setSendAmount] = useState("");
   const [fromCurrency, setFromCurrency] = useState("USD");
   const [toCurrency, setToCurrency] = useState("EUR");
-  
+  const [gstRate, setGstRate] = useState(0);
 
   const countryOptions = getNames().map((country) => ({
     label: country,
     value: country,
   }));
 
-  const documentOptions = [
-    // { label: "Aadhar Card", value: "Aadhar Card" },
-    { label: "Passport", value: "Passport" },
+  const { uploadFile, loading: fileUploading, error: fileError } = useERPFileUpload();
+ 
+    const documentOptions = [ 
+     { label: "Passport", value: "Passport" },
     { label: "Government ID", value: "Government ID" },
-    // { label: "Other", value: "Other" },
-  ];
+    { label: "Driver's License", value: "Driver's License" },
+    { label: "Voter ID Card", value: "Voter ID Card" }, 
+   ];
 
   const payModeOptions = [
-    { label: "Cash to Bank", value: "cash_to_bank" },
-    { label: "Bank to Bank", value: "bank_to_bank" },
-    { label: "Cash to Cash", value: "cash_to_cash" },
-  ];
+  { label: "Cash to Bank", value: "Cash to Bank" },
+  { label: "Bank to Bank", value: "Bank to Bank" },
+  { label: "Cash to Cash", value: "Cash to Cash" },
+];
 
   const getTodayDate = () => new Date().toISOString().split("T")[0];
 
   useEffect(() => {
     setTransferDate(getTodayDate());
   }, []);
+
+  useEffect(() => {
+  const fetchGST = async () => {
+    try {
+      const response = await fetch(
+        "http://192.168.101.182:81/api/method/moneygram.api.get_tax_template_for_company",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            company: "MH Money Express",
+          }),
+        }
+      );
+
+      const result = await response.json();
+      // console.log("GST API FULL RESPONSE:", result);
+
+      const taxRate =
+        result?.message?.taxes?.[0]?.tax_rate ?? 0;
+
+      setGstRate(Number(taxRate));
+
+    } catch (error) {
+      console.error("GST fetch error:", error);
+      setGstRate(0);
+    }
+  };
+
+  fetchGST();
+}, []);
 
   const STATIC_RATES = {
     USD: { USD: 1, INR: 83, AUD: 1.5, EUR: 0.92 },
@@ -109,6 +146,7 @@ const [receiverFileName, setReceiverFileName] = useState("");
   fromCurrency,
   toCurrency,
   rates: STATIC_RATES,
+  gstPercent: gstRate,   
 });
 
 const stepLabels = {
@@ -145,111 +183,37 @@ const stepLabels = {
   };
 
   const handleNextToAmount = () => {
+  const error = validateStepOne({
+    payMode,
 
-  /* ================= SENDER VALIDATION ================= */
+    senderFullName,
+    senderEmail,
+    senderPhone,
+    senderCountry,
+    senderBankName,
+    senderAccountNumber,
+    senderSwiftCode,
+    senderDocType,
+    senderOtherDocType,
+    senderDocNumber,
+    senderDocFile,
 
-  if (!senderFullName) {
-    return alert("Please enter Sender Full Name.");
+    receiverFullName,
+    receiverEmail,
+    receiverPhone,
+    receiverCountry,
+    receiverBankName,
+    receiverAccountNumber,
+    receiverSwiftCode,
+    receiverDocType,
+    receiverOtherDocType,
+    receiverDocNumber,
+    receiverDocFile,
+  });
+
+  if (error) {
+    return alert(error);
   }
-
-  if (!senderEmail) {
-    return alert("Please enter Sender Email Address.");
-  }
-
-  if (!senderPhone) {
-    return alert("Please enter Sender Phone Number.");
-  }
-
-  if (!senderCountry) {
-    return alert("Please select Sender Country.");
-  }
-
-  /* ===== Sender Bank (Only if Bank to Bank) ===== */
-  if (payMode === "bank_to_bank") {
-    if (!senderBankName) {
-      return alert("Please enter Sender Bank Name.");
-    }
-
-    if (!senderAccountNumber) {
-      return alert("Please enter Sender Account Number.");
-    }
-
-    if (!senderSwiftCode) {
-      return alert("Please enter Sender SWIFT Code.");
-    }
-  }
-
-  /* ===== Sender Document ===== */
-
-  if (!senderDocType) {
-    return alert("Please select Sender Document Type.");
-  }
-
-  if (senderDocType === "Other" && !senderOtherDocType) {
-    return alert("Please enter Sender Custom Document Type.");
-  }
-
-  if (!senderDocNumber) {
-    return alert("Please enter Sender Document Number.");
-  }
-
-  if (!senderDocFile) {
-    return alert("Please upload Sender Document File.");
-  }
-
-
-  /* ================= RECEIVER VALIDATION ================= */
-
-  if (!receiverFullName) {
-    return alert("Please enter Receiver Full Name.");
-  }
-
-  if (!receiverEmail) {
-    return alert("Please enter Receiver Email Address.");
-  }
-
-  if (!receiverPhone) {
-    return alert("Please enter Receiver Phone Number.");
-  }
-
-  if (!receiverCountry) {
-    return alert("Please select Receiver Country.");
-  }
-
-  /* ===== Receiver Bank (Cash to Bank OR Bank to Bank) ===== */
-  if (payMode === "cash_to_bank" || payMode === "bank_to_bank") {
-    if (!receiverBankName) {
-      return alert("Please enter Receiver Bank Name.");
-    }
-
-    if (!receiverAccountNumber) {
-      return alert("Please enter Receiver Account Number.");
-    }
-
-    if (!receiverSwiftCode) {
-      return alert("Please enter Receiver SWIFT Code.");
-    }
-  }
-
-  /* ===== Receiver Document ===== */
-
-  if (!receiverDocType) {
-    return alert("Please select Receiver Document Type.");
-  }
-
-  if (receiverDocType === "Other" && !receiverOtherDocType) {
-    return alert("Please enter Receiver Custom Document Type.");
-  }
-
-  if (!receiverDocNumber) {
-    return alert("Please enter Receiver Document Number.");
-  }
-
-  if (!receiverDocFile) {
-    return alert("Please upload Receiver Document File.");
-  }
-
-  /* ================= ALL GOOD ================= */
 
   setCurrentStep(Step.AMOUNT);
 };
@@ -260,53 +224,155 @@ const stepLabels = {
     setCurrentStep(Step.PREVIEW);
   };
 
-  const handleConfirm = () => {
-    const finalData = {
-      payMode: payMode,
-      sender: {
-        fullName: senderFullName,
-        email: senderEmail,
-        phone: senderPhone,
-        country: senderCountry,
-        senderBankName: senderBankName,
-        senderAccountNumber: senderAccountNumber,
-        senderSwiftCode: senderSwiftCode,
-        document: {
-        type: senderDocType,
-        number: senderDocNumber,
-        fileName: senderDocFile?.name || null,
-        },
-      },
-      receiver: {
-        fullName: receiverFullName,
-        email: receiverEmail,
-        phone: receiverPhone,
-        country: receiverCountry,
-        receiverBankName: receiverBankName,
-        receiverAccountNumber: receiverAccountNumber,
-        receiverSwiftCode: receiverSwiftCode,
-        document: {
-          type: receiverDocType ,
-          number: receiverDocNumber,
-          fileName: receiverDocFile?.name || null,
-        },
-       },
-      transfer: {
-        sendAmount,
-        fromCurrency,
-        toCurrency,
-        receiveAmount,
-        serviceFee,
-        gst,
-        subTotal,
-        totalToPay,
-      },
+  
+ 
+ const handleConfirm = async () => {
+  try {
+    let senderFileUrl = null;
+    let receiverFileUrl = null;
 
+    // ======================
+    // Upload Sender File
+    // ======================
+    if (senderDocFile) {
+      senderFileUrl = await uploadFile(senderDocFile, {
+        isPrivate: 1,
+      });
+    }
+
+    // ======================
+    // Upload Receiver File
+    // ======================
+    if (receiverDocFile) {
+      receiverFileUrl = await uploadFile(receiverDocFile, {
+        isPrivate: 1,
+      });
+    }
+
+    const payload = {
+      data: {
+        // ======================
+        // SENDER
+        // ======================
+        sender_full_name: senderFullName,
+        sender_phone_number: senderPhone,
+        sender_payment_mode: payMode,
+        sender_document_type: senderDocType,
+        sender_government_id_type: senderOtherDocType,
+        sender_document_number: senderDocNumber,
+        sender_email_address: senderEmail,
+        sender_country: senderCountry,
+        sender_transfer_date: transferDate,
+        sender_bank_name: senderBankName || "",
+        sender_account_number: senderAccountNumber || "",
+        sender_swift_code: senderSwiftCode || "",
+        sender_identity_doc_file: senderFileUrl,
+
+        // ======================
+        // RECEIVER
+        // ======================
+        receiver_full_name: receiverFullName,
+        receiver_phone_number: receiverPhone,
+        receiver_doc_type: receiverDocType,
+        receiver_government_id_type: receiverOtherDocType,
+        receiver_document_number: receiverDocNumber,
+        receiver_email_address: receiverEmail,
+        receiver_country: receiverCountry,
+        receiver_bank_name: receiverBankName || "",
+        receiver_account_number: receiverAccountNumber || "",
+        receiver_swift_code: receiverSwiftCode || "",
+        receiver_identity_doc_file: receiverFileUrl,
+
+        // ======================
+        // AMOUNTS
+        // ======================
+        sending_amount: Number(sendAmount),
+        receiving_amount: Number(receiveAmount),
+        sending_currency: fromCurrency,
+        receiving_currency: toCurrency,
+        sending_amount_summary: Number(sendAmount),
+        service_fee: Number(serviceFee),
+        sub_total: Number(subTotal),
+        taxes: Number(gst),
+        total_to_pay: Number(totalToPay),
+      },
     };
 
-    console.log("Final Transfer Data:", finalData);
-    alert("Transaction stored. Check console.");
-  };
+    // 🔥 PRINT FULL PAYLOAD
+    console.log("========== FINAL PAYLOAD ==========");
+    console.log(JSON.stringify(payload, null, 2));
+    console.log("===================================");
+
+    const response = await fetch(
+      "http://192.168.101.182:81/api/method/moneygram.moneygram.api.money_exchange.create_money_transfer",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "token 661457e17b8612a:32a5ddcc5a9c177",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const result = await response.json();
+
+    if (response.ok) {
+  const docName = result?.message?.name || "";
+
+  // Remove "Money Transfer-" prefix
+  const cleanName = docName.replace("Money Transfer-", "");
+
+  alert(`Money Transfer Created: ${cleanName}`);
+
+  console.log("Server Response:", result);
+
+  resetForm();  // 🔥 Clears everything and returns to Step 1
+}
+  } catch (error) {
+    console.error("API Error:", error);
+    alert("Something went wrong while creating transfer.");
+  }
+};
+
+const resetForm = () => {
+  // Sender
+  setSenderFullName("");
+  setSenderEmail("");
+  setSenderPhone("");
+  setSenderCountry("");
+  setPayMode("Cash to Bank");
+  setSenderBankName("");
+  setSenderAccountNumber("");
+  setSenderSwiftCode("");
+  setSenderDocType("");
+  setSenderDocNumber("");
+  setSenderDocFile(null);
+  setSenderOtherDocType("");
+  setSenderFileName("");
+
+  // Receiver
+  setReceiverFullName("");
+  setReceiverEmail("");
+  setReceiverPhone("");
+  setReceiverCountry("");
+  setReceiverBankName("");
+  setReceiverAccountNumber("");
+  setReceiverSwiftCode("");
+  setReceiverDocType("");
+  setReceiverDocNumber("");
+  setReceiverDocFile(null);
+  setReceiverOtherDocType("");
+  setReceiverFileName("");
+
+  // Amount
+  setSendAmount("");
+  setFromCurrency("USD");
+  setToCurrency("EUR");
+
+  // Return to Step 1
+  setCurrentStep(Step.DETAILS);
+};
 
   return (
   <div className="min-h-screen flex flex-col">
@@ -346,25 +412,24 @@ const stepLabels = {
       {/* Pay Mode + Date */}
       
 
-      <input
-        placeholder="Full Name"
-        value={senderFullName}
-        onChange={(e) => setSenderFullName(e.target.value)}
-        className={inputStyle}
-      />
+      <FormInput
+  placeholder="Full Name"
+  value={senderFullName}
+  onChange={(e) => setSenderFullName(e.target.value)}
+/>
 
       <div className="grid md:grid-cols-2 gap-6">
-        <input
+        <FormInput
           placeholder="Email Address"
           value={senderEmail}
           onChange={(e) => setSenderEmail(e.target.value)}
-          className={inputStyle}
+          
         />
-        <input
+        <FormInput
           placeholder="Phone Number"
           value={senderPhone}
           onChange={(e) => setSenderPhone(e.target.value)}
-          className={inputStyle}
+          
         />
       </div>
 
@@ -404,29 +469,29 @@ const stepLabels = {
       </div>
 
       {/* ================= SENDER BANK DETAILS ================= */}
-{(payMode === "bank_to_bank") && (
+{(payMode === "Bank to Bank") && (
   <div className="space-y-6 border-t pt-8">
     <h4 className="text-xl font-black">Sender Bank Details</h4>
 
-    <input
+    <FormInput
       placeholder="Bank Name"
       value={senderBankName}
       onChange={(e) => setSenderBankName(e.target.value)}
-      className={inputStyle}
+      
     />
 
-    <input
+    <FormInput
       placeholder="Account Number"
       value={senderAccountNumber}
       onChange={(e) => setSenderAccountNumber(e.target.value)}
-      className={inputStyle}
+      
     />
 
-    <input
+    <FormInput
       placeholder="SWIFT Code"
       value={senderSwiftCode}
       onChange={(e) => setSenderSwiftCode(e.target.value)}
-      className={inputStyle}
+      
     />
   </div>
 )}
@@ -449,14 +514,14 @@ const stepLabels = {
           styles={customSelectStyles}
         />
 
-        {/* {senderDocType === "Other" && (
-          <input
-            placeholder="Enter Document Type"
-            value={senderOtherDocType}
-            onChange={(e) => setSenderOtherDocType(e.target.value)}
-            className={inputStyle}
-          />
-        )} */}
+        {senderDocType === "Government ID" && (
+  <input
+    placeholder="Enter Government ID Type"
+    value={senderOtherDocType}
+    onChange={(e) => setSenderOtherDocType(e.target.value)}
+    className={inputStyle}
+  />
+)}
 
         <input
           placeholder="Document Number"
@@ -522,7 +587,7 @@ const stepLabels = {
         placeholder="Country"
       />
       {/* ================= RECEIVER BANK DETAILS ================= */}
-{(payMode === "cash_to_bank" || payMode === "bank_to_bank") && (
+{(payMode === "Cash to Bank" || payMode === "Bank to Bank") && (
   <div className="space-y-6 border-t pt-8">
     <h4 className="text-xl font-black">Receiver Bank Details</h4>
 
@@ -566,14 +631,14 @@ const stepLabels = {
           styles={customSelectStyles}
         />
 
-        {/* {receiverDocType === "Other" && (
-          <input
-            placeholder="Enter Document Type"
-            value={receiverOtherDocType}
-            onChange={(e) => setReceiverOtherDocType(e.target.value)}
-            className={inputStyle}
-          />
-        )} */}
+        {receiverDocType === "Government ID" && (
+  <input
+    placeholder="Enter Government ID Type"
+    value={receiverOtherDocType}
+    onChange={(e) => setReceiverOtherDocType(e.target.value)}
+    className={inputStyle}
+  />
+)}
 
         <input
           placeholder="Document Number"
@@ -605,7 +670,8 @@ const stepLabels = {
 
     <button
       onClick={handleNextToAmount}
-      className="w-full bg-primary text-white rounded-2xl py-4 font-black hover:opacity-90 transition"
+      className="w-full bg-[var(--color-primary)] text-black rounded-2xl py-4 font-black hover:opacity-90 transition"
+
     >
       Next: Transfer Amount
     </button>
@@ -685,7 +751,8 @@ const stepLabels = {
 
   <button
     onClick={handlePreview}
-    className="w-2/3 bg-primary text-white rounded-2xl py-4 font-black hover:opacity-90 transition"
+    className="w-full bg-[var(--color-primary)] hover:brightness-95 text-black rounded-2xl py-4 font-black transition"
+
   >
     Preview Details
   </button>
@@ -725,16 +792,12 @@ const stepLabels = {
 
               <button
                 onClick={handleConfirm}
-                className="w-full bg-primary text-white rounded-2xl py-4 font-black hover:opacity-90 transition"
+                className="w-full bg-[var(--color-primary)] hover:brightness-95 text-black rounded-2xl py-4 font-black transition"
+
               >
                 Confirm & Proceed
               </button>
-              {/* <button
-  onClick={() => setCurrentStep(Step.AMOUNT)}
-  className="w-full border border-gray-300 rounded-2xl py-4 font-black hover:bg-gray-50 transition"
->
-  ← Back to Amount
-</button> */}
+             
             </div>
             
           )}
@@ -765,7 +828,7 @@ const stepLabels = {
               </div>
 
               <div className="flex justify-between">
-                <span>GST (15%)</span>
+                <span>GST ({gstRate}%)</span>
                 <span>{gst} {fromCurrency}</span>
               </div>
 
