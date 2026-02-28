@@ -229,7 +229,7 @@ const stepLabels = {
  const handleConfirm = async () => {
   try {
     let senderFileUrl = null;
-    let receiverFileUrl = null;
+    // let receiverFileUrl = null;
 
     // ======================
     // Upload Sender File
@@ -243,11 +243,11 @@ const stepLabels = {
     // ======================
     // Upload Receiver File
     // ======================
-    if (receiverDocFile) {
-      receiverFileUrl = await uploadFile(receiverDocFile, {
-        isPrivate: 1,
-      });
-    }
+    // if (receiverDocFile) {
+    //   receiverFileUrl = await uploadFile(receiverDocFile, {
+    //     isPrivate: 1,
+    //   });
+    // }
 
     const payload = {
       data: {
@@ -281,7 +281,7 @@ const stepLabels = {
         receiver_bank_name: receiverBankName || "",
         receiver_account_number: receiverAccountNumber || "",
         receiver_swift_code: receiverSwiftCode || "",
-        receiver_identity_doc_file: receiverFileUrl,
+        // receiver_identity_doc_file: receiverFileUrl,
 
         // ======================
         // AMOUNTS
@@ -615,7 +615,7 @@ const resetForm = () => {
 )}
 
 
-      <div className="space-y-6">
+      {/* <div className="space-y-6">
         <h4 className="text-xl font-semibold">Identity Document</h4>
 
         <Select
@@ -665,7 +665,7 @@ const resetForm = () => {
             {receiverFileName || "No file chosen"}
           </span>
         </div>
-      </div>
+      </div> */}
     </div>
 
     <button
