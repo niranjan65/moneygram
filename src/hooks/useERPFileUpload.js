@@ -24,13 +24,10 @@ export const useERPFileUpload = () => {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("is_private", isPrivate);
-      // formData.append("doctype", doctype);
-
-      // if (docname) formData.append("docname", docname);
-      // if (fieldname) formData.append("fieldname", fieldname);
+     
 
       const response = await fetch(
-        "http://192.168.101.182:81/api/method/upload_file",
+        "http://182.71.135.110:82/api/method/upload_file",
         {
           method: "POST",
            headers: {

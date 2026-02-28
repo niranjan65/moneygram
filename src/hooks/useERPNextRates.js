@@ -7,6 +7,7 @@ export function useERPNextRates() {
   const [error, setError] = useState(null);
   const [rateDate, setRateDate] = useState(null);
   const [noDataForToday, setNoDataForToday] = useState(false);
+   const [showUploadModal, setShowUploadModal] = useState(false);
 
   useEffect(() => {
     async function fetchRates() {
@@ -18,20 +19,30 @@ export function useERPNextRates() {
         const today = new Date().toISOString().split("T")[0];
 
         const response = await fetch(
-          "http://192.168.101.182:81/api/method/moneygram.api.get_currency_exchange_rate",
+          "http://182.71.135.110:82/api/method/moneygram.api.get_currency_exchange_rate",
           {
             method: "POST", 
             headers: {
               "Content-Type": "application/json",
+              "Authorization": "token 661457e17b8612a:32a5ddcc5a9c177",
+              "Access-Control-Allow-Origin": "http://localhost:5174",
+              "Access-Control-Allow-Methods": "POST",
+              "Access-Control-Allow-Headers": "*"
             },
             credentials: "include", 
             body: JSON.stringify({
-              today_date: "2026-02-23",
+              today_date: today,
             }),
           }
         );
 
+         if (response.status === 404) {
+          setShowUploadModal(true);
+          return;
+        }
+
         if (!response.ok) {
+          console.log("response error..", response)
           throw new Error("Failed to fetch exchange rates");
         }
 
@@ -98,5 +109,7 @@ export function useERPNextRates() {
     error,
     rateDate,
     noDataForToday,
+    showUploadModal,
+    setShowUploadModal,
   };
 }

@@ -7,8 +7,22 @@ import TransactionHistory from "./pages/TransactionHistory";
 import Contact from "./pages/ContactUs";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
+import { useEffect } from "react";
+import { io } from "socket.io-client";
 
 function App() {
+
+  const socket = io("http://192.168.101.172:5000");
+
+useEffect(() => {
+  console.log("object")
+  socket.on("new-sales-invoice", (data) => {
+    console.log("New Invoice:", data);
+
+    // Update state here
+  });
+}, []);
+
   return (
     <BrowserRouter>
       <Routes>

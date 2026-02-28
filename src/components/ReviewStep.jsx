@@ -453,11 +453,9 @@ export const ReviewStep = ({
 
             <div className="flex items-baseline justify-center gap-2">
               <span className="text-5xl font-extrabold text-gray-900">
-                {fmt(isCash ? totalDispensed ?? receiverGets : receiverGets)}
+                {fmt(total)} {senderCurrency}
               </span>
-              <span className="text-2xl font-bold text-gray-400">
-                {receiverCurrency}
-              </span>
+              
             </div>
 
             {exchangeRate > 0 && (
@@ -506,7 +504,7 @@ export const ReviewStep = ({
               </div>
             </div>
 
-            <div className="space-y-3">
+            {/* <div className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Total to Pay</span>
                 <span className="font-extrabold text-lg text-gray-900">
@@ -521,7 +519,7 @@ export const ReviewStep = ({
                   {isCash ? 'Cash Pickup' : 'Bank Deposit'}
                 </span>
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Cash Breakdown */}

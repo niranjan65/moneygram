@@ -21,6 +21,7 @@
     "react-router-dom": "^7.13.0",
     "react-select": "^5.10.2",
     "react-sparklines": "^1.7.0",
+    "socket.io-client": "^4.8.3",
     "tailwindcss": "^4.2.0"
   },
   "devDependencies": {
