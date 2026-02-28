@@ -13,6 +13,8 @@ import { useERPNextRates } from '../hooks/useERPNextRates';
 import { useCountries } from '../hooks/useCountry';
 import { useCustomers } from '../hooks/useCustomer';
 import { useDenomination } from '../hooks/useDenomination';
+import { useExchange } from '../context/ExchangeContext';
+
 
 const PRIMARY = '#30e87a';
 
@@ -32,14 +34,47 @@ const ErrorMsg = ({ message }) =>
 
 
 
-function buildRows(amount, notes) {
+// function buildRows(amount, notes) {
+//   const rows = [];
+//   // let rem = Math.floor(amount);
+//   let rem = parseFloat(amount || 0);
+//   for (const n of notes) {
+//     // const count = Math.floor(rem / n);
+
+//     const count = Math.floor((rem + 0.0001) / n);
+
+//     rows.push({ id: n, denom: n, count: count > 0 ? count : 0 });
+//     if (count > 0) rem -= count * n;
+//   }
+//   return rows;
+// }
+
+function buildRows(amount, denoms) {
   const rows = [];
-  let rem = Math.floor(amount);
-  for (const n of notes) {
-    const count = Math.floor(rem / n);
-    rows.push({ id: n, denom: n, count: count > 0 ? count : 0 });
-    if (count > 0) rem -= count * n;
+
+  if (!amount || !denoms?.length) return rows;
+
+  // Convert total amount to cents (integer)
+  let remaining = Math.round(parseFloat(amount) * 100);
+
+  // Convert denominations to cents and sort descending
+  const sortedDenoms = [...denoms]
+    .map(d => Math.round(d * 100))
+    .sort((a, b) => b - a);
+
+  for (let i = 0; i < sortedDenoms.length; i++) {
+    const denomCents = sortedDenoms[i];
+    const count = Math.floor(remaining / denomCents);
+
+    rows.push({
+      id: `${denomCents}-${i}`,
+      denom: denomCents / 100, // convert back to normal currency
+      count: count > 0 ? count : 0,
+    });
+
+    remaining -= count * denomCents;
   }
+
   return rows;
 }
 
@@ -49,18 +84,29 @@ const DenominationPanel = ({
   title, subtitle, flag, symbol, currency, notes, coins,
   targetAmount, onRowsChange, accentColor = PRIMARY,
 }) => {
-  const [rows, setRows] = useState(() => buildRows(targetAmount, notes));
+  // const [rows, setRows] = useState(() => buildRows(targetAmount, notes));
+  const [rows, setRows] = useState(() =>
+    buildRows(targetAmount, [...(notes || []), ...(coins || [])])
+  );
   const [customDenom, setCustomDenom] = useState('');
   const [showCustom, setShowCustom] = useState(false);
   const prevKey = useRef(`${currency}:${targetAmount}`);
+
+  // useEffect(() => {
+  //   const key = `${currency}:${targetAmount}`;
+  //   if (prevKey.current !== key) {
+  //     prevKey.current = key;
+  //     setRows(buildRows(targetAmount, notes));
+  //   }
+  // }, [currency, targetAmount, notes]);
 
   useEffect(() => {
     const key = `${currency}:${targetAmount}`;
     if (prevKey.current !== key) {
       prevKey.current = key;
-      setRows(buildRows(targetAmount, notes));
+      setRows(buildRows(targetAmount, [...(notes || []), ...(coins || [])]));
     }
-  }, [currency, targetAmount, notes]);
+  }, [currency, targetAmount, notes, coins]);
 
   useEffect(() => { onRowsChange?.(rows); }, [rows]);
 
@@ -74,7 +120,9 @@ const DenominationPanel = ({
   const step = useCallback((id, d) =>
     setRows(p => p.map(r => r.id === id ? { ...r, count: Math.max(0, r.count + d) } : r)), []);
   const removeRow = useCallback((id) => setRows(p => p.filter(r => r.id !== id)), []);
-  const reset = () => setRows(buildRows(targetAmount, notes));
+  // const reset = () => setRows(buildRows(targetAmount, notes));
+  const reset = () =>
+    setRows(buildRows(targetAmount, [...(notes || []), ...(coins || [])]));
 
   const activeDenomSet = new Set(rows.map(r => r.denom));
   const addablePresets = [...notes, ...coins].filter(d => !activeDenomSet.has(d));
@@ -274,6 +322,42 @@ const GovernmentIdSection = ({ register, errors, setValue, watch }) => {
     validate: (val) => !!val || 'Please upload a government document',
   });
 
+  const fetchCustomerById = async (idNumber) => {
+    if (!idNumber || idNumber.length < 3) return;
+
+    try {
+      const response = await fetch(
+        `http://182.71.135.110:82/api/resource/Customer/${idNumber}`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": "token 661457e17b8612a:32a5ddcc5a9c177"
+          },
+
+        }
+      );
+
+      if (!response.ok) {
+        console.log("Customer not found");
+        return;
+      }
+
+      const result = await response.json();
+      const customer = result.data;
+
+      console.log("Customer found:", customer);
+
+      // Autofill form
+      setValue("firstName", customer.custom_first_name || "");
+      setValue("lastName", customer.custom_last_name || "");
+      setValue("country", customer.custom_country || "");
+      setValue("city", customer.custom_city || "");
+
+    } catch (error) {
+      console.error("Error fetching customer:", error);
+    }
+  };
+
   const handleFile = (file) => {
     if (!file) return;
     const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
@@ -339,21 +423,21 @@ const GovernmentIdSection = ({ register, errors, setValue, watch }) => {
 
         {
           idType === 'GOVERNMENT_ID' &&
-           <div className="relative group">
-          <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2.5">
-            Government ID Type
-          </label>
-          <div className="relative">
-            <select className={`${inputBase} border-gray-200 appearance-none pr-12`} {...register('government_id')}>
-              <option>Driver’s Licence</option>
-              <option>Voter ID Card</option>
-              
-            </select>
-            <div style={{ color: PRIMARY }} className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 group-hover:scale-110 transition-transform">
-              <ChevronDown size={20} />
+          <div className="relative group">
+            <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2.5">
+              Government ID Type
+            </label>
+            <div className="relative">
+              <select className={`${inputBase} border-gray-200 appearance-none pr-12`} {...register('government_id')}>
+                <option>Driver’s Licence</option>
+                <option>Voter ID Card</option>
+
+              </select>
+              <div style={{ color: PRIMARY }} className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 group-hover:scale-110 transition-transform">
+                <ChevronDown size={20} />
+              </div>
             </div>
           </div>
-        </div>
         }
 
         {/* ID Number */}
@@ -361,12 +445,25 @@ const GovernmentIdSection = ({ register, errors, setValue, watch }) => {
           <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
             {idType === 'PASSPORT' ? 'Passport Number' : 'ID Number'} <span className="text-red-400">*</span>
           </label>
+          {/* <input
+            type="text"
+            placeholder={placeholders[idType]}
+            {...register('idNumber', {
+              required: 'ID number is required',
+              minLength: { value: 3, message: 'ID number is too short' },
+            })}
+            className={fieldCls(errors.idNumber)}
+          /> */}
+
           <input
             type="text"
             placeholder={placeholders[idType]}
             {...register('idNumber', {
               required: 'ID number is required',
               minLength: { value: 3, message: 'ID number is too short' },
+              onBlur: (e) => {
+                fetchCustomerById(e.target.value);
+              },
             })}
             className={fieldCls(errors.idNumber)}
           />
@@ -471,12 +568,34 @@ export const ReceiverForm = ({
     },
   });
 
+ 
+  
+  const {
+    receiverGets,
+    sendAmount: ctxSendAmount,
+    serviceFee,
+    gstAmount,
+    total,
+  } = useExchange();
+
+  
+
+  const roundToNearestFiveCents = (amount) => {
+    if (!amount) return 0;
+    return Math.round(amount / 0.05) * 0.05;
+  };
+
+  const roundedTotal = roundToNearestFiveCents(total);
+
   const exchangeType = watch('exchangeType');
 
   const exchangeTypes = [
     { key: 'BUY', label: 'Buy', Icon: Store },
     { key: 'SELL', label: 'Sell', Icon: CreditCard },
   ];
+
+
+
 
   /* ── ERPNext rates ── */
   const {
@@ -486,97 +605,185 @@ export const ReceiverForm = ({
     error: rateError,
     rateDate,
     noDataForToday,
+    showUploadModal,    
+    setShowUploadModal,     
   } = useERPNextRates();
 
-  
+
 
   // const countryList = useCountries();
 
-const {
-  countries,
-  loading: countryLoading,
-  error: countryError,
-} = useCountries();
+  const {
+    countries,
+    loading: countryLoading,
+    error: countryError,
+  } = useCountries();
   const customerList = useCustomers();
 
- 
 
- 
+
+
   const FJD = { code: 'FJD', symbol: 'FJ$', name: 'Fijian Dollar' };
 
-  
+
   const [toCurrency, setToCurrency] = useState(null);
 
- 
-  const [manualRate, setManualRate]       = useState('');
+
+  const [manualRate, setManualRate] = useState('');
   const [useManualRate, setUseManualRate] = useState(false);
 
-  
-  const [sendAmount, setSendAmount]           = useState(externalSendAmount ?? 1000);
+
+  const [sendAmount, setSendAmount] = useState(externalSendAmount ?? 1000);
   const [sendAmountError, setSendAmountError] = useState('');
 
-  
-  const senderDenomRowsRef   = useRef([]);
+
+  const senderDenomRowsRef = useRef([]);
   const receiverDenomRowsRef = useRef([]);
 
-  
+
   useEffect(() => {
     if (availableCurrencies.length && !toCurrency) {
       setToCurrency(availableCurrencies[0]);
     }
   }, [availableCurrencies]);
 
-  
+
   useEffect(() => {
     if (noDataForToday) setUseManualRate(true);
   }, [noDataForToday]);
 
-  
+
+
+  // const effectiveRate = useMemo(() => {
+
+
+  //   if (useManualRate) {
+  //     const m = parseFloat(manualRate);
+  //     return !isNaN(m) && m > 0 ? m : null;
+  //   }
+
+  //   if (!toCurrency) return null;
+
+
+  //   if (exchangeType === "BUY") {
+  //     return toCurrency.buyingRate ?? null;
+  //   }
+
+  //   if (exchangeType === "SELL") {
+  //     return toCurrency.sellingRate ?? null;
+  //   }
+
+  //   return null;
+
+  // }, [useManualRate, manualRate, toCurrency, exchangeType]);
 
   const effectiveRate = useMemo(() => {
+  if (!toCurrency) return null;
 
-  
   if (useManualRate) {
     const m = parseFloat(manualRate);
     return !isNaN(m) && m > 0 ? m : null;
   }
 
-  if (!toCurrency) return null;
-
-  
-  if (exchangeType === "BUY") {
+  if (exchangeType === "SELL") {
+    // You buy foreign
     return toCurrency.buyingRate ?? null;
   }
 
-  if (exchangeType === "SELL") {
+  if (exchangeType === "BUY") {
+    // You sell foreign
     return toCurrency.sellingRate ?? null;
   }
 
   return null;
+}, [toCurrency, exchangeType, useManualRate, manualRate]);
 
-}, [useManualRate, manualRate, toCurrency, exchangeType]);
+  // const exchangePreview = useMemo(() => {
+  //   if (!effectiveRate || !sendAmount) return null;
 
-  const exchangePreview = useMemo(() => {
-    if (!effectiveRate || !sendAmount) return null;
+  //   // const raw = sendAmount * effectiveRate;
+  //   let raw;
 
-    // const raw = sendAmount * effectiveRate;
-    let raw;
-
-    if (exchangeType === "SELL") {
-      raw = sendAmount * effectiveRate;
-    } else {
-      raw = sendAmount * effectiveRate;
-    }
-    return {
-      rate: effectiveRate,
-      rawAmount: raw,
-      formatted: raw.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-    };
-  }, [effectiveRate, sendAmount, toCurrency]);
+  //   if (exchangeType === "SELL") {
+  //     raw = sendAmount * effectiveRate;
+  //   } else {
+  //     raw = sendAmount * effectiveRate;
+  //   }
+  //   return {
+  //     rate: effectiveRate,
+  //     rawAmount: raw,
+  //     formatted: raw.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+  //   };
+  // }, [effectiveRate, sendAmount, toCurrency]);
 
   // console.log("Exchange rate value", exchangePreview)
 
-  
+//   const exchangePreview = useMemo(() => {
+
+//   // 🔒 1️⃣ Guard against invalid rate
+//   if (!effectiveRate || effectiveRate <= 0) return null;
+
+//   // 🔒 2️⃣ Guard against invalid amount
+//   if (!sendAmount || sendAmount <= 0) return null;
+
+//   let receiverAmount = 0;
+
+//   if (exchangeType === "SELL") {
+//     // Customer gives foreign → receives FJD
+//     receiverAmount = sendAmount * effectiveRate;
+//   }
+
+//   if (exchangeType === "BUY") {
+//     // Customer gives FJD → receives foreign
+//     receiverAmount = sendAmount / effectiveRate;
+//   }
+
+//   // 🔒 3️⃣ Safe rounding
+//   receiverAmount =
+//     Math.round((receiverAmount + Number.EPSILON) * 100) / 100;
+
+//   return {
+//     rate: effectiveRate,
+//     rawAmount: receiverAmount,
+//     formatted: receiverAmount.toLocaleString(undefined, {
+//       minimumFractionDigits: 2,
+//       maximumFractionDigits: 2,
+//     }),
+//   };
+
+// }, [effectiveRate, sendAmount, exchangeType]);
+
+  const exchangePreview = useMemo(() => {
+
+  if (!effectiveRate || effectiveRate <= 0) return null;
+  if (!sendAmount || sendAmount <= 0) return null;
+
+  let receiverAmount = 0;
+
+  if (exchangeType === "BUY") {
+    // Customer gives FJD → gets foreign
+    receiverAmount = sendAmount * effectiveRate;
+  }
+
+  if (exchangeType === "SELL") {
+    // Customer gives foreign → gets FJD
+    receiverAmount = sendAmount / effectiveRate;
+  }
+
+  receiverAmount =
+    Math.round((receiverAmount + Number.EPSILON) * 100) / 100;
+
+  return {
+    rate: effectiveRate,
+    rawAmount: receiverAmount,
+    formatted: receiverAmount.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+  };
+
+}, [effectiveRate, sendAmount, exchangeType]);
+
   const watchedCountry = watch('country');
 
   useEffect(() => {
@@ -591,44 +798,64 @@ const {
     });
   }, [sendAmount, toCurrency, exchangePreview]);
 
-  
-  const senderInfo   = DENOMINATION_DATA['Fiji'] ?? null;   
+
+  const baseCurrencyInfo = DENOMINATION_DATA['Fiji'] ?? null;
   // const receiverInfo = DENOMINATION_DATA[watchedCountry] ?? null;
 
-//   const {
-//   data: receiverInfo,
-//   loading: denomLoading,
-//   error: denomError,
-// } = useDenomination(watchedCountry);
+  //   const {
+  //   data: receiverInfo,
+  //   loading: denomLoading,
+  //   error: denomError,
+  // } = useDenomination(watchedCountry);
 
-const selectedDenomCountry = toCurrency?.country ?? null;
+  const selectedDenomCountry = toCurrency?.country ?? null;
 
-const {
-  data: receiverInfo,
-  loading: denomLoading,
-  error: denomError,
-} = useDenomination(selectedDenomCountry);
+  const {
+    data: foreignCurrencyInfo,
+    loading: denomLoading,
+    error: denomError,
+  } = useDenomination(selectedDenomCountry);
+
+  // const {
+  //   data: receiverInfo,
+  //   loading: denomLoading,
+  //   error: denomError,
+  // } = useDenomination(selectedDenomCountry);
+
+  const senderInfo =
+    exchangeType === "BUY"
+      ? baseCurrencyInfo          // Customer pays FJD
+      : foreignCurrencyInfo;      // Customer pays foreign
+
+  const receiverInfo =
+    exchangeType === "BUY"
+      ? foreignCurrencyInfo       // Customer receives foreign
+      : baseCurrencyInfo;         // Customer receives FJD
 
 
-console.log("receiver info", receiverInfo)
 
-  
   const onSubmit = (data) => {
     if (!sendAmount || sendAmount <= 0) {
       setSendAmountError('Please enter a valid send amount');
       return;
     }
+
+     // ✅ Block submission if no rates available
+  if (!effectiveRate || effectiveRate <= 0) {
+    return;
+  }
+
     if (useManualRate && (!manualRate || parseFloat(manualRate) <= 0)) {
-      return; 
+      return;
     }
     setSendAmountError('');
 
     onContinue?.({
       ...data,
       notes: receiverInfo?.notes,
-notes_name: receiverInfo?.notes_name,
-coins: receiverInfo?.coins,
-coins_name: receiverInfo?.coins_name,
+      notes_name: receiverInfo?.notes_name,
+      coins: receiverInfo?.coins,
+      coins_name: receiverInfo?.coins_name,
       sendAmount,
       senderCurrency: FJD.code,
       receiverCurrency: toCurrency?.code ?? '',
@@ -645,9 +872,38 @@ coins_name: receiverInfo?.coins_name,
     });
   };
 
-  
+  console.log("showupload modal", showUploadModal)
+
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 sm:p-10">
+
+       {/* ✅ 404 Upload Modal */}
+    {showUploadModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
+          <div className="text-4xl mb-4">📂</div>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">
+            No Exchange Rates Found
+          </h2>
+          <p className="text-gray-500 text-sm mb-6">
+            Upload exchange rates in{' '}
+            <span className="font-medium text-gray-700">Currency Master Data</span>{' '}
+            first before proceeding.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowUploadModal(false)}
+            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-6 py-2 rounded-lg transition"
+          >
+            OK, Got it
+          </button>
+        </div>
+      </div>
+    )}
+
+
+
       <h3 className="text-gray-900 font-black text-xl mb-8 flex items-center gap-3">
         <UserPlus size={24} style={{ color: PRIMARY }} />
         Transfer & Receiver Details
@@ -688,7 +944,7 @@ coins_name: receiverInfo?.coins_name,
               const active = exchangeType === key;
               return (
                 <button key={key} type="button"
-                  onClick={() => { setValue('exchangeType', key, { shouldValidate: true });  }}
+                  onClick={() => { setValue('exchangeType', key, { shouldValidate: true }); }}
                   className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2.5 ${active
                     ? 'bg-white text-gray-900 shadow-lg shadow-black/5 ring-1 ring-black/5'
                     : 'text-gray-400 hover:text-gray-600'}`}>
@@ -707,10 +963,13 @@ coins_name: receiverInfo?.coins_name,
             style={{ background: `${PRIMARY}0d`, borderColor: `${PRIMARY}22` }}
             className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 rounded-2xl border"
           >
-            
+
             <div className="flex flex-col gap-2.5">
               <label style={{ color: PRIMARY }} className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
-                <Coins size={14} /> Total Foreign Currency <span className="text-red-400">*</span>
+                <Coins size={14} /> {exchangeType === "SELL"
+                  ? `Customer Gives (${toCurrency?.code})`
+                  : `Customer Gives (FJD)`
+                } <span className="text-red-400">*</span>
               </label>
               <input
                 type="number" min="0" step="any" value={sendAmount}
@@ -719,27 +978,31 @@ coins_name: receiverInfo?.coins_name,
                   setSendAmount(val);
                   setSendAmountError(val > 0 ? '' : 'Please enter a valid send amount');
                 }}
-                className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 transition text-lg font-black h-14 ${
-                  sendAmountError ? 'border-red-400 focus:ring-red-200' : 'border-gray-300'
-                }`}
+                className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 transition text-lg font-black h-14 ${sendAmountError ? 'border-red-400 focus:ring-red-200' : 'border-gray-300'
+                  }`}
                 placeholder="0"
               />
               {sendAmountError && <ErrorMsg message={sendAmountError} />}
 
-              
-              <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white border border-gray-200 rounded-xl">
+
+              {/* <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white border border-gray-200 rounded-xl">
                 <span className="font-black text-gray-800">FJ$</span>
                 <span className="text-gray-500 font-bold text-sm flex-1">Fijian Dollar</span>
                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2 py-1 bg-gray-100 rounded-lg">
-                  FJD 
+                  FJD
                 </span>
-              </div>
+              </div> */}
             </div>
 
-            
+
             <div className="flex flex-col gap-2.5">
               <label style={{ color: PRIMARY }} className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
-                <Coins size={14} /> {exchangeType == "SELL" ? "You Get" : "Need To Pay"}
+                <Coins size={14} />
+                 {/* {exchangeType == "SELL" ? "You Get" : "Need To Pay"} */}
+                 {exchangeType === "SELL"
+  ? `Customer Receives (${FJD.code})`
+  : `Customer Receives (${toCurrency?.code ?? ""})`
+}
               </label>
 
               {/* Converted amount */}
@@ -749,8 +1012,8 @@ coins_name: receiverInfo?.coins_name,
                   ratesLoading
                     ? 'Loading rates…'
                     : exchangePreview
-                    ? exchangePreview.formatted
-                    : '—'
+                      ? exchangePreview.formatted
+                      : '—'
                 }
                 className="w-full border border-gray-200 rounded-lg px-4 py-3 bg-gray-100 text-gray-700 font-black text-lg h-14"
               />
@@ -768,24 +1031,24 @@ coins_name: receiverInfo?.coins_name,
                 </div>
               ) : (
                 <div className="relative group">
-                        <select
-                          className={`${inputBase} border-gray-200 appearance-none pr-12`}
-                          value={toCurrency?.code ?? ''}
-                          onChange={e => {
-                            const found = availableCurrencies.find(c => c.code === e.target.value);
-                            setToCurrency(found ?? null);
-                            if (!useManualRate) setManualRate('');
-                          }}
-                        >
-                          {availableCurrencies.map(c => (
-                            <option key={c.code} value={c.code}>
-                              {c.code} — {exchangeType === "BUY"
-                                ? `Buy: ${c.buyingRate?.toFixed(2) ?? '—'}`
-                                : `Sell: ${c.sellingRate?.toFixed(2) ?? '—'}`
-                              }
-                            </option>
-                          ))}
-                        </select>
+                  <select
+                    className={`${inputBase} border-gray-200 appearance-none pr-12`}
+                    value={toCurrency?.code ?? ''}
+                    onChange={e => {
+                      const found = availableCurrencies.find(c => c.code === e.target.value);
+                      setToCurrency(found ?? null);
+                      if (!useManualRate) setManualRate('');
+                    }}
+                  >
+                    {availableCurrencies.map(c => (
+                      <option key={c.code} value={c.code}>
+                        {c.code} — {exchangeType === "BUY"
+                          ? `Buy: ${c.buyingRate?.toFixed(2) ?? '—'}`
+                          : `Sell: ${c.sellingRate?.toFixed(2) ?? '—'}`
+                        }
+                      </option>
+                    ))}
+                  </select>
                   <div style={{ color: PRIMARY }} className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 group-hover:scale-110 transition-transform">
                     <ChevronDown size={20} />
                   </div>
@@ -794,14 +1057,14 @@ coins_name: receiverInfo?.coins_name,
             </div>
           </div>
 
-          
+
         </div>
 
         {/* Name fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[
             ['firstName', 'First Name', 'e.g. Maria', { required: 'First name is required', minLength: { value: 2, message: 'Too short' } }],
-            ['lastName',  'Last Name',  'e.g. Garcia', { required: 'Last name is required',  minLength: { value: 2, message: 'Too short' } }],
+            ['lastName', 'Last Name', 'e.g. Garcia', { required: 'Last name is required', minLength: { value: 2, message: 'Too short' } }],
           ].map(([name, label, ph, rules]) => (
             <div key={name} className="flex flex-col gap-2.5">
               <label className="text-xs font-black text-gray-500 uppercase tracking-widest">
@@ -832,48 +1095,48 @@ coins_name: receiverInfo?.coins_name,
           </div> */}
 
           <div className="flex flex-col gap-2.5">
-  <label className="text-xs font-black text-gray-500 uppercase tracking-widest">
-    Destination Country <span className="text-red-400">*</span>
-  </label>
+            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">
+              Destination Country <span className="text-red-400">*</span>
+            </label>
 
-  <div className="relative group">
-    {countryError ? (
-      <div className="text-red-500 text-sm font-bold">
-        Failed to load countries
-      </div>
-    ) : countryLoading ? (
-      <div className="h-14 bg-gray-100 animate-pulse rounded-xl" />
-    ) : (
-      <select
-        {...register('country', { required: 'Please select a country' })}
-        className={`${fieldCls(errors.country)} appearance-none pl-12 pr-12`}
-      >
-        <option value="">Select Country</option>
-        {countries.map((country) => (
-          <option key={country.name} value={country.name}>
-            {country.name}
-          </option>
-        ))}
-      </select>
-    )}
+            <div className="relative group">
+              {countryError ? (
+                <div className="text-red-500 text-sm font-bold">
+                  Failed to load countries
+                </div>
+              ) : countryLoading ? (
+                <div className="h-14 bg-gray-100 animate-pulse rounded-xl" />
+              ) : (
+                <select
+                  {...register('country', { required: 'Please select a country' })}
+                  className={`${fieldCls(errors.country)} appearance-none pl-12 pr-12`}
+                >
+                  <option value="">Select Country</option>
+                  {countries.map((country) => (
+                    <option key={country.name} value={country.name}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
+              )}
 
-    <div
-      style={{ color: PRIMARY }}
-      className="pointer-events-none absolute inset-y-0 left-0 flex items-center px-4"
-    >
-      <Globe size={20} />
-    </div>
+              <div
+                style={{ color: PRIMARY }}
+                className="pointer-events-none absolute inset-y-0 left-0 flex items-center px-4"
+              >
+                <Globe size={20} />
+              </div>
 
-    <div
-      style={{ color: PRIMARY }}
-      className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 group-hover:scale-110 transition-transform"
-    >
-      <ChevronDown size={20} />
-    </div>
-  </div>
+              <div
+                style={{ color: PRIMARY }}
+                className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 group-hover:scale-110 transition-transform"
+              >
+                <ChevronDown size={20} />
+              </div>
+            </div>
 
-  <ErrorMsg message={errors.country?.message} />
-</div>
+            <ErrorMsg message={errors.country?.message} />
+          </div>
           <div className="flex flex-col gap-2.5">
             <label className="text-xs font-black text-gray-500 uppercase tracking-widest">
               City / Province <span className="text-red-400">*</span>
@@ -898,9 +1161,19 @@ coins_name: receiverInfo?.coins_name,
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
             {senderInfo ? (
               <DenominationPanel
-                title="Sender Pays — Cash In" subtitle="Cash received from customer"
-                flag={senderInfo.flag} symbol={senderInfo.symbol} currency={senderInfo.currency}
-                notes={senderInfo.notes} coins={senderInfo.coins} targetAmount={sendAmount}
+                title="Sender Pays — Cash In"
+                subtitle="Cash received from customer"
+                flag={senderInfo.flag}
+                symbol={senderInfo.symbol}
+                currency={senderInfo.currency}
+                notes={senderInfo.notes}
+                coins={senderInfo.coins}
+                targetAmount={
+                  exchangeType === "BUY"
+                    ? roundedTotal
+                    : sendAmount
+                }
+
                 onRowsChange={rows => { senderDenomRowsRef.current = rows; }}
                 accentColor="#3b82f6"
               />
@@ -925,38 +1198,51 @@ coins_name: receiverInfo?.coins_name,
             )} */}
 
             {denomLoading ? (
-  <div className="rounded-2xl border bg-gray-50 flex items-center justify-center p-8 text-center">
-    <p className="font-black text-gray-400 text-sm">Loading denomination…</p>
-  </div>
-) : denomError ? (
-  <div className="rounded-2xl border bg-red-50 flex items-center justify-center p-8 text-center">
-    <p className="font-black text-red-500 text-sm">{denomError}</p>
-  </div>
-) : receiverInfo ? (
-  <DenominationPanel
-    title="Receiver Gets — Cash Out"
-    // subtitle={`Cash to disburse to ${watchedCountry}`}
-    subtitle={`Cash to disburse to ${selectedDenomCountry ?? ''}`}
-    flag={receiverInfo.flag}
-    symbol={receiverInfo.symbol}
-    currency={receiverInfo.currency}
-    notes={receiverInfo.notes}
-    coins={receiverInfo.coins}
-    targetAmount={exchangePreview?.rawAmount ?? 0}
-    onRowsChange={rows => {
-      receiverDenomRowsRef.current = rows;
-    }}
-    accentColor={PRIMARY}
-  />
-) : (
-  <div className="rounded-2xl border bg-gray-50 flex items-center justify-center p-8 text-center">
-    <p className="font-black text-gray-400 text-sm">
-      No denomination configured for this country
-    </p>
-  </div>
-)}
+              <div className="rounded-2xl border bg-gray-50 flex items-center justify-center p-8 text-center">
+                <p className="font-black text-gray-400 text-sm">Loading denomination…</p>
+              </div>
+            ) : denomError ? (
+              <div className="rounded-2xl border bg-red-50 flex items-center justify-center p-8 text-center">
+                <p className="font-black text-red-500 text-sm">{denomError}</p>
+              </div>
+            ) : receiverInfo ? (
+              <DenominationPanel
+                title="Receiver Gets — Cash Out"
+                // subtitle={`Cash to disburse to ${watchedCountry}`}
+                subtitle={`Cash to disburse to ${selectedDenomCountry ?? ''}`}
+                flag={receiverInfo.flag}
+                symbol={receiverInfo.symbol}
+                currency={receiverInfo.currency}
+                notes={receiverInfo.notes}
+                coins={receiverInfo.coins}
+                // targetAmount={exchangePreview?.rawAmount ?? 0}
+                targetAmount={
+                  exchangeType === "BUY"
+                    ? exchangePreview?.rawAmount ?? 0
+                    : roundedTotal
+                }
+                onRowsChange={rows => {
+                  receiverDenomRowsRef.current = rows;
+                }}
+                accentColor={PRIMARY}
+              />
+            ) : (
+              <div className="rounded-2xl border bg-gray-50 flex items-center justify-center p-8 text-center">
+                <p className="font-black text-gray-400 text-sm">
+                  No denomination configured for this country
+                </p>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Just above the actions div */}
+{(!effectiveRate || effectiveRate <= 0) && !ratesLoading && (
+  <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-bold">
+    <AlertCircle size={15} />
+    Exchange rates for today are not available. Please upload rates in Currency Master Data before proceeding.
+  </div>
+)}
 
         {/* Actions */}
         <div className="flex items-center justify-between pt-4">
@@ -965,6 +1251,7 @@ coins_name: receiverInfo?.coins_name,
             Back
           </button>
           <button type="submit"
+            disabled={!effectiveRate || effectiveRate <= 0 || ratesLoading}
             style={{ background: PRIMARY, boxShadow: `0 8px 24px ${PRIMARY}44` }}
             className="flex items-center justify-center gap-3 rounded-2xl text-gray-900 text-base font-black h-14 px-10 transition-all transform active:scale-95 hover:opacity-90 group">
             Continue <ArrowRight size={20} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />

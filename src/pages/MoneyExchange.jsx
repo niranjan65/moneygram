@@ -231,11 +231,12 @@ if (uploadedFileUrl) {
     };
 
     const response = await fetch(
-      "http://192.168.101.182:81/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
+      "http://182.71.135.110:82/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+           "Authorization": "token 661457e17b8612a:32a5ddcc5a9c177"
         },
         credentials: "include", // VERY IMPORTANT for ERPNext session
         body: JSON.stringify(apiPayload),
@@ -263,10 +264,45 @@ if (uploadedFileUrl) {
   }
 }, [transferPayload, senderInfo.email, summary, transferPayload?.receiverDenominationRows]);
 
-   const handleDashboard = useCallback(() => {
-    // TODO: navigate to dashboard route
-    console.log('Navigate to dashboard');
-  }, []);
+  //  const handleDashboard = useCallback(() => {
+  //   // TODO: navigate to dashboard route
+  //   console.log('Navigate to dashboard');
+  // }, []);
+
+  const handleDashboard = useCallback(() => {
+  // Reset receiver info
+  setReceiverInfo({
+    firstName: '',
+    lastName: '',
+    country: 'Spain',
+    city: '',
+    deliveryMethod: 'BANK_DEPOSIT',
+    bankName: '',
+    accountNumber: '',
+    senderCurrency: 'USD',
+    receiverCurrency: 'EUR',
+  });
+
+  // Reset summary
+  setSummary({
+    sendAmount: 1000.00,
+    currency: 'USD',
+    fee: TRANSFER_FEE,
+    exchangeRate: 0.02,
+    receiverGets: 920.00,
+    receiverCurrency: 'EUR',
+    exchangeType: 'BUY',
+  });
+
+  // Clear transfer data
+  setTransferPayload(null);
+  setTransactionId(null);
+  setApiResponseDoc(null);
+
+  // Go back to form step
+  setCurrentStep(Step.DETAILS);
+
+}, []);
 
   const handleDownloadReceipt = useCallback(() => {
     // TODO: generate PDF receipt
