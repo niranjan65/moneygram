@@ -4,6 +4,7 @@
 //   fromCurrency,
 //   toCurrency,
 //   rates,
+//   gstPercent, 
 // }) => {
 //   const amount = parseFloat(sendAmount);
 
@@ -22,16 +23,16 @@
 //   // 1️⃣ Service Fee (2%)
 //   const serviceFee = amount * 0.02;
 
-//   // 2️⃣ Subtotal (Amount + Service Fee)
+//   // 2️⃣ Subtotal
 //   const subTotal = amount + serviceFee;
 
-//   // 3️⃣ GST (15% on Subtotal)
-//   const gst = subTotal * 0.15;
+//   // 3️⃣ GST (Dynamic from ERP)
+//   const gst = subTotal * (gstPercent / 100);
 
 //   // 4️⃣ Total To Pay
 //   const totalToPay = subTotal + gst;
 
-//   // 5️⃣ Receiver Gets (Only based on send amount)
+//   // 5️⃣ Receiver Gets
 //   const receiveAmount = amount * rate;
 
 //   return {
@@ -42,13 +43,12 @@
 //     receiveAmount: receiveAmount.toFixed(2),
 //   };
 // };
-//transferCalculator.js
 export const calculateTransfer = ({
   sendAmount,
   fromCurrency,
   toCurrency,
   rates,
-  gstPercent, 
+  gstPercent,
 }) => {
   const amount = parseFloat(sendAmount);
 
@@ -64,20 +64,20 @@ export const calculateTransfer = ({
 
   const rate = rates[fromCurrency][toCurrency];
 
-  // 1️⃣ Service Fee (2%)
-  const serviceFee = amount * 0.02;
+  // 1️⃣ Receiver Gets (conversion first)
+  const receiveAmount = amount * rate;
 
-  // 2️⃣ Subtotal
+  // 2️⃣ Service Fee (2% of receive amount)
+  const serviceFee = receiveAmount * 0.02;
+
+  // 3️⃣ GST (only on service fee)
+  const gst = serviceFee * (gstPercent / 100);
+
+  // 4️⃣ Subtotal (Send Amount + Service Fee)
   const subTotal = amount + serviceFee;
 
-  // 3️⃣ GST (Dynamic from ERP)
-  const gst = subTotal * (gstPercent / 100);
-
-  // 4️⃣ Total To Pay
-  const totalToPay = subTotal + gst;
-
-  // 5️⃣ Receiver Gets
-  const receiveAmount = amount * rate;
+  // 5️⃣ Total To Pay (Send + Fee + GST)
+  const totalToPay = amount + serviceFee + gst;
 
   return {
     serviceFee: serviceFee.toFixed(2),
