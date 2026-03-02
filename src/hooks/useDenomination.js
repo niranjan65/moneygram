@@ -84,16 +84,19 @@ const HEADERS = {
   Authorization: "token 661457e17b8612a:32a5ddcc5a9c177",
 };
 
-// 🔥 Shared transform — converts ["100$", "50c"] → [100, 0.50]
-const transformDenomination = (arr = []) =>
+// 🔥 Shared transform — extracts numeric values from [{value, name}] objects
+// and sorts them descending
+const transformValues = (arr = []) =>
   arr
-    .map((item) => {
-      if (item.includes("c")) {
-        return parseFloat(item.replace("c", "")) / 100;
-      }
-      return parseFloat(item.replace("$", ""));
-    })
+    .map((item) => parseFloat(item.value))
+    .filter((v) => !isNaN(v))
     .sort((a, b) => b - a);
+
+// Extract the "name" strings in the same order as the sorted values
+const extractNames = (arr = []) =>
+  [...arr]
+    .sort((a, b) => parseFloat(b.value) - parseFloat(a.value))
+    .map((item) => item.name);
 
 // Shared fetcher
 async function fetchCountryDenomination(country) {
@@ -111,13 +114,13 @@ async function fetchCountryDenomination(country) {
   if (!countryData) return null;
 
   return {
-    currency:   countryData.currency,
-    symbol:     countryData.symbol,
-    flag:       countryData.flag || "",
-    notes:      transformDenomination(countryData.notes),
-    coins:      transformDenomination(countryData.coins),
-    notes_name: countryData.notes_name,
-    coins_name: countryData.coins_name,
+    currency: countryData.currency,
+    symbol: countryData.symbol,
+    flag: countryData.flag || "",
+    notes: transformValues(countryData.notes || []),
+    coins: transformValues(countryData.coins || []),
+    notes_name: extractNames(countryData.notes || []),
+    coins_name: extractNames(countryData.coins || []),
     pickupNote: countryData.pickupNote,
   };
 }

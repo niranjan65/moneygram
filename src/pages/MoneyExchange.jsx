@@ -194,7 +194,7 @@ if (uploadedFileUrl) {
         send_amount: transferPayload.sendAmount,
         total_amount: transferPayload.sendAmount + summary.fee,
 
-denomination: transferPayload.senderDenominationRows?.map(row => {
+receiver__gets: transferPayload.senderDenominationRows?.map(row => {
   const { denomination_value, denomination_type } = row;
   let itemName = denomination_value;
 
@@ -211,7 +211,7 @@ denomination: transferPayload.senderDenominationRows?.map(row => {
   return { denomination: itemName, qty: row.count, amount: row.subtotal };
 }) || [],
 
-receiver__gets: transferPayload.receiverDenominationRows?.map(row => {
+denomination: transferPayload.receiverDenominationRows?.map(row => {
   const { denomination_value, denomination_type } = row;
   let itemName = denomination_value;
 
