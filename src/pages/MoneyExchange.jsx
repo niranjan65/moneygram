@@ -194,44 +194,46 @@ if (uploadedFileUrl) {
         send_amount: transferPayload.sendAmount,
         total_amount: transferPayload.sendAmount + summary.fee,
 
-        denomination: transferPayload.receiverDenominationRows?.map(row => {
-          const { denomination_value, denomination_type } = row;
+receiver__gets: transferPayload.senderDenominationRows?.map(row => {
+  const { denomination_value, denomination_type } = row;
+  let itemName = denomination_value;
 
-          let itemName = denomination_value;
+  // ✅ sender rows use sender_notes_name / sender_coins_name
+  if (denomination_type === "Note" && transferPayload.sender_notes && transferPayload.sender_notes_name) {
+    const index = transferPayload.sender_notes.findIndex(n => n === denomination_value);
+    if (index !== -1) itemName = transferPayload.sender_notes_name[index];
+  }
+  if (denomination_type === "Coin" && transferPayload.sender_coins && transferPayload.sender_coins_name) {
+    const index = transferPayload.sender_coins.findIndex(c => c === denomination_value);
+    if (index !== -1) itemName = transferPayload.sender_coins_name[index];
+  }
 
-          if (transferPayload.notes && transferPayload.notes_name) {
-            if (denomination_type === "Note") {
-              const index = transferPayload.notes.findIndex(
-                n => n === denomination_value
-              );
-              if (index !== -1) {
-                itemName = transferPayload.notes_name[index];
-              }
-            }
-          }
+  return { denomination: itemName, qty: row.count, amount: row.subtotal };
+}) || [],
 
-          if (transferPayload.coins && transferPayload.coins_name) {
-            if (denomination_type === "Coin") {
-              const index = transferPayload.coins.findIndex(
-                c => c === denomination_value
-              );
-              if (index !== -1) {
-                itemName = transferPayload.coins_name[index];
-              }
-            }
-          }
+denomination: transferPayload.receiverDenominationRows?.map(row => {
+  const { denomination_value, denomination_type } = row;
+  let itemName = denomination_value;
 
-          return {
-            denomination: itemName,
-            qty: row.count,
-            amount: row.subtotal,
-          };
-        }) || [],
+  // ✅ receiver rows use notes_name / coins_name
+  if (denomination_type === "Note" && transferPayload.notes && transferPayload.notes_name) {
+    const index = transferPayload.notes.findIndex(n => n === denomination_value);
+    if (index !== -1) itemName = transferPayload.notes_name[index];
+  }
+  if (denomination_type === "Coin" && transferPayload.coins && transferPayload.coins_name) {
+    const index = transferPayload.coins.findIndex(c => c === denomination_value);
+    if (index !== -1) itemName = transferPayload.coins_name[index];
+  }
+
+  return { denomination: itemName, qty: row.count, amount: row.subtotal };
+}) || [],
+
       },
     };
+    
 
     const response = await fetch(
-      "http://182.71.135.110:82/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
+      "http://192.168.101.182:81/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
       {
         method: "POST",
         headers: {

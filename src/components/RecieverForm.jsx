@@ -12,7 +12,7 @@ import { DENOMINATION_DATA, SUPPORTED_COUNTRIES } from '../hooks/Denomination';
 import { useERPNextRates } from '../hooks/useERPNextRates';
 import { useCountries } from '../hooks/useCountry';
 import { useCustomers } from '../hooks/useCustomer';
-import { useDenomination } from '../hooks/useDenomination';
+import { useBaseCurrency, useDenomination } from '../hooks/useDenomination';
 import { useExchange } from '../context/ExchangeContext';
 
 
@@ -85,28 +85,34 @@ const DenominationPanel = ({
   targetAmount, onRowsChange, accentColor = PRIMARY,
 }) => {
   // const [rows, setRows] = useState(() => buildRows(targetAmount, notes));
-  const [rows, setRows] = useState(() =>
-    buildRows(targetAmount, [...(notes || []), ...(coins || [])])
-  );
+  // const [rows, setRows] = useState(() =>
+  //   buildRows(targetAmount, [...(notes || []), ...(coins || [])])
+  // );
+
+  const [rows, setRows] = useState([]);
+
   const [customDenom, setCustomDenom] = useState('');
   const [showCustom, setShowCustom] = useState(false);
-  const prevKey = useRef(`${currency}:${targetAmount}`);
+  // const prevKey = useRef(`${currency}:${targetAmount}`);
 
   // useEffect(() => {
   //   const key = `${currency}:${targetAmount}`;
   //   if (prevKey.current !== key) {
   //     prevKey.current = key;
-  //     setRows(buildRows(targetAmount, notes));
+  //     setRows(buildRows(targetAmount, [...(notes || []), ...(coins || [])]));
   //   }
-  // }, [currency, targetAmount, notes]);
+  // }, [currency, targetAmount, notes, coins]);
 
-  useEffect(() => {
-    const key = `${currency}:${targetAmount}`;
-    if (prevKey.current !== key) {
-      prevKey.current = key;
-      setRows(buildRows(targetAmount, [...(notes || []), ...(coins || [])]));
-    }
-  }, [currency, targetAmount, notes, coins]);
+  // ✅ After — key includes notes length so it rebuilds when async data loads
+const prevKey = useRef('');
+
+useEffect(() => {
+  const key = `${currency}:${targetAmount}:${(notes || []).length}:${(coins || []).length}`;
+  if (prevKey.current !== key) {
+    prevKey.current = key;
+    setRows(buildRows(targetAmount, [...(notes || []), ...(coins || [])]));
+  }
+}, [currency, targetAmount, notes, coins]);
 
   useEffect(() => { onRowsChange?.(rows); }, [rows]);
 
@@ -327,7 +333,7 @@ const GovernmentIdSection = ({ register, errors, setValue, watch }) => {
 
     try {
       const response = await fetch(
-        `http://182.71.135.110:82/api/resource/Customer/${idNumber}`,
+        `http://192.168.101.182:81/api/resource/Customer/${idNumber}`,
         {
           method: "GET",
           headers: {
@@ -345,7 +351,7 @@ const GovernmentIdSection = ({ register, errors, setValue, watch }) => {
       const result = await response.json();
       const customer = result.data;
 
-      console.log("Customer found:", customer);
+      
 
       // Autofill form
       setValue("firstName", customer.custom_first_name || "");
@@ -680,6 +686,8 @@ export const ReceiverForm = ({
   const effectiveRate = useMemo(() => {
   if (!toCurrency) return null;
 
+  console.log("toooo currency", toCurrency)
+
   if (useManualRate) {
     const m = parseFloat(manualRate);
     return !isNaN(m) && m > 0 ? m : null;
@@ -687,12 +695,12 @@ export const ReceiverForm = ({
 
   if (exchangeType === "SELL") {
     // You buy foreign
-    return toCurrency.buyingRate ?? null;
+    return toCurrency.sellingRate ?? null;
   }
 
   if (exchangeType === "BUY") {
     // You sell foreign
-    return toCurrency.sellingRate ?? null;
+    return toCurrency.buyingRate ?? null;
   }
 
   return null;
@@ -762,12 +770,15 @@ export const ReceiverForm = ({
 
   if (exchangeType === "BUY") {
     // Customer gives FJD → gets foreign
+
+    console.log("send amount", sendAmount)
+    console.log("effective rate", effectiveRate)
     receiverAmount = sendAmount * effectiveRate;
   }
 
   if (exchangeType === "SELL") {
     // Customer gives foreign → gets FJD
-    receiverAmount = sendAmount / effectiveRate;
+    receiverAmount = sendAmount * effectiveRate;
   }
 
   receiverAmount =
@@ -799,7 +810,8 @@ export const ReceiverForm = ({
   }, [sendAmount, toCurrency, exchangePreview]);
 
 
-  const baseCurrencyInfo = DENOMINATION_DATA['Fiji'] ?? null;
+  // const baseCurrencyInfo = DENOMINATION_DATA['Fiji'] ?? null;
+  const { data: baseCurrencyInfo } = useBaseCurrency();
   // const receiverInfo = DENOMINATION_DATA[watchedCountry] ?? null;
 
   //   const {
@@ -833,46 +845,150 @@ export const ReceiverForm = ({
       : baseCurrencyInfo;         // Customer receives FJD
 
 
+  console.log("Sender info", senderInfo)
+  console.log("Receiver Info", receiverInfo)
+
+//   const onSubmit = (data) => {
+//     if (!sendAmount || sendAmount <= 0) {
+//       setSendAmountError('Please enter a valid send amount');
+//       return;
+//     }
+
+//      // ✅ Block submission if no rates available
+//   if (!effectiveRate || effectiveRate <= 0) {
+//     return;
+//   }
+
+//     if (useManualRate && (!manualRate || parseFloat(manualRate) <= 0)) {
+//       return;
+//     }
+//     setSendAmountError('');
+
+//     // onContinue?.({
+//     //   ...data,
+//     //   notes: receiverInfo?.notes,
+//     //   notes_name: receiverInfo?.notes_name,
+//     //   coins: receiverInfo?.coins,
+//     //   coins_name: receiverInfo?.coins_name,
+//     //   sendAmount,
+//     //   senderCurrency: FJD.code,
+//     //   receiverCurrency: toCurrency?.code ?? '',
+//     //   exchangeRate: exchangePreview?.rate ?? 0,
+//     //   receiverGets: exchangePreview?.rawAmount ?? 0,
+//     //   rateSource: useManualRate ? 'manual' : 'erpnext',
+//     //   rateDate: useManualRate ? null : rateDate,
+//     //   senderDenominationRows: senderDenomRowsRef.current
+//     //     .filter(r => r.count > 0)
+//     //     .map(r => ({ denomination_value: r.denom, denomination_type: r.denom >= 1 ? 'Note' : 'Coin', count: r.count, subtotal: r.denom * r.count })),
+//     //   receiverDenominationRows: receiverDenomRowsRef.current
+//     //     .filter(r => r.count > 0)
+//     //     .map(r => ({ denomination_value: r.denom, denomination_type: r.denom >= 1 ? 'Note' : 'Coin', count: r.count, subtotal: r.denom * r.count })),
+//     // });
+
+
+
+
+//     onContinue?.({
+//   ...data,
+
+//   // ✅ Sender's denomination metadata (for senderDenominationRows lookup)
+//   sender_notes:       senderInfo?.notes,
+//   sender_notes_name:  senderInfo?.notes_name,
+//   sender_coins:       senderInfo?.coins,
+//   sender_coins_name:  senderInfo?.coins_name,
+
+//   // ✅ Receiver's denomination metadata (for receiverDenominationRows lookup)
+//   notes:       receiverInfo?.notes,
+//   notes_name:  receiverInfo?.notes_name,
+//   coins:       receiverInfo?.coins,
+//   coins_name:  receiverInfo?.coins_name,
+
+//   sendAmount,
+//   senderCurrency:   FJD.code,
+//   receiverCurrency: toCurrency?.code ?? '',
+//   exchangeRate:     exchangePreview?.rate ?? 0,
+//   receiverGets:     exchangePreview?.rawAmount ?? 0,
+//   rateSource:       useManualRate ? 'manual' : 'erpnext',
+//   rateDate:         useManualRate ? null : rateDate,
+
+//   senderDenominationRows: senderDenomRowsRef.current
+//     .filter(r => r.count > 0)
+//     .map(r => ({ denomination_value: r.denom, denomination_type: r.denom >= 1 ? 'Note' : 'Coin', count: r.count, subtotal: r.denom * r.count })),
+
+//   receiverDenominationRows: receiverDenomRowsRef.current
+//     .filter(r => r.count > 0)
+//     .map(r => ({ denomination_value: r.denom, denomination_type: r.denom >= 1 ? 'Note' : 'Coin', count: r.count, subtotal: r.denom * r.count })),
+// });
+//   };
 
   const onSubmit = (data) => {
-    if (!sendAmount || sendAmount <= 0) {
-      setSendAmountError('Please enter a valid send amount');
-      return;
-    }
+  if (!sendAmount || sendAmount <= 0) {
+    setSendAmountError('Please enter a valid send amount');
+    return;
+  }
 
-     // ✅ Block submission if no rates available
   if (!effectiveRate || effectiveRate <= 0) {
     return;
   }
 
-    if (useManualRate && (!manualRate || parseFloat(manualRate) <= 0)) {
-      return;
-    }
-    setSendAmountError('');
+  if (useManualRate && (!manualRate || parseFloat(manualRate) <= 0)) {
+    return;
+  }
 
-    onContinue?.({
-      ...data,
-      notes: receiverInfo?.notes,
-      notes_name: receiverInfo?.notes_name,
-      coins: receiverInfo?.coins,
-      coins_name: receiverInfo?.coins_name,
-      sendAmount,
-      senderCurrency: FJD.code,
-      receiverCurrency: toCurrency?.code ?? '',
-      exchangeRate: exchangePreview?.rate ?? 0,
-      receiverGets: exchangePreview?.rawAmount ?? 0,
-      rateSource: useManualRate ? 'manual' : 'erpnext',
-      rateDate: useManualRate ? null : rateDate,
-      senderDenominationRows: senderDenomRowsRef.current
-        .filter(r => r.count > 0)
-        .map(r => ({ denomination_value: r.denom, denomination_type: r.denom >= 1 ? 'Note' : 'Coin', count: r.count, subtotal: r.denom * r.count })),
-      receiverDenominationRows: receiverDenomRowsRef.current
-        .filter(r => r.count > 0)
-        .map(r => ({ denomination_value: r.denom, denomination_type: r.denom >= 1 ? 'Note' : 'Coin', count: r.count, subtotal: r.denom * r.count })),
-    });
+  setSendAmountError('');
+
+  // ── Determine denomination type by checking which array it belongs to ──────
+  const getDenomType = (denom, notesArr = [], coinsArr = []) => {
+    if (notesArr.includes(denom)) return 'Note';
+    if (coinsArr.includes(denom)) return 'Coin';
+    return denom >= 1 ? 'Note' : 'Coin'; // fallback
   };
 
-  console.log("showupload modal", showUploadModal)
+  onContinue?.({
+    ...data,
+
+    // ── Sender denomination metadata (FJD / base currency) ──────────────────
+    sender_notes:      senderInfo?.notes      ?? [],
+    sender_notes_name: senderInfo?.notes_name ?? [],
+    sender_coins:      senderInfo?.coins      ?? [],
+    sender_coins_name: senderInfo?.coins_name ?? [],
+
+    // ── Receiver denomination metadata (foreign currency) ───────────────────
+    notes:      receiverInfo?.notes      ?? [],
+    notes_name: receiverInfo?.notes_name ?? [],
+    coins:      receiverInfo?.coins      ?? [],
+    coins_name: receiverInfo?.coins_name ?? [],
+
+    // ── Exchange info ────────────────────────────────────────────────────────
+    sendAmount,
+    senderCurrency:   FJD.code,
+    receiverCurrency: toCurrency?.code ?? '',
+    exchangeRate:     exchangePreview?.rate ?? 0,
+    receiverGets:     exchangePreview?.rawAmount ?? 0,
+    rateSource:       useManualRate ? 'manual' : 'erpnext',
+    rateDate:         useManualRate ? null : rateDate,
+
+    // ── Sender rows — type resolved against senderInfo arrays ───────────────
+    senderDenominationRows: senderDenomRowsRef.current
+      .filter(r => r.count > 0)
+      .map(r => ({
+        denomination_value: r.denom,
+        denomination_type:  getDenomType(r.denom, senderInfo?.notes, senderInfo?.coins),
+        count:              r.count,
+        subtotal:           r.denom * r.count,
+      })),
+
+    // ── Receiver rows — type resolved against receiverInfo arrays ────────────
+    receiverDenominationRows: receiverDenomRowsRef.current
+      .filter(r => r.count > 0)
+      .map(r => ({
+        denomination_value: r.denom,
+        denomination_type:  getDenomType(r.denom, receiverInfo?.notes, receiverInfo?.coins),
+        count:              r.count,
+        subtotal:           r.denom * r.count,
+      })),
+  });
+};
 
 
   return (
@@ -968,7 +1084,7 @@ export const ReceiverForm = ({
               <label style={{ color: PRIMARY }} className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
                 <Coins size={14} /> {exchangeType === "SELL"
                   ? `Customer Gives (${toCurrency?.code})`
-                  : `Customer Gives (FJD)`
+                  : `Customer Gets (${toCurrency?.code}) `
                 } <span className="text-red-400">*</span>
               </label>
               <input
@@ -1001,7 +1117,7 @@ export const ReceiverForm = ({
                  {/* {exchangeType == "SELL" ? "You Get" : "Need To Pay"} */}
                  {exchangeType === "SELL"
   ? `Customer Receives (${FJD.code})`
-  : `Customer Receives (${toCurrency?.code ?? ""})`
+  : `Customer Pays (${FJD.code})`
 }
               </label>
 
