@@ -279,7 +279,9 @@ const PRIMARY = '#30e87a';
 const PRIMARY_DARK = '#24b35f';
 
 // 🔌 Connect to your webhook server
-const socket = io('http://192.168.101.172:5000', {
+// const socket_server = 'http://182.71.135.110:8079';
+const socket_server = 'http://192.168.101.172:5000';
+const socket = io(socket_server, {
   transports: ['websocket'],
 });
 

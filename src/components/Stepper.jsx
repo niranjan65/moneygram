@@ -14,8 +14,8 @@ export const Stepper = ({ currentStep }) => {
   const steps = [
     { id: Step.ESTIMATE, label: 'Estimate' },
     { id: Step.DETAILS, label: 'Details' },
-    { id: Step.PAYMENT, label: 'Payment' },
     { id: Step.REVIEW, label: 'Review' },
+    { id: Step.PAYMENT, label: 'Payment' },
   ];
 
   return (
