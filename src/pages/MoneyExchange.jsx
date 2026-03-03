@@ -11,9 +11,9 @@ import { ExchangeProvider } from '../context/ExchangeContext';
 
 const Step = {
   ESTIMATE: 1,
-  DETAILS:  2,
-  PAYMENT:  3,
-  REVIEW:   4,
+  DETAILS: 2,
+  REVIEW: 3,
+  PAYMENT: 4,
 };
 
 const TRANSFER_FEE = 4.99;
@@ -27,29 +27,29 @@ const MoneyExchange = () => {
 
 
   const [senderInfo] = useState({
-    name:  'Niranjan Singh',
+    name: 'Niranjan Singh',
     email: 'niranjan.ks@anantdv.com',
     phone: '+91 1234567890',
   });
 
   const [receiverInfo, setReceiverInfo] = useState({
-    firstName:        '',
-    lastName:         '',
-    country:          'Spain',
-    city:             '',
-    deliveryMethod:   'BANK_DEPOSIT',
-    bankName:         '',
-    accountNumber:    '',
-    senderCurrency:   'USD',
+    firstName: '',
+    lastName: '',
+    country: 'Spain',
+    city: '',
+    deliveryMethod: 'BANK_DEPOSIT',
+    bankName: '',
+    accountNumber: '',
+    senderCurrency: 'USD',
     receiverCurrency: 'EUR',
   });
 
   const [summary, setSummary] = useState({
-    sendAmount:       1000.00,
-    currency:         'USD',
-    fee:              TRANSFER_FEE,
-    exchangeRate:     0.02,
-    receiverGets:     920.00,
+    sendAmount: 1000.00,
+    currency: 'USD',
+    fee: TRANSFER_FEE,
+    exchangeRate: 0.02,
+    receiverGets: 920.00,
     receiverCurrency: 'EUR',
     exchangeType: 'BUY',
   });
@@ -65,13 +65,13 @@ const MoneyExchange = () => {
   const handleSummaryChange = useCallback((incoming) => {
     setSummary(prev => ({
       ...prev,
-      sendAmount:       incoming.sendAmount,
-      currency:         incoming.currency,
-      exchangeRate:     incoming.exchangeRate,
-      receiverGets:     incoming.receiverGets,
+      sendAmount: incoming.sendAmount,
+      currency: incoming.currency,
+      exchangeRate: incoming.exchangeRate,
+      receiverGets: incoming.receiverGets,
       fee: incoming.receiverGets * 0.02,
       receiverCurrency: incoming.receiverCurrency,
-      exchangeType: incoming.exchangeType, 
+      exchangeType: incoming.exchangeType,
     }));
   }, []);
 
@@ -83,10 +83,10 @@ const MoneyExchange = () => {
 
     setSummary(prev => ({
       ...prev,
-      sendAmount:       data.sendAmount,
-      currency:         data.senderCurrency,
-      exchangeRate:     data.exchangeRate,
-      receiverGets:     data.receiverGets,
+      sendAmount: data.sendAmount,
+      currency: data.senderCurrency,
+      exchangeRate: data.exchangeRate,
+      receiverGets: data.receiverGets,
       receiverCurrency: data.receiverCurrency,
     }));
 
@@ -101,24 +101,24 @@ const MoneyExchange = () => {
   // Called from ReviewStep → Cancel → reset everything and go back to DETAILS
   const handleCancel = useCallback(() => {
     setReceiverInfo({
-      firstName:        '',
-      lastName:         '',
-      country:          'Spain',
-      city:             '',
-      deliveryMethod:   'BANK_DEPOSIT',
-      bankName:         '',
-      accountNumber:    '',
-      senderCurrency:   'USD',
+      firstName: '',
+      lastName: '',
+      country: 'Spain',
+      city: '',
+      deliveryMethod: 'BANK_DEPOSIT',
+      bankName: '',
+      accountNumber: '',
+      senderCurrency: 'USD',
       receiverCurrency: 'EUR',
     });
     setSummary({
-      sendAmount:       1000.00,
-      currency:         'USD',
-      fee:              TRANSFER_FEE,
-      exchangeRate:     0.02,
-      receiverGets:     920.00,
+      sendAmount: 1000.00,
+      currency: 'USD',
+      fee: TRANSFER_FEE,
+      exchangeRate: 0.02,
+      receiverGets: 920.00,
       receiverCurrency: 'EUR',
-      exchangeType:     'BUY',
+      exchangeType: 'BUY',
     });
     setTransferPayload(null);
     setTransactionId(null);
@@ -141,130 +141,245 @@ const MoneyExchange = () => {
   // }, [transferPayload]);
 
   const handleConfirm = useCallback(async () => {
-  if (!transferPayload) return;
+    if (!transferPayload) return;
 
-  let uploadedFileUrl = null;
+    let uploadedFileUrl = null;
 
-if (transferPayload.docFile) {
-  uploadedFileUrl = await uploadFile(transferPayload.docFile, {
-    isPrivate: 1, 
-    doctype: "Currency Exchange For Customer",
-  });
-}
+    if (transferPayload.docFile) {
+      uploadedFileUrl = await uploadFile(transferPayload.docFile, {
+        isPrivate: 1,
+        doctype: "Currency Exchange For Customer",
+      });
+    }
 
-  console.log("transfer payload", transferPayload)
+    console.log("transfer payload", transferPayload)
 
-  try {
-    // Decide which field to use
-let idDocumentField = {};
+    try {
+      // Decide which field to use
+      let idDocumentField = {};
 
-if (uploadedFileUrl) {
-  if (transferPayload.idType === "PASSPORT") {
-    idDocumentField.passport_photo__scan = uploadedFileUrl;
-  }
+      if (uploadedFileUrl) {
+        if (transferPayload.idType === "PASSPORT") {
+          idDocumentField.passport_photo__scan = uploadedFileUrl;
+        }
 
-  if (transferPayload.idType === "GOVERNMENT_ID") {
-    idDocumentField.government_id_photo__scan = uploadedFileUrl;
-  }
-}
-    const apiPayload = {
-      data: {
-        verification_id_type: transferPayload.idType,
-        passport_number: transferPayload.idNumber,
-        first_name: transferPayload.firstName,
-        last_name: transferPayload.lastName,
-        receiver_mailid: senderInfo.email, 
-        destination_country: transferPayload.country,
-        city__province: transferPayload.city,
-        id_number: transferPayload.idNumber,
-        ...idDocumentField,
-
-        you_send: transferPayload.sendAmount,
-        you_send_currency_type: transferPayload.senderCurrency,
-
-        they_receive: transferPayload.receiverGets,
-        they_receive_currency_type: transferPayload.receiverCurrency,
-
-        expected: transferPayload.sendAmount,
-        counted: transferPayload.sendAmount,
-        balanced: 0,
-
-        exchange_rate: transferPayload.exchangeRate,
-        transfer_fee: summary.fee,
-        send_amount: transferPayload.sendAmount,
-        total_amount: transferPayload.sendAmount + summary.fee,
-
-denomination: transferPayload.senderDenominationRows?.map(row => {
-  const { denomination_value, denomination_type } = row;
-  let itemName = denomination_value;
-
-  // ✅ sender rows use sender_notes_name / sender_coins_name
-  if (denomination_type === "Note" && transferPayload.sender_notes && transferPayload.sender_notes_name) {
-    const index = transferPayload.sender_notes.findIndex(n => n === denomination_value);
-    if (index !== -1) itemName = transferPayload.sender_notes_name[index];
-  }
-  if (denomination_type === "Coin" && transferPayload.sender_coins && transferPayload.sender_coins_name) {
-    const index = transferPayload.sender_coins.findIndex(c => c === denomination_value);
-    if (index !== -1) itemName = transferPayload.sender_coins_name[index];
-  }
-
-  return { denomination: itemName, qty: row.count, amount: row.subtotal };
-}) || [],
-
-receiver__gets: transferPayload.receiverDenominationRows?.map(row => {
-  const { denomination_value, denomination_type } = row;
-  let itemName = denomination_value;
-
-  // ✅ receiver rows use notes_name / coins_name
-  if (denomination_type === "Note" && transferPayload.notes && transferPayload.notes_name) {
-    const index = transferPayload.notes.findIndex(n => n === denomination_value);
-    if (index !== -1) itemName = transferPayload.notes_name[index];
-  }
-  if (denomination_type === "Coin" && transferPayload.coins && transferPayload.coins_name) {
-    const index = transferPayload.coins.findIndex(c => c === denomination_value);
-    if (index !== -1) itemName = transferPayload.coins_name[index];
-  }
-
-  return { denomination: itemName, qty: row.count, amount: row.subtotal };
-}) || [],
-
-      },
-    };
-    
-
-    const response = await fetch(
-      "http://192.168.101.182:81/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-           "Authorization": "token 661457e17b8612a:32a5ddcc5a9c177"
-        },
-        credentials: "include", // VERY IMPORTANT for ERPNext session
-        body: JSON.stringify(apiPayload),
+        if (transferPayload.idType === "GOVERNMENT_ID") {
+          idDocumentField.government_id_photo__scan = uploadedFileUrl;
+        }
       }
-    );
 
-    const result = await response.json();
+      let denominationData = [];
 
-    console.log("API Success:", result);
+      let receiverData = []
 
-    // Store the created Currency Exchange For Customer doc from API
-    const createdDoc = result?.message || result?.data || result;
-    setApiResponseDoc(createdDoc);
+      if (transferPayload.exchangeType === "BUY") {
 
-    // Use the doc name from API as transaction ID, fallback to random
-    const txId = createdDoc?.name || `#TRX-${Math.floor(100000 + Math.random() * 900000)}`;
-    setTransactionId(txId);
+        denominationData =
+          transferPayload.receiverDenominationRows?.map(row => {
+            const { denomination_value, denomination_type } = row;
+            let itemName = denomination_value;
 
-    // Move to payment success screen
-    setCurrentStep(Step.PAYMENT);
+            if (
+              denomination_type === "Note" &&
+              transferPayload.notes &&
+              transferPayload.notes_name
+            ) {
+              const index = transferPayload.notes.findIndex(
+                n => n === denomination_value
+              );
+              if (index !== -1) itemName = transferPayload.notes_name[index];
+            }
 
-  } catch (error) {
-    console.error("API Error:", error);
-    alert("Something went wrong while creating exchange");
-  }
-}, [transferPayload, senderInfo.email, summary, transferPayload?.receiverDenominationRows]);
+            if (
+              denomination_type === "Coin" &&
+              transferPayload.coins &&
+              transferPayload.coins_name
+            ) {
+              const index = transferPayload.coins.findIndex(
+                c => c === denomination_value
+              );
+              if (index !== -1) itemName = transferPayload.coins_name[index];
+            }
+
+            return {
+              denomination: itemName,
+              qty: row.count,
+              amount: row.subtotal
+            };
+          }) || [];
+
+        receiverData =
+          transferPayload.senderDenominationRows?.map(row => {
+            const { denomination_value, denomination_type } = row;
+            let itemName = denomination_value;
+
+            if (
+              denomination_type === "Note" &&
+              transferPayload.sender_notes &&
+              transferPayload.sender_notes_name
+            ) {
+              const index = transferPayload.sender_notes.findIndex(
+                n => n === denomination_value
+              );
+              if (index !== -1) itemName = transferPayload.sender_notes_name[index];
+            }
+
+            if (
+              denomination_type === "Coin" &&
+              transferPayload.sender_coins &&
+              transferPayload.sender_coins_name
+            ) {
+              const index = transferPayload.sender_coins.findIndex(
+                c => c === denomination_value
+              );
+              if (index !== -1) itemName = transferPayload.sender_coins_name[index];
+            }
+
+            return {
+              denomination: itemName,
+              qty: row.count,
+              amount: row.subtotal
+            };
+          }) || [];
+
+      } else {
+
+        denominationData =
+          transferPayload.senderDenominationRows?.map(row => {
+            const { denomination_value, denomination_type } = row;
+            let itemName = denomination_value;
+
+            if (
+              denomination_type === "Note" &&
+              transferPayload.sender_notes &&
+              transferPayload.sender_notes_name
+            ) {
+              const index = transferPayload.sender_notes.findIndex(
+                n => n === denomination_value
+              );
+              if (index !== -1) itemName = transferPayload.sender_notes_name[index];
+            }
+
+            if (
+              denomination_type === "Coin" &&
+              transferPayload.sender_coins &&
+              transferPayload.sender_coins_name
+            ) {
+              const index = transferPayload.sender_coins.findIndex(
+                c => c === denomination_value
+              );
+              if (index !== -1) itemName = transferPayload.sender_coins_name[index];
+            }
+
+            return {
+              denomination: itemName,
+              qty: row.count,
+              amount: row.subtotal
+            };
+          }) || [];
+
+        receiverData =
+          transferPayload.receiverDenominationRows?.map(row => {
+            const { denomination_value, denomination_type } = row;
+            let itemName = denomination_value;
+
+            if (
+              denomination_type === "Note" &&
+              transferPayload.notes &&
+              transferPayload.notes_name
+            ) {
+              const index = transferPayload.notes.findIndex(
+                n => n === denomination_value
+              );
+              if (index !== -1) itemName = transferPayload.notes_name[index];
+            }
+
+            if (
+              denomination_type === "Coin" &&
+              transferPayload.coins &&
+              transferPayload.coins_name
+            ) {
+              const index = transferPayload.coins.findIndex(
+                c => c === denomination_value
+              );
+              if (index !== -1) itemName = transferPayload.coins_name[index];
+            }
+
+            return {
+              denomination: itemName,
+              qty: row.count,
+              amount: row.subtotal
+            };
+          }) || [];
+      }
+      const apiPayload = {
+        data: {
+          verification_id_type: transferPayload.idType,
+          passport_number: transferPayload.idNumber,
+          first_name: transferPayload.firstName,
+          last_name: transferPayload.lastName,
+          receiver_mailid: senderInfo.email,
+          destination_country: transferPayload.country,
+          city__province: transferPayload.city,
+          id_number: transferPayload.idNumber,
+          ...idDocumentField,
+
+          you_send: transferPayload.sendAmount,
+          you_send_currency_type: transferPayload.senderCurrency,
+
+          they_receive: transferPayload.receiverGets,
+          they_receive_currency_type: transferPayload.receiverCurrency,
+
+          expected: transferPayload.sendAmount,
+          counted: transferPayload.sendAmount,
+          balanced: 0,
+
+          exchange_rate: transferPayload.exchangeRate,
+          transfer_fee: summary.fee,
+          send_amount: transferPayload.sendAmount,
+          total_amount: transferPayload.sendAmount + summary.fee,
+
+          denomination: denominationData,
+
+          receiver__gets: receiverData
+
+        },
+      };
+
+
+      const response = await fetch(
+        "http://182.71.135.110:82/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "token 661457e17b8612a:32a5ddcc5a9c177"
+          },
+          credentials: "include", // VERY IMPORTANT for ERPNext session
+          body: JSON.stringify(apiPayload),
+        }
+      );
+
+      const result = await response.json();
+
+      console.log("API Success:", result);
+
+      // Store the created Currency Exchange For Customer doc from API
+      const createdDoc = result?.message || result?.data || result;
+      setApiResponseDoc(createdDoc);
+
+      // Use the doc name from API as transaction ID, fallback to random
+      const txId = createdDoc?.name || `#TRX-${Math.floor(100000 + Math.random() * 900000)}`;
+      setTransactionId(txId);
+
+      // Move to payment success screen
+      setCurrentStep(Step.PAYMENT);
+
+    } catch (error) {
+      console.error("API Error:", error);
+      alert("Something went wrong while creating exchange");
+    }
+  }, [transferPayload, senderInfo.email, summary, transferPayload?.receiverDenominationRows]);
 
   //  const handleDashboard = useCallback(() => {
   //   // TODO: navigate to dashboard route
@@ -272,39 +387,39 @@ receiver__gets: transferPayload.receiverDenominationRows?.map(row => {
   // }, []);
 
   const handleDashboard = useCallback(() => {
-  // Reset receiver info
-  setReceiverInfo({
-    firstName: '',
-    lastName: '',
-    country: 'Spain',
-    city: '',
-    deliveryMethod: 'BANK_DEPOSIT',
-    bankName: '',
-    accountNumber: '',
-    senderCurrency: 'USD',
-    receiverCurrency: 'EUR',
-  });
+    // Reset receiver info
+    setReceiverInfo({
+      firstName: '',
+      lastName: '',
+      country: 'Spain',
+      city: '',
+      deliveryMethod: 'BANK_DEPOSIT',
+      bankName: '',
+      accountNumber: '',
+      senderCurrency: 'USD',
+      receiverCurrency: 'EUR',
+    });
 
-  // Reset summary
-  setSummary({
-    sendAmount: 1000.00,
-    currency: 'USD',
-    fee: TRANSFER_FEE,
-    exchangeRate: 0.02,
-    receiverGets: 920.00,
-    receiverCurrency: 'EUR',
-    exchangeType: 'BUY',
-  });
+    // Reset summary
+    setSummary({
+      sendAmount: 1000.00,
+      currency: 'USD',
+      fee: TRANSFER_FEE,
+      exchangeRate: 0.02,
+      receiverGets: 920.00,
+      receiverCurrency: 'EUR',
+      exchangeType: 'BUY',
+    });
 
-  // Clear transfer data
-  setTransferPayload(null);
-  setTransactionId(null);
-  setApiResponseDoc(null);
+    // Clear transfer data
+    setTransferPayload(null);
+    setTransactionId(null);
+    setApiResponseDoc(null);
 
-  // Go back to form step
-  setCurrentStep(Step.DETAILS);
+    // Go back to form step
+    setCurrentStep(Step.DETAILS);
 
-}, []);
+  }, []);
 
   const handleDownloadReceipt = useCallback(() => {
     // TODO: generate PDF receipt
@@ -328,16 +443,16 @@ receiver__gets: transferPayload.receiverDenominationRows?.map(row => {
     }
 
     if (currentStep === Step.PAYMENT) {
-      
+
       return (
         <TransferSuccess
-            data={transferPayload}
-            apiDoc={apiResponseDoc}
-            transactionId={transactionId}
-            estimatedArrival="Today by 5:00 PM"
-            onDashboard={handleDashboard}
-            onDownloadReceipt={handleDownloadReceipt}
-          />
+          data={transferPayload}
+          apiDoc={apiResponseDoc}
+          transactionId={transactionId}
+          estimatedArrival="Today by 5:00 PM"
+          onDashboard={handleDashboard}
+          onDownloadReceipt={handleDownloadReceipt}
+        />
       );
     }
 
@@ -411,46 +526,48 @@ receiver__gets: transferPayload.receiverDenominationRows?.map(row => {
   // );
 
   return (
-  <div className="min-h-screen flex flex-col">
-    <Navbar />
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
 
-    <ExchangeProvider summary={summary}>
-      <main className="flex-grow py-8 px-4 sm:px-6 lg:px-8 xl:px-12">
-        <div className="max-w-7xl mx-auto flex flex-col gap-10">
+      <ExchangeProvider summary={summary}>
+        <main className="flex-grow py-8 px-4 sm:px-6 lg:px-8 xl:px-12">
+          <div className="max-w-7xl mx-auto flex flex-col gap-10">
 
-          <Stepper currentStep={currentStep} />
+            <Stepper currentStep={currentStep} />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
 
-            {/* Main Column */}
-            <div className="lg:col-span-8 flex flex-col gap-10">
-              {currentStep === Step.DETAILS && (
-                <div className="flex flex-col gap-3">
-                  <h1 className="text-gray-900 text-3xl sm:text-5xl font-black tracking-tight leading-none">
-                    Who are you sending{" "}
-                    <span className="text-primary italic">money</span> to?
-                  </h1>
+              {/* Main Column — full width on success page */}
+              <div className={`${currentStep === Step.PAYMENT ? 'lg:col-span-12' : 'lg:col-span-8'} flex flex-col gap-10`}>
+                {currentStep === Step.DETAILS && (
+                  <div className="flex flex-col gap-3">
+                    <h1 className="text-gray-900 text-3xl sm:text-5xl font-black tracking-tight leading-none">
+                      Who are you sending{" "}
+                      <span className="text-primary italic">money</span> to?
+                    </h1>
+                  </div>
+                )}
+
+                {renderStepContent()}
+              </div>
+
+              {/* Sidebar — hidden on success page */}
+              {currentStep !== Step.PAYMENT && (
+                <div className="lg:col-span-4 relative">
+                  <Summary />
                 </div>
               )}
 
-              {renderStepContent()}
             </div>
-
-            {/* Sidebar */}
-            <div className="lg:col-span-4 relative">
-              <Summary />
-            </div>
-
           </div>
-        </div>
-      </main>
-    </ExchangeProvider>
+        </main>
+      </ExchangeProvider>
 
-    <footer className="py-8 px-10 border-t border-gray-100 text-center text-gray-400 text-xs font-bold uppercase tracking-[0.2em]">
-      © 2026 MoneyGram Technologies Inc.
-    </footer>
-  </div>
-);
+      <footer className="py-8 px-10 border-t border-gray-100 text-center text-gray-400 text-xs font-bold uppercase tracking-[0.2em]">
+        © 2026 MoneyGram Technologies Inc.
+      </footer>
+    </div>
+  );
 };
 
 export default MoneyExchange;
