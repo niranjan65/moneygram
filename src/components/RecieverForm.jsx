@@ -104,15 +104,15 @@ const DenominationPanel = ({
   // }, [currency, targetAmount, notes, coins]);
 
   // ✅ After — key includes notes length so it rebuilds when async data loads
-const prevKey = useRef('');
+  const prevKey = useRef('');
 
-useEffect(() => {
-  const key = `${currency}:${targetAmount}:${(notes || []).length}:${(coins || []).length}`;
-  if (prevKey.current !== key) {
-    prevKey.current = key;
-    setRows(buildRows(targetAmount, [...(notes || []), ...(coins || [])]));
-  }
-}, [currency, targetAmount, notes, coins]);
+  useEffect(() => {
+    const key = `${currency}:${targetAmount}:${(notes || []).length}:${(coins || []).length}`;
+    if (prevKey.current !== key) {
+      prevKey.current = key;
+      setRows(buildRows(targetAmount, [...(notes || []), ...(coins || [])]));
+    }
+  }, [currency, targetAmount, notes, coins]);
 
   useEffect(() => { onRowsChange?.(rows); }, [rows]);
 
@@ -333,7 +333,7 @@ const GovernmentIdSection = ({ register, errors, setValue, watch }) => {
 
     try {
       const response = await fetch(
-        `http://192.168.101.182:81/api/resource/Customer/${idNumber}`,
+        `http://182.71.135.110:82/api/resource/Customer/${idNumber}`,
         {
           method: "GET",
           headers: {
@@ -351,7 +351,7 @@ const GovernmentIdSection = ({ register, errors, setValue, watch }) => {
       const result = await response.json();
       const customer = result.data;
 
-      
+
 
       // Autofill form
       setValue("firstName", customer.custom_first_name || "");
@@ -574,8 +574,8 @@ export const ReceiverForm = ({
     },
   });
 
- 
-  
+
+
   const {
     receiverGets,
     sendAmount: ctxSendAmount,
@@ -584,7 +584,7 @@ export const ReceiverForm = ({
     total,
   } = useExchange();
 
-  
+
 
   const roundToNearestFiveCents = (amount) => {
     if (!amount) return 0;
@@ -611,8 +611,8 @@ export const ReceiverForm = ({
     error: rateError,
     rateDate,
     noDataForToday,
-    showUploadModal,    
-    setShowUploadModal,     
+    showUploadModal,
+    setShowUploadModal,
   } = useERPNextRates();
 
 
@@ -684,27 +684,27 @@ export const ReceiverForm = ({
   // }, [useManualRate, manualRate, toCurrency, exchangeType]);
 
   const effectiveRate = useMemo(() => {
-  if (!toCurrency) return null;
+    if (!toCurrency) return null;
 
-  console.log("toooo currency", toCurrency)
+    console.log("toooo currency", toCurrency)
 
-  if (useManualRate) {
-    const m = parseFloat(manualRate);
-    return !isNaN(m) && m > 0 ? m : null;
-  }
+    if (useManualRate) {
+      const m = parseFloat(manualRate);
+      return !isNaN(m) && m > 0 ? m : null;
+    }
 
-  if (exchangeType === "SELL") {
-    // You buy foreign
-    return toCurrency.sellingRate ?? null;
-  }
+    if (exchangeType === "SELL") {
+      // You buy foreign
+      return toCurrency.sellingRate ?? null;
+    }
 
-  if (exchangeType === "BUY") {
-    // You sell foreign
-    return toCurrency.buyingRate ?? null;
-  }
+    if (exchangeType === "BUY") {
+      // You sell foreign
+      return toCurrency.buyingRate ?? null;
+    }
 
-  return null;
-}, [toCurrency, exchangeType, useManualRate, manualRate]);
+    return null;
+  }, [toCurrency, exchangeType, useManualRate, manualRate]);
 
   // const exchangePreview = useMemo(() => {
   //   if (!effectiveRate || !sendAmount) return null;
@@ -726,74 +726,74 @@ export const ReceiverForm = ({
 
   // console.log("Exchange rate value", exchangePreview)
 
-//   const exchangePreview = useMemo(() => {
+  //   const exchangePreview = useMemo(() => {
 
-//   // 🔒 1️⃣ Guard against invalid rate
-//   if (!effectiveRate || effectiveRate <= 0) return null;
+  //   // 🔒 1️⃣ Guard against invalid rate
+  //   if (!effectiveRate || effectiveRate <= 0) return null;
 
-//   // 🔒 2️⃣ Guard against invalid amount
-//   if (!sendAmount || sendAmount <= 0) return null;
+  //   // 🔒 2️⃣ Guard against invalid amount
+  //   if (!sendAmount || sendAmount <= 0) return null;
 
-//   let receiverAmount = 0;
+  //   let receiverAmount = 0;
 
-//   if (exchangeType === "SELL") {
-//     // Customer gives foreign → receives FJD
-//     receiverAmount = sendAmount * effectiveRate;
-//   }
+  //   if (exchangeType === "SELL") {
+  //     // Customer gives foreign → receives FJD
+  //     receiverAmount = sendAmount * effectiveRate;
+  //   }
 
-//   if (exchangeType === "BUY") {
-//     // Customer gives FJD → receives foreign
-//     receiverAmount = sendAmount / effectiveRate;
-//   }
+  //   if (exchangeType === "BUY") {
+  //     // Customer gives FJD → receives foreign
+  //     receiverAmount = sendAmount / effectiveRate;
+  //   }
 
-//   // 🔒 3️⃣ Safe rounding
-//   receiverAmount =
-//     Math.round((receiverAmount + Number.EPSILON) * 100) / 100;
+  //   // 🔒 3️⃣ Safe rounding
+  //   receiverAmount =
+  //     Math.round((receiverAmount + Number.EPSILON) * 100) / 100;
 
-//   return {
-//     rate: effectiveRate,
-//     rawAmount: receiverAmount,
-//     formatted: receiverAmount.toLocaleString(undefined, {
-//       minimumFractionDigits: 2,
-//       maximumFractionDigits: 2,
-//     }),
-//   };
+  //   return {
+  //     rate: effectiveRate,
+  //     rawAmount: receiverAmount,
+  //     formatted: receiverAmount.toLocaleString(undefined, {
+  //       minimumFractionDigits: 2,
+  //       maximumFractionDigits: 2,
+  //     }),
+  //   };
 
-// }, [effectiveRate, sendAmount, exchangeType]);
+  // }, [effectiveRate, sendAmount, exchangeType]);
 
   const exchangePreview = useMemo(() => {
 
-  if (!effectiveRate || effectiveRate <= 0) return null;
-  if (!sendAmount || sendAmount <= 0) return null;
+    if (!effectiveRate || effectiveRate <= 0) return null;
+    if (!sendAmount || sendAmount <= 0) return null;
 
-  let receiverAmount = 0;
+    let receiverAmount = 0;
 
-  if (exchangeType === "BUY") {
-    // Customer gives FJD → gets foreign
+    if (exchangeType === "BUY") {
+      // Customer gives FJD → gets foreign
 
-    console.log("send amount", sendAmount)
-    console.log("effective rate", effectiveRate)
-    receiverAmount = sendAmount * effectiveRate;
-  }
+      console.log("send amount", sendAmount)
+      console.log("effective rate", effectiveRate)
+      receiverAmount = sendAmount * effectiveRate;
+    }
 
-  if (exchangeType === "SELL") {
-    // Customer gives foreign → gets FJD
-    receiverAmount = sendAmount * effectiveRate;
-  }
+    if (exchangeType === "SELL") {
+      // Customer gives foreign → gets FJD
+      receiverAmount = sendAmount * effectiveRate;
+    }
 
-  receiverAmount =
-    Math.round((receiverAmount + Number.EPSILON) * 100) / 100;
+    receiverAmount =
+      Math.round((receiverAmount + Number.EPSILON) * 100) / 100;
 
-  return {
-    rate: effectiveRate,
-    rawAmount: receiverAmount,
-    formatted: receiverAmount.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }),
-  };
+    return {
+      rate: effectiveRate,
+      rawAmount: receiverAmount,
+      formatted: receiverAmount.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+    };
 
-}, [effectiveRate, sendAmount, exchangeType]);
+  }, [effectiveRate, sendAmount, exchangeType]);
 
   const watchedCountry = watch('country');
 
@@ -848,175 +848,175 @@ export const ReceiverForm = ({
   console.log("Sender info", senderInfo)
   console.log("Receiver Info", receiverInfo)
 
-//   const onSubmit = (data) => {
-//     if (!sendAmount || sendAmount <= 0) {
-//       setSendAmountError('Please enter a valid send amount');
-//       return;
-//     }
+  //   const onSubmit = (data) => {
+  //     if (!sendAmount || sendAmount <= 0) {
+  //       setSendAmountError('Please enter a valid send amount');
+  //       return;
+  //     }
 
-//      // ✅ Block submission if no rates available
-//   if (!effectiveRate || effectiveRate <= 0) {
-//     return;
-//   }
+  //      // ✅ Block submission if no rates available
+  //   if (!effectiveRate || effectiveRate <= 0) {
+  //     return;
+  //   }
 
-//     if (useManualRate && (!manualRate || parseFloat(manualRate) <= 0)) {
-//       return;
-//     }
-//     setSendAmountError('');
+  //     if (useManualRate && (!manualRate || parseFloat(manualRate) <= 0)) {
+  //       return;
+  //     }
+  //     setSendAmountError('');
 
-//     // onContinue?.({
-//     //   ...data,
-//     //   notes: receiverInfo?.notes,
-//     //   notes_name: receiverInfo?.notes_name,
-//     //   coins: receiverInfo?.coins,
-//     //   coins_name: receiverInfo?.coins_name,
-//     //   sendAmount,
-//     //   senderCurrency: FJD.code,
-//     //   receiverCurrency: toCurrency?.code ?? '',
-//     //   exchangeRate: exchangePreview?.rate ?? 0,
-//     //   receiverGets: exchangePreview?.rawAmount ?? 0,
-//     //   rateSource: useManualRate ? 'manual' : 'erpnext',
-//     //   rateDate: useManualRate ? null : rateDate,
-//     //   senderDenominationRows: senderDenomRowsRef.current
-//     //     .filter(r => r.count > 0)
-//     //     .map(r => ({ denomination_value: r.denom, denomination_type: r.denom >= 1 ? 'Note' : 'Coin', count: r.count, subtotal: r.denom * r.count })),
-//     //   receiverDenominationRows: receiverDenomRowsRef.current
-//     //     .filter(r => r.count > 0)
-//     //     .map(r => ({ denomination_value: r.denom, denomination_type: r.denom >= 1 ? 'Note' : 'Coin', count: r.count, subtotal: r.denom * r.count })),
-//     // });
-
-
+  //     // onContinue?.({
+  //     //   ...data,
+  //     //   notes: receiverInfo?.notes,
+  //     //   notes_name: receiverInfo?.notes_name,
+  //     //   coins: receiverInfo?.coins,
+  //     //   coins_name: receiverInfo?.coins_name,
+  //     //   sendAmount,
+  //     //   senderCurrency: FJD.code,
+  //     //   receiverCurrency: toCurrency?.code ?? '',
+  //     //   exchangeRate: exchangePreview?.rate ?? 0,
+  //     //   receiverGets: exchangePreview?.rawAmount ?? 0,
+  //     //   rateSource: useManualRate ? 'manual' : 'erpnext',
+  //     //   rateDate: useManualRate ? null : rateDate,
+  //     //   senderDenominationRows: senderDenomRowsRef.current
+  //     //     .filter(r => r.count > 0)
+  //     //     .map(r => ({ denomination_value: r.denom, denomination_type: r.denom >= 1 ? 'Note' : 'Coin', count: r.count, subtotal: r.denom * r.count })),
+  //     //   receiverDenominationRows: receiverDenomRowsRef.current
+  //     //     .filter(r => r.count > 0)
+  //     //     .map(r => ({ denomination_value: r.denom, denomination_type: r.denom >= 1 ? 'Note' : 'Coin', count: r.count, subtotal: r.denom * r.count })),
+  //     // });
 
 
-//     onContinue?.({
-//   ...data,
 
-//   // ✅ Sender's denomination metadata (for senderDenominationRows lookup)
-//   sender_notes:       senderInfo?.notes,
-//   sender_notes_name:  senderInfo?.notes_name,
-//   sender_coins:       senderInfo?.coins,
-//   sender_coins_name:  senderInfo?.coins_name,
 
-//   // ✅ Receiver's denomination metadata (for receiverDenominationRows lookup)
-//   notes:       receiverInfo?.notes,
-//   notes_name:  receiverInfo?.notes_name,
-//   coins:       receiverInfo?.coins,
-//   coins_name:  receiverInfo?.coins_name,
+  //     onContinue?.({
+  //   ...data,
 
-//   sendAmount,
-//   senderCurrency:   FJD.code,
-//   receiverCurrency: toCurrency?.code ?? '',
-//   exchangeRate:     exchangePreview?.rate ?? 0,
-//   receiverGets:     exchangePreview?.rawAmount ?? 0,
-//   rateSource:       useManualRate ? 'manual' : 'erpnext',
-//   rateDate:         useManualRate ? null : rateDate,
+  //   // ✅ Sender's denomination metadata (for senderDenominationRows lookup)
+  //   sender_notes:       senderInfo?.notes,
+  //   sender_notes_name:  senderInfo?.notes_name,
+  //   sender_coins:       senderInfo?.coins,
+  //   sender_coins_name:  senderInfo?.coins_name,
 
-//   senderDenominationRows: senderDenomRowsRef.current
-//     .filter(r => r.count > 0)
-//     .map(r => ({ denomination_value: r.denom, denomination_type: r.denom >= 1 ? 'Note' : 'Coin', count: r.count, subtotal: r.denom * r.count })),
+  //   // ✅ Receiver's denomination metadata (for receiverDenominationRows lookup)
+  //   notes:       receiverInfo?.notes,
+  //   notes_name:  receiverInfo?.notes_name,
+  //   coins:       receiverInfo?.coins,
+  //   coins_name:  receiverInfo?.coins_name,
 
-//   receiverDenominationRows: receiverDenomRowsRef.current
-//     .filter(r => r.count > 0)
-//     .map(r => ({ denomination_value: r.denom, denomination_type: r.denom >= 1 ? 'Note' : 'Coin', count: r.count, subtotal: r.denom * r.count })),
-// });
-//   };
+  //   sendAmount,
+  //   senderCurrency:   FJD.code,
+  //   receiverCurrency: toCurrency?.code ?? '',
+  //   exchangeRate:     exchangePreview?.rate ?? 0,
+  //   receiverGets:     exchangePreview?.rawAmount ?? 0,
+  //   rateSource:       useManualRate ? 'manual' : 'erpnext',
+  //   rateDate:         useManualRate ? null : rateDate,
+
+  //   senderDenominationRows: senderDenomRowsRef.current
+  //     .filter(r => r.count > 0)
+  //     .map(r => ({ denomination_value: r.denom, denomination_type: r.denom >= 1 ? 'Note' : 'Coin', count: r.count, subtotal: r.denom * r.count })),
+
+  //   receiverDenominationRows: receiverDenomRowsRef.current
+  //     .filter(r => r.count > 0)
+  //     .map(r => ({ denomination_value: r.denom, denomination_type: r.denom >= 1 ? 'Note' : 'Coin', count: r.count, subtotal: r.denom * r.count })),
+  // });
+  //   };
 
   const onSubmit = (data) => {
-  if (!sendAmount || sendAmount <= 0) {
-    setSendAmountError('Please enter a valid send amount');
-    return;
-  }
+    if (!sendAmount || sendAmount <= 0) {
+      setSendAmountError('Please enter a valid send amount');
+      return;
+    }
 
-  if (!effectiveRate || effectiveRate <= 0) {
-    return;
-  }
+    if (!effectiveRate || effectiveRate <= 0) {
+      return;
+    }
 
-  if (useManualRate && (!manualRate || parseFloat(manualRate) <= 0)) {
-    return;
-  }
+    if (useManualRate && (!manualRate || parseFloat(manualRate) <= 0)) {
+      return;
+    }
 
-  setSendAmountError('');
+    setSendAmountError('');
 
-  // ── Determine denomination type by checking which array it belongs to ──────
-  const getDenomType = (denom, notesArr = [], coinsArr = []) => {
-    if (notesArr.includes(denom)) return 'Note';
-    if (coinsArr.includes(denom)) return 'Coin';
-    return denom >= 1 ? 'Note' : 'Coin'; // fallback
+    // ── Determine denomination type by checking which array it belongs to ──────
+    const getDenomType = (denom, notesArr = [], coinsArr = []) => {
+      if (notesArr.includes(denom)) return 'Note';
+      if (coinsArr.includes(denom)) return 'Coin';
+      return denom >= 1 ? 'Note' : 'Coin'; // fallback
+    };
+
+    onContinue?.({
+      ...data,
+
+      // ── Sender denomination metadata (FJD / base currency) ──────────────────
+      sender_notes: senderInfo?.notes ?? [],
+      sender_notes_name: senderInfo?.notes_name ?? [],
+      sender_coins: senderInfo?.coins ?? [],
+      sender_coins_name: senderInfo?.coins_name ?? [],
+
+      // ── Receiver denomination metadata (foreign currency) ───────────────────
+      notes: receiverInfo?.notes ?? [],
+      notes_name: receiverInfo?.notes_name ?? [],
+      coins: receiverInfo?.coins ?? [],
+      coins_name: receiverInfo?.coins_name ?? [],
+
+      // ── Exchange info ────────────────────────────────────────────────────────
+      sendAmount,
+      senderCurrency: FJD.code,
+      receiverCurrency: toCurrency?.code ?? '',
+      exchangeRate: exchangePreview?.rate ?? 0,
+      receiverGets: exchangePreview?.rawAmount ?? 0,
+      rateSource: useManualRate ? 'manual' : 'erpnext',
+      rateDate: useManualRate ? null : rateDate,
+
+      // ── Sender rows — type resolved against senderInfo arrays ───────────────
+      senderDenominationRows: senderDenomRowsRef.current
+        .filter(r => r.count > 0)
+        .map(r => ({
+          denomination_value: r.denom,
+          denomination_type: getDenomType(r.denom, senderInfo?.notes, senderInfo?.coins),
+          count: r.count,
+          subtotal: r.denom * r.count,
+        })),
+
+      // ── Receiver rows — type resolved against receiverInfo arrays ────────────
+      receiverDenominationRows: receiverDenomRowsRef.current
+        .filter(r => r.count > 0)
+        .map(r => ({
+          denomination_value: r.denom,
+          denomination_type: getDenomType(r.denom, receiverInfo?.notes, receiverInfo?.coins),
+          count: r.count,
+          subtotal: r.denom * r.count,
+        })),
+    });
   };
-
-  onContinue?.({
-    ...data,
-
-    // ── Sender denomination metadata (FJD / base currency) ──────────────────
-    sender_notes:      senderInfo?.notes      ?? [],
-    sender_notes_name: senderInfo?.notes_name ?? [],
-    sender_coins:      senderInfo?.coins      ?? [],
-    sender_coins_name: senderInfo?.coins_name ?? [],
-
-    // ── Receiver denomination metadata (foreign currency) ───────────────────
-    notes:      receiverInfo?.notes      ?? [],
-    notes_name: receiverInfo?.notes_name ?? [],
-    coins:      receiverInfo?.coins      ?? [],
-    coins_name: receiverInfo?.coins_name ?? [],
-
-    // ── Exchange info ────────────────────────────────────────────────────────
-    sendAmount,
-    senderCurrency:   FJD.code,
-    receiverCurrency: toCurrency?.code ?? '',
-    exchangeRate:     exchangePreview?.rate ?? 0,
-    receiverGets:     exchangePreview?.rawAmount ?? 0,
-    rateSource:       useManualRate ? 'manual' : 'erpnext',
-    rateDate:         useManualRate ? null : rateDate,
-
-    // ── Sender rows — type resolved against senderInfo arrays ───────────────
-    senderDenominationRows: senderDenomRowsRef.current
-      .filter(r => r.count > 0)
-      .map(r => ({
-        denomination_value: r.denom,
-        denomination_type:  getDenomType(r.denom, senderInfo?.notes, senderInfo?.coins),
-        count:              r.count,
-        subtotal:           r.denom * r.count,
-      })),
-
-    // ── Receiver rows — type resolved against receiverInfo arrays ────────────
-    receiverDenominationRows: receiverDenomRowsRef.current
-      .filter(r => r.count > 0)
-      .map(r => ({
-        denomination_value: r.denom,
-        denomination_type:  getDenomType(r.denom, receiverInfo?.notes, receiverInfo?.coins),
-        count:              r.count,
-        subtotal:           r.denom * r.count,
-      })),
-  });
-};
 
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 sm:p-10">
 
-       {/* ✅ 404 Upload Modal */}
-    {showUploadModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
-          <div className="text-4xl mb-4">📂</div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">
-            No Exchange Rates Found
-          </h2>
-          <p className="text-gray-500 text-sm mb-6">
-            Upload exchange rates in{' '}
-            <span className="font-medium text-gray-700">Currency Master Data</span>{' '}
-            first before proceeding.
-          </p>
-          <button
-            type="button"
-            onClick={() => setShowUploadModal(false)}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-6 py-2 rounded-lg transition"
-          >
-            OK, Got it
-          </button>
+      {/* ✅ 404 Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
+            <div className="text-4xl mb-4">📂</div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">
+              No Exchange Rates Found
+            </h2>
+            <p className="text-gray-500 text-sm mb-6">
+              Upload exchange rates in{' '}
+              <span className="font-medium text-gray-700">Currency Master Data</span>{' '}
+              first before proceeding.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowUploadModal(false)}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-6 py-2 rounded-lg transition"
+            >
+              OK, Got it
+            </button>
+          </div>
         </div>
-      </div>
-    )}
+      )}
 
 
 
@@ -1049,6 +1049,97 @@ export const ReceiverForm = ({
         </div> */}
 
         <div className="h-px bg-gray-100" />
+
+
+
+        {/* Name fields */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[
+            ['firstName', 'First Name', 'e.g. Maria', { required: 'First name is required', minLength: { value: 2, message: 'Too short' } }],
+            ['lastName', 'Last Name', 'e.g. Garcia', { required: 'Last name is required', minLength: { value: 2, message: 'Too short' } }],
+          ].map(([name, label, ph, rules]) => (
+            <div key={name} className="flex flex-col gap-2.5">
+              <label className="text-xs font-black text-gray-500 uppercase tracking-widest">
+                {label} <span className="text-red-400">*</span>
+              </label>
+              <input type="text" placeholder={ph} {...register(name, rules)} className={fieldCls(errors[name])} />
+              <ErrorMsg message={errors[name]?.message} />
+            </div>
+          ))}
+        </div>
+
+        {/* Country & City */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* <div className="flex flex-col gap-2.5">
+            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">
+              Destination Country <span className="text-red-400">*</span>
+            </label>
+            <div className="relative group">
+              <select
+                {...register('country', { required: 'Please select a country' })}
+                className={`${fieldCls(errors.country)} appearance-none pl-12 pr-12`}>
+                {SUPPORTED_COUNTRIES.map(c => <option key={c}>{c}</option>)}
+              </select>
+              <div style={{ color: PRIMARY }} className="pointer-events-none absolute inset-y-0 left-0 flex items-center px-4"><Globe size={20} /></div>
+              <div style={{ color: PRIMARY }} className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 group-hover:scale-110 transition-transform"><ChevronDown size={20} /></div>
+            </div>
+            <ErrorMsg message={errors.country?.message} />
+          </div> */}
+
+          <div className="flex flex-col gap-2.5">
+            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">
+              Destination Country <span className="text-red-400">*</span>
+            </label>
+
+            <div className="relative group">
+              {countryError ? (
+                <div className="text-red-500 text-sm font-bold">
+                  Failed to load countries
+                </div>
+              ) : countryLoading ? (
+                <div className="h-14 bg-gray-100 animate-pulse rounded-xl" />
+              ) : (
+                <select
+                  {...register('country', { required: 'Please select a country' })}
+                  className={`${fieldCls(errors.country)} appearance-none pl-12 pr-12`}
+                >
+                  <option value="">Select Country</option>
+                  {countries.map((country) => (
+                    <option key={country.name} value={country.name}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              <div
+                style={{ color: PRIMARY }}
+                className="pointer-events-none absolute inset-y-0 left-0 flex items-center px-4"
+              >
+                <Globe size={20} />
+              </div>
+
+              <div
+                style={{ color: PRIMARY }}
+                className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 group-hover:scale-110 transition-transform"
+              >
+                <ChevronDown size={20} />
+              </div>
+            </div>
+
+            <ErrorMsg message={errors.country?.message} />
+          </div>
+          <div className="flex flex-col gap-2.5">
+            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">
+              City / Province <span className="text-red-400">*</span>
+            </label>
+            <input type="text" placeholder="e.g. Madrid"
+              {...register('city', { required: 'City is required' })}
+              className={fieldCls(errors.city)} />
+            <ErrorMsg message={errors.city?.message} />
+          </div>
+        </div>
+
 
         <div className="flex flex-col gap-2.5">
           <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
@@ -1176,94 +1267,6 @@ export const ReceiverForm = ({
 
         </div>
 
-        {/* Name fields */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[
-            ['firstName', 'First Name', 'e.g. Maria', { required: 'First name is required', minLength: { value: 2, message: 'Too short' } }],
-            ['lastName', 'Last Name', 'e.g. Garcia', { required: 'Last name is required', minLength: { value: 2, message: 'Too short' } }],
-          ].map(([name, label, ph, rules]) => (
-            <div key={name} className="flex flex-col gap-2.5">
-              <label className="text-xs font-black text-gray-500 uppercase tracking-widest">
-                {label} <span className="text-red-400">*</span>
-              </label>
-              <input type="text" placeholder={ph} {...register(name, rules)} className={fieldCls(errors[name])} />
-              <ErrorMsg message={errors[name]?.message} />
-            </div>
-          ))}
-        </div>
-
-        {/* Country & City */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* <div className="flex flex-col gap-2.5">
-            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">
-              Destination Country <span className="text-red-400">*</span>
-            </label>
-            <div className="relative group">
-              <select
-                {...register('country', { required: 'Please select a country' })}
-                className={`${fieldCls(errors.country)} appearance-none pl-12 pr-12`}>
-                {SUPPORTED_COUNTRIES.map(c => <option key={c}>{c}</option>)}
-              </select>
-              <div style={{ color: PRIMARY }} className="pointer-events-none absolute inset-y-0 left-0 flex items-center px-4"><Globe size={20} /></div>
-              <div style={{ color: PRIMARY }} className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 group-hover:scale-110 transition-transform"><ChevronDown size={20} /></div>
-            </div>
-            <ErrorMsg message={errors.country?.message} />
-          </div> */}
-
-          <div className="flex flex-col gap-2.5">
-            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">
-              Destination Country <span className="text-red-400">*</span>
-            </label>
-
-            <div className="relative group">
-              {countryError ? (
-                <div className="text-red-500 text-sm font-bold">
-                  Failed to load countries
-                </div>
-              ) : countryLoading ? (
-                <div className="h-14 bg-gray-100 animate-pulse rounded-xl" />
-              ) : (
-                <select
-                  {...register('country', { required: 'Please select a country' })}
-                  className={`${fieldCls(errors.country)} appearance-none pl-12 pr-12`}
-                >
-                  <option value="">Select Country</option>
-                  {countries.map((country) => (
-                    <option key={country.name} value={country.name}>
-                      {country.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-
-              <div
-                style={{ color: PRIMARY }}
-                className="pointer-events-none absolute inset-y-0 left-0 flex items-center px-4"
-              >
-                <Globe size={20} />
-              </div>
-
-              <div
-                style={{ color: PRIMARY }}
-                className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 group-hover:scale-110 transition-transform"
-              >
-                <ChevronDown size={20} />
-              </div>
-            </div>
-
-            <ErrorMsg message={errors.country?.message} />
-          </div>
-          <div className="flex flex-col gap-2.5">
-            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">
-              City / Province <span className="text-red-400">*</span>
-            </label>
-            <input type="text" placeholder="e.g. Madrid"
-              {...register('city', { required: 'City is required' })}
-              className={fieldCls(errors.city)} />
-            <ErrorMsg message={errors.city?.message} />
-          </div>
-        </div>
-
         <div className="h-px bg-gray-100" />
 
         {/* Denomination Panels */}
@@ -1334,7 +1337,7 @@ export const ReceiverForm = ({
                 // targetAmount={exchangePreview?.rawAmount ?? 0}
                 targetAmount={
                   exchangeType === "BUY"
-                    ? exchangePreview?.rawAmount ?? 0
+                    ? sendAmount
                     : roundedTotal
                 }
                 onRowsChange={rows => {
@@ -1353,12 +1356,12 @@ export const ReceiverForm = ({
         </div>
 
         {/* Just above the actions div */}
-{(!effectiveRate || effectiveRate <= 0) && !ratesLoading && (
-  <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-bold">
-    <AlertCircle size={15} />
-    Exchange rates for today are not available. Please upload rates in Currency Master Data before proceeding.
-  </div>
-)}
+        {(!effectiveRate || effectiveRate <= 0) && !ratesLoading && (
+          <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-bold">
+            <AlertCircle size={15} />
+            Exchange rates for today are not available. Please upload rates in Currency Master Data before proceeding.
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex items-center justify-between pt-4">
