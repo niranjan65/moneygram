@@ -1,58 +1,13 @@
 // //transferCalculator.js
-// export const calculateTransfer = ({
-//   sendAmount,
-//   fromCurrency,
-//   toCurrency,
-//   rates,
-//   gstPercent, 
-// }) => {
-//   const amount = parseFloat(sendAmount);
-
-//   if (!amount || !rates[fromCurrency]?.[toCurrency]) {
-//     return {
-//       serviceFee: 0,
-//       subTotal: 0,
-//       gst: 0,
-//       totalToPay: 0,
-//       receiveAmount: 0,
-//     };
-//   }
-
-//   const rate = rates[fromCurrency][toCurrency];
-
-//   // 1️⃣ Service Fee (2%)
-//   const serviceFee = amount * 0.02;
-
-//   // 2️⃣ Subtotal
-//   const subTotal = amount + serviceFee;
-
-//   // 3️⃣ GST (Dynamic from ERP)
-//   const gst = subTotal * (gstPercent / 100);
-
-//   // 4️⃣ Total To Pay
-//   const totalToPay = subTotal + gst;
-
-//   // 5️⃣ Receiver Gets
-//   const receiveAmount = amount * rate;
-
-//   return {
-//     serviceFee: serviceFee.toFixed(2),
-//     subTotal: subTotal.toFixed(2),
-//     gst: gst.toFixed(2),
-//     totalToPay: totalToPay.toFixed(2),
-//     receiveAmount: receiveAmount.toFixed(2),
-//   };
-// };
 export const calculateTransfer = ({
   sendAmount,
-  fromCurrency,
   toCurrency,
-  rates,
+  erpRates,
   gstPercent,
 }) => {
   const amount = parseFloat(sendAmount);
 
-  if (!amount || !rates[fromCurrency]?.[toCurrency]) {
+  if (!amount) {
     return {
       serviceFee: 0,
       subTotal: 0,
@@ -62,21 +17,28 @@ export const calculateTransfer = ({
     };
   }
 
-  const rate = rates[fromCurrency][toCurrency];
+  const toCurrencyObj = erpRates.find(
+    (c) => c.currency_name === toCurrency
+  );
 
-  // 1️⃣ Receiver Gets (conversion first)
-  const receiveAmount = amount * rate;
+  if (!toCurrencyObj) {
+    return {
+      serviceFee: 0,
+      subTotal: 0,
+      gst: 0,
+      totalToPay: 0,
+      receiveAmount: 0,
+    };
+  }
 
-  // 2️⃣ Service Fee (2% of receive amount)
+  const buyingRate = Number(toCurrencyObj.buying_price);
+
+  // ✅ FJD base logic
+  const receiveAmount = amount * buyingRate;
+
   const serviceFee = receiveAmount * 0.02;
-
-  // 3️⃣ GST (only on service fee)
   const gst = serviceFee * (gstPercent / 100);
-
-  // 4️⃣ Subtotal (Send Amount + Service Fee)
   const subTotal = amount + serviceFee;
-
-  // 5️⃣ Total To Pay (Send + Fee + GST)
   const totalToPay = amount + serviceFee + gst;
 
   return {

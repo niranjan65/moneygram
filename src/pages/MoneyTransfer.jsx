@@ -4,6 +4,7 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import Select from "react-select";
 import { getNames } from "country-list";
+import { getExchangeRates } from "../services/exchangeRateService";
 import FormInput from "../components/FormInput";
 import { calculateTransfer } from "../utils/transferCalculator";
 import { validateStepOne } from "../utils/validateStepOne";
@@ -49,9 +50,9 @@ const MoneyTransfer = () => {
   const [receiverAccountNumber, setReceiverAccountNumber] = useState("");
   const [receiverSwiftCode, setReceiverSwiftCode] = useState("");
 
-  const [receiverDocType, setReceiverDocType] = useState("");
-  const [receiverDocNumber, setReceiverDocNumber] = useState("");
-  const [receiverDocFile, setReceiverDocFile] = useState(null);
+  // const [receiverDocType, setReceiverDocType] = useState("");
+  // const [receiverDocNumber, setReceiverDocNumber] = useState("");
+  // const [receiverDocFile, setReceiverDocFile] = useState(null);
 
   const [senderOtherDocType, setSenderOtherDocType] = useState("");
 const [receiverOtherDocType, setReceiverOtherDocType] = useState("");
@@ -64,9 +65,13 @@ const [receiverFileName, setReceiverFileName] = useState("");
   // AMOUNT
   // ======================
   const [sendAmount, setSendAmount] = useState("");
-  const [fromCurrency, setFromCurrency] = useState("USD");
+  // const [fromCurrency, setFromCurrency] = useState("USD");
+  const [fromCurrency] = useState("FJD"); 
   const [toCurrency, setToCurrency] = useState("EUR");
   const [gstRate, setGstRate] = useState(0);
+
+  const [erpCurrencies, setErpCurrencies] = useState([]);
+  const [erpRates, setErpRates] = useState([]);
 
   const countryOptions = getNames().map((country) => ({
     label: country,
@@ -127,17 +132,25 @@ const [receiverFileName, setReceiverFileName] = useState("");
   fetchGST();
 }, []);
 
+useEffect(() => {
+  const fetchCurrencies = async () => {
+    try {
+      const data = await getExchangeRates();
 
+      setErpRates(data); 
 
-  const STATIC_RATES = {
-    USD: { USD: 1, INR: 83, AUD: 1.5, EUR: 0.92 },
-    INR: { USD: 0.012, INR: 1, AUD: 0.018, EUR: 0.011 },
-    AUD: { USD: 0.67, INR: 55, AUD: 1, EUR: 0.61 },
-    EUR: { USD: 1.09, INR: 90, AUD: 1.63, EUR: 1 },
+      const currencyList = data.map(item => item.currency_name);
+      setErpCurrencies(currencyList);
+
+    } catch (error) {
+      console.error("Failed to load ERP currencies", error);
+    }
   };
 
+  fetchCurrencies();
+}, []);
 
-  const {
+ const {
   serviceFee,
   subTotal,
   gst,
@@ -145,10 +158,9 @@ const [receiverFileName, setReceiverFileName] = useState("");
   receiveAmount,
 } = calculateTransfer({
   sendAmount,
-  fromCurrency,
   toCurrency,
-  rates: STATIC_RATES,
-  gstPercent: gstRate,   
+  erpRates,
+  gstPercent: gstRate,
 });
 
 const stepLabels = {
@@ -207,10 +219,10 @@ const stepLabels = {
     receiverBankName,
     receiverAccountNumber,
     receiverSwiftCode,
-    receiverDocType,
-    receiverOtherDocType,
-    receiverDocNumber,
-    receiverDocFile,
+    // receiverDocType,
+    // receiverOtherDocType,
+    // receiverDocNumber,
+    // receiverDocFile,
   });
 
   if (error) {
@@ -275,9 +287,9 @@ const stepLabels = {
         // ======================
         receiver_full_name: receiverFullName,
         receiver_phone_number: receiverPhone,
-        receiver_doc_type: receiverDocType,
-        receiver_government_id_type: receiverOtherDocType,
-        receiver_document_number: receiverDocNumber,
+        // receiver_doc_type: receiverDocType,
+        // receiver_government_id_type: receiverOtherDocType,
+        // receiver_document_number: receiverDocNumber,
         receiver_email_address: receiverEmail,
         receiver_country: receiverCountry,
         receiver_bank_name: receiverBankName || "",
@@ -361,15 +373,15 @@ const resetForm = () => {
   setReceiverBankName("");
   setReceiverAccountNumber("");
   setReceiverSwiftCode("");
-  setReceiverDocType("");
-  setReceiverDocNumber("");
-  setReceiverDocFile(null);
-  setReceiverOtherDocType("");
+  // setReceiverDocType("");
+  // setReceiverDocNumber("");
+  // setReceiverDocFile(null);
+  // setReceiverOtherDocType("");
   setReceiverFileName("");
 
   // Amount
   setSendAmount("");
-  setFromCurrency("USD");
+  // setFromCurrency("USD");
   setToCurrency("EUR");
 
   // Return to Step 1
@@ -651,15 +663,12 @@ const resetForm = () => {
                       className="flex-1 px-5 py-4 font-semibold outline-none"
                     />
                     <select
-                      value={fromCurrency}
-                      onChange={(e) => setFromCurrency(e.target.value)}
-                      className="px-4 border-l border-gray-200 font-semibold bg-white text-black"
-                    >
-                      <option>USD</option>
-                      <option>INR</option>
-                      <option>AUD</option>
-                      <option>EUR</option>
-                    </select>
+  value="FJD"
+  disabled
+  className="px-4 border-l border-gray-200 font-semibold bg-gray-100 text-black cursor-not-allowed"
+>
+  <option value="FJD">FJD</option>
+</select>
                   </div>
                 </div>
 
@@ -677,15 +686,16 @@ const resetForm = () => {
                       className="flex-1 px-5 py-4 font-semibold bg-gray-50"
                     />
                     <select
-                      value={toCurrency}
-                      onChange={(e) => setToCurrency(e.target.value)}
-                      className="px-4 border-l border-gray-200 font-semibold bg-white text-black"
-                    >
-                      <option>EUR</option>
-                      <option>USD</option>
-                      <option>INR</option>
-                      <option>AUD</option>
-                    </select>
+  value={toCurrency}
+  onChange={(e) => setToCurrency(e.target.value)}
+  className="px-4 border-l border-gray-200 font-semibold bg-white text-black"
+>
+  {erpCurrencies.map((currency) => (
+    <option key={currency} value={currency}>
+      {currency}
+    </option>
+  ))}
+</select>
                   </div>
                 </div>
               </div>
