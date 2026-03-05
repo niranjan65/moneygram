@@ -111,7 +111,7 @@ const [receiverFileName, setReceiverFileName] = useState("");
       );
 
       const result = await response.json();
-      // console.log("GST API FULL RESPONSE:", result);
+      console.log("GST API FULL RESPONSE:", result);
 
       const taxRate =
         result?.message?.taxes?.[0]?.tax_rate ?? 0;
@@ -126,6 +126,8 @@ const [receiverFileName, setReceiverFileName] = useState("");
 
   fetchGST();
 }, []);
+
+
 
   const STATIC_RATES = {
     USD: { USD: 1, INR: 83, AUD: 1.5, EUR: 0.92 },
@@ -613,59 +615,6 @@ const resetForm = () => {
     />
   </div>
 )}
-
-
-      {/* <div className="space-y-6">
-        <h4 className="text-xl font-semibold">Identity Document</h4>
-
-        <Select
-          options={documentOptions}
-          value={documentOptions.find(opt => opt.value === receiverDocType)}
-          onChange={(selected) => {
-            setReceiverDocType(selected.value);
-            if (selected.value !== "Other") {
-              setReceiverOtherDocType("");
-            }
-          }}
-          placeholder="Document Type"
-          styles={customSelectStyles}
-        />
-
-        {receiverDocType === "Government ID" && (
-  <input
-    placeholder="Enter Government ID Type"
-    value={receiverOtherDocType}
-    onChange={(e) => setReceiverOtherDocType(e.target.value)}
-    className={inputStyle}
-  />
-)}
-
-        <input
-          placeholder="Document Number"
-          value={receiverDocNumber}
-          onChange={(e) => setReceiverDocNumber(e.target.value)}
-          className={inputStyle}
-        />
-
-        <div className="flex items-center gap-4">
-          <label className="bg-primary text-white px-6 py-3 rounded-2xl cursor-pointer font-semibold text-sm hover:opacity-90 transition">
-            Choose File
-            <input
-              type="file"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files[0];
-                setReceiverDocFile(file);
-                setReceiverFileName(file ? file.name : "");
-              }}
-            />
-          </label>
-
-          <span className="text-sm font-semibold text-gray-600">
-            {receiverFileName || "No file chosen"}
-          </span>
-        </div>
-      </div> */}
     </div>
 
     <button
