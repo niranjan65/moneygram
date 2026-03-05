@@ -147,7 +147,7 @@ const MoneyExchange = () => {
 
     if (transferPayload.docFile) {
       uploadedFileUrl = await uploadFile(transferPayload.docFile, {
-        isPrivate: 1,
+        isPrivate: 0,
         doctype: "Currency Exchange For Customer",
       });
     }
@@ -457,9 +457,7 @@ const MoneyExchange = () => {
       );
     }
 
-    // Default: DETAILS step (ReceiverForm)
-
-    console.log("current step", currentStep)
+  
     return (
       <>
         <SenderCard sender={senderInfo} />
@@ -543,8 +541,8 @@ const MoneyExchange = () => {
                 {currentStep === Step.DETAILS && (
                   <div className="flex flex-col gap-3">
                     <h1 className="text-gray-900 text-3xl sm:text-5xl font-black tracking-tight leading-none">
-                      Who are you sending{" "}
-                      <span className="text-primary italic">money</span> to?
+                      How much are you exchanging{" "}
+                      <span className="text-primary italic">money ?</span>
                     </h1>
                   </div>
                 )}

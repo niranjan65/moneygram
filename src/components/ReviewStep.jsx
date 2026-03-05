@@ -64,7 +64,7 @@ export const ReviewStep = ({
       {/* Header */}
       <div className="text-center space-y-2">
         <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">
-          Review transfer details
+          Review exchange details
         </h2>
         <p className="text-gray-500">
           Please review the details below before confirming.
@@ -88,12 +88,12 @@ export const ReviewStep = ({
 
           <div className="text-center space-y-2">
             <span className="text-sm uppercase tracking-wider text-gray-500">
-              Recipient Receives
+              Customer Receives
             </span>
 
             <div className="flex items-baseline justify-center gap-2">
               <span className="text-5xl font-extrabold text-gray-900">
-                {fmt(total)} {senderCurrency}
+                {fmt(sendAmount)} {senderCurrency}
               </span>
               
             </div>
@@ -104,7 +104,7 @@ export const ReviewStep = ({
                 style={{ background: `${PRIMARY}22`, color: PRIMARY_DARK }}
               >
                 <TrendingUp size={13} className="mr-1" />
-                Rate: 1 {senderCurrency} = {exchangeRate.toFixed(4)} {receiverCurrency}
+                Rate: 1 {senderCurrency} = {exchangeRate.toFixed(4)} FJD
               </div>
             )}
           </div>
@@ -116,7 +116,7 @@ export const ReviewStep = ({
           {/* Cost Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 pb-6 border-b border-gray-100">
 
-            <div className="space-y-3">
+            {/* <div className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Send Amount</span>
                 <span className="font-bold text-gray-900">
@@ -142,7 +142,7 @@ export const ReviewStep = ({
                   +{fmt(gstAmount)} {senderCurrency}
                 </span>
               </div>
-            </div>
+            </div> */}
 
             {/* <div className="space-y-3">
               <div className="flex justify-between text-sm">
@@ -163,7 +163,7 @@ export const ReviewStep = ({
           </div>
 
           {/* Cash Breakdown */}
-          {isCash && denominationRows.length > 0 && (
+          {/* {isCash && denominationRows.length > 0 && (
             <div className="pb-6 border-b border-gray-100">
               <h3 className="text-xs uppercase tracking-widest text-gray-400 mb-3">
                 Cash Denomination Breakdown
@@ -195,10 +195,10 @@ export const ReviewStep = ({
                 </table>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Arrival Info */}
-          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
+          {/* <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
             <Clock size={18} className="text-blue-600" />
             <div>
               <p className="text-sm font-bold text-blue-900">
@@ -208,7 +208,7 @@ export const ReviewStep = ({
                 Funds are typically available within 24 hours depending on bank processing.
               </p>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Footer */}
@@ -233,7 +233,7 @@ export const ReviewStep = ({
                 background: `linear-gradient(to right, ${PRIMARY}, ${PRIMARY_DARK})`,
               }}
             >
-              Confirm & Send
+              Confirm
               <ArrowRight size={18} />
             </button>
           </div>

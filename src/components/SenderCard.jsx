@@ -92,7 +92,7 @@ export const SenderCard = () => {
       <div className="px-6 py-4 flex items-center justify-between border-b border-gray-50 bg-gray-50/50">
         <h3 className="text-gray-900 font-extrabold text-base flex items-center gap-2">
           <User size={18} className="text-primary" />
-          Forex Teller Information
+          Teller Information
         </h3>
 
         <button className="text-xs font-bold text-primary hover:text-primary/80 flex items-center gap-1 uppercase tracking-wider">
