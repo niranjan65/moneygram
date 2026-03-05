@@ -472,7 +472,8 @@ import { io } from 'socket.io-client';
 import { useExchange } from '../context/ExchangeContext';
 import { InvoiceDocument } from './SalesInvoice';
 
-const socket_server = 'http://182.71.135.110:8079';
+// const socket_server = 'http://182.71.135.110:8079';
+const socket_server = 'http://192.168.101.172:5000';
 const socket = io(socket_server, { transports: ['websocket'] });
 
 // ─── Inline SVG Icons ─────────────────────────────────────────────────────────
