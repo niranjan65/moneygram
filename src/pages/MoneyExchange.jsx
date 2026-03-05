@@ -335,6 +335,7 @@ const MoneyExchange = () => {
           balanced: 0,
 
           exchange_rate: transferPayload.exchangeRate,
+          exchangeType: transferPayload.exchangeType,
           transfer_fee: summary.fee,
           send_amount: transferPayload.sendAmount,
           total_amount: transferPayload.sendAmount + summary.fee,
