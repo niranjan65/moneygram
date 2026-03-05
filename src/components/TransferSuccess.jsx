@@ -725,7 +725,7 @@ export const TransferSuccess = ({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pb-8 border-b border-slate-100">
               <div>
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Transaction ID</p>
-                <p className="font-bold text-slate-800 text-sm">{txnId}</p>
+                <p className="font-bold text-slate-800 text-sm">{invoiceData?.name}</p>
               </div>
               <div>
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Date &amp; Time</p>
@@ -740,13 +740,13 @@ export const TransferSuccess = ({
               </div>
               <div className="md:text-right">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Payment Method</p>
-                <p className="font-medium text-slate-800 text-sm">Wallet Balance</p>
+                <p className="font-medium text-slate-800 text-sm">Cash</p>
               </div>
             </div>
 
             {/* Sender / Receiver */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 py-8">
-              <div className="flex items-start gap-4">
+              {/* <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center flex-shrink-0">
                   <Icon name="person" size={22} />
                 </div>
@@ -755,15 +755,15 @@ export const TransferSuccess = ({
                   <h3 className="text-lg font-bold text-slate-900">{senderName}</h3>
                   <p className="text-sm text-slate-500 mt-0.5">{company}</p>
                 </div>
-              </div>
+              </div> */}
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-lg bg-green-50 text-green-400 flex items-center justify-center flex-shrink-0">
                   <Icon name="person_pin" size={22} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Receiver Details</p>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Customer Details</p>
                   <h3 className="text-lg font-bold text-slate-900">{recipientName}</h3>
-                  <p className="text-sm text-slate-500 mt-0.5">Australia | Cash Pickup</p>
+                  {/* <p className="text-sm text-slate-500 mt-0.5">Australia | Cash Pickup</p> */}
                 </div>
               </div>
             </div>
@@ -803,8 +803,8 @@ export const TransferSuccess = ({
                 <span className="text-sm font-medium text-slate-900">{fmt(taxAmount)} {currency}</span>
               </div>
               <div className="flex justify-between w-60 pt-4 mt-2 border-t border-slate-100">
-                <span className="text-lg font-bold text-slate-900">Grand Total:</span>
-                <span className="text-2xl font-black text-green-400">{fmt(roundedTotal)} {currency}</span>
+                <span className="text-[15px] font-bold text-slate-900">Grand Total:</span>
+                <span className="text-[15px] font-black text-green-400">{fmt(roundedTotal)} {currency}</span>
               </div>
             </div>
           </div>

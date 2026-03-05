@@ -135,9 +135,9 @@ export default function Login() {
 </h2>
 
 
-      <p className="text-gray-500 text-center mb-6">
+      {/* <p className="text-gray-500 text-center mb-6">
         Access your account to manage transfers.
-      </p>
+      </p> */}
 
       {error && (
         <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-lg text-sm">
