@@ -359,6 +359,19 @@ const GovernmentIdSection = ({ register, errors, setValue, watch }) => {
       setValue("country", customer.custom_country || "");
       setValue("city", customer.custom_city || "");
 
+
+      console.log("Customer found...", customer)
+
+      // Show customer image in Passport Photo / Scan section
+      if (customer.image) {
+        const imageUrl = customer.image.startsWith("http")
+          ? customer.image
+          : `http://192.168.101.182:81${customer.image}`;
+        setPreviewUrl(imageUrl);
+        setPreviewFile(null); // not a local file, so clear previewFile
+        setValue("docFile", imageUrl, { shouldValidate: true });
+      }
+
     } catch (error) {
       console.error("Error fetching customer:", error);
     }
@@ -961,7 +974,7 @@ export const ReceiverForm = ({
 
       // ── Exchange info ────────────────────────────────────────────────────────
       sendAmount,
-      senderCurrency: FJD.code,
+      senderCurrency: toCurrency?.code,
       receiverCurrency: toCurrency?.code ?? '',
       exchangeRate: exchangePreview?.rate ?? 0,
       receiverGets: exchangePreview?.rawAmount ?? 0,
@@ -1022,7 +1035,7 @@ export const ReceiverForm = ({
 
       <h3 className="text-gray-900 font-black text-xl mb-8 flex items-center gap-3">
         <UserPlus size={24} style={{ color: PRIMARY }} />
-        Transfer & Receiver Details
+        Customer Details
       </h3>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8" noValidate>
@@ -1088,7 +1101,7 @@ export const ReceiverForm = ({
 
           <div className="flex flex-col gap-2.5">
             <label className="text-xs font-black text-gray-500 uppercase tracking-widest">
-              Destination Country <span className="text-red-400">*</span>
+              Country <span className="text-red-400">*</span>
             </label>
 
             <div className="relative group">
@@ -1175,7 +1188,7 @@ export const ReceiverForm = ({
               <label style={{ color: PRIMARY }} className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
                 <Coins size={14} /> {exchangeType === "SELL"
                   ? `Customer Gives (${toCurrency?.code})`
-                  : `Customer Gets (${toCurrency?.code}) `
+                  : `Customer Gets (${toCurrency?.code ? toCurrency?.code : ''}) `
                 } <span className="text-red-400">*</span>
               </label>
               <input
@@ -1205,11 +1218,11 @@ export const ReceiverForm = ({
             <div className="flex flex-col gap-2.5">
               <label style={{ color: PRIMARY }} className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
                 <Coins size={14} />
-                 {/* {exchangeType == "SELL" ? "You Get" : "Need To Pay"} */}
-                 {exchangeType === "SELL"
-  ? `Customer Receives (${FJD.code})`
-  : `Customer Pays (${FJD.code})`
-}
+                {/* {exchangeType == "SELL" ? "You Get" : "Need To Pay"} */}
+                {exchangeType === "SELL"
+                  ? `Customer Receives (${FJD.code})`
+                  : `Customer Pays (${FJD.code})`
+                }
               </label>
 
               {/* Converted amount */}

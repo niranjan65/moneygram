@@ -36,7 +36,9 @@ export function useERPNextRates() {
           }
         );
 
-         if (response.status === 404) {
+       
+
+         if (response.status === 404 ) {
           setShowUploadModal(true);
           return;
         }
@@ -51,10 +53,11 @@ export function useERPNextRates() {
         
         const result = data.message;
 
-        console.log("Erp rate.....", result)
+        
 
         if (!result || !result.name) {
           setNoDataForToday(true);
+          setShowUploadModal(true)
           setRates({});
           setAvailableCurrencies([]);
           return;
