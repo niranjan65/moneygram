@@ -25,7 +25,7 @@ export function useERPNextRates() {
             headers: {
               "Content-Type": "application/json",
               "Authorization": "token 661457e17b8612a:32a5ddcc5a9c177",
-              "Access-Control-Allow-Origin": "http://localhost:5174",
+              "Access-Control-Allow-Origin": "http://182.71.135.110:8077",
               "Access-Control-Allow-Methods": "POST",
               "Access-Control-Allow-Headers": "*"
             },
