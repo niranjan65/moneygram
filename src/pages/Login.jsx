@@ -5,7 +5,7 @@ import mhlogo from "../assets/mhlogo.png";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 
-const ERPNEXT_BASE_URL = "http://192.168.101.182:81";
+const ERPNEXT_BASE_URL = "http://182.71.135.110:82";
 
 export default function Login() {
   const navigate = useNavigate();

@@ -98,7 +98,7 @@ const [receiverFileName, setReceiverFileName] = useState("");
   const fetchGST = async () => {
     try {
       const response = await fetch(
-        "http://192.168.101.182:81/api/method/moneygram.api.get_tax_template_for_company",
+        "http://182.71.135.110:82/api/method/moneygram.api.get_tax_template_for_company",
         {
           method: "POST",
           headers: {
@@ -304,7 +304,7 @@ const stepLabels = {
     console.log("===================================");
 
     const response = await fetch(
-      "http://192.168.101.182:81/api/method/moneygram.moneygram.api.money_exchange.create_money_transfer",
+      "http://182.71.135.110:82/api/method/moneygram.moneygram.api.money_exchange.create_money_transfer",
       {
         method: "POST",
         headers: {
