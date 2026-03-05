@@ -563,7 +563,7 @@ const MoneyExchange = () => {
       </ExchangeProvider>
 
       <footer className="py-8 px-10 border-t border-gray-100 text-center text-gray-400 text-xs font-bold uppercase tracking-[0.2em]">
-        © 2026 MoneyGram Technologies Inc.
+        © 2026 MoneyGram.
       </footer>
     </div>
   );
