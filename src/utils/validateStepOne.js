@@ -66,13 +66,13 @@ export const validateStepOne = ({
   }
 
   // Receiver Document
-  if (!receiverDocType) return "Please select Receiver Document Type.";
-  if (receiverDocType === "Other" && !receiverOtherDocType)
-    return "Please enter Receiver Custom Document Type.";
-  if (!receiverDocNumber)
-    return "Please enter Receiver Document Number.";
-  if (!receiverDocFile)
-    return "Please upload Receiver Document File.";
+  // if (!receiverDocType) return "Please select Receiver Document Type.";
+  // if (receiverDocType === "Other" && !receiverOtherDocType)
+  //   return "Please enter Receiver Custom Document Type.";
+  // if (!receiverDocNumber)
+  //   return "Please enter Receiver Document Number.";
+  // if (!receiverDocFile)
+  //   return "Please upload Receiver Document File.";
 
   return null; // ✅ everything valid
 };
