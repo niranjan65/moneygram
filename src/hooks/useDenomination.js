@@ -14,7 +14,7 @@
 //         setError(null);
 
 //         const response = await fetch(
-//           "http://182.71.135.110:82/api/method/moneygram.moneygram.api.get_denomination.get_denomination",
+//           "http://192.168.101.182:81/api/method/moneygram.moneygram.api.get_denomination.get_denomination",
 //           {
 //             method: "POST", 
 //             headers: {
@@ -77,7 +77,7 @@
 import { useState, useEffect } from "react";
 
 const API_URL =
-  "http://182.71.135.110:82/api/method/moneygram.moneygram.api.get_denomination.get_denomination";
+  "http://192.168.101.182:81/api/method/moneygram.moneygram.api.get_denomination.get_denomination";
 
 const HEADERS = {
   "Content-Type": "application/json",

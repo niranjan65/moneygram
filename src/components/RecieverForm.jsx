@@ -333,7 +333,7 @@ const GovernmentIdSection = ({ register, errors, setValue, watch }) => {
 
     try {
       const response = await fetch(
-        `http://182.71.135.110:82/api/resource/Customer/${idNumber}`,
+        `http://192.168.101.182:81/api/resource/Customer/${idNumber}`,
         {
           method: "GET",
           headers: {
