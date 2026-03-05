@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 const API_URL =
-  "http://192.168.101.182:81/api/method/frappe.auth.get_logged_user";
+  "http://182.71.135.110:82/api/method/frappe.auth.get_logged_user";
 
 const HEADERS = {
   "Content-Type": "application/json",

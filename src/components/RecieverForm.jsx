@@ -333,7 +333,7 @@ const GovernmentIdSection = ({ register, errors, setValue, watch }) => {
 
     try {
       const response = await fetch(
-        `http://192.168.101.182:81/api/resource/Customer/${idNumber}`,
+        `http://182.71.135.110:82/api/resource/Customer/${idNumber}`,
         {
           method: "GET",
           headers: {
@@ -366,7 +366,7 @@ const GovernmentIdSection = ({ register, errors, setValue, watch }) => {
       if (customer.image) {
         const imageUrl = customer.image.startsWith("http")
           ? customer.image
-          : `http://192.168.101.182:81${customer.image}`;
+          : `http://182.71.135.110:82${customer.image}`;
         setPreviewUrl(imageUrl);
         setPreviewFile(null); // not a local file, so clear previewFile
         setValue("docFile", imageUrl, { shouldValidate: true });
