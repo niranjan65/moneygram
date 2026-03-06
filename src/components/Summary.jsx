@@ -177,6 +177,13 @@ export const Summary = () => {
     exchangeType,
   } = useExchange();
 
+  const roundToNearestFiveCents = (amount) => {
+  if (!amount) return 0;
+  return Math.round(amount / 0.05) * 0.05;
+};
+
+  const roundedTotal = roundToNearestFiveCents(total);
+
   return (
     <div className="sticky top-24 flex flex-col gap-5">
       <div className="rounded-2xl border border-gray-200 bg-white shadow-xl shadow-primary/5 overflow-hidden">
@@ -250,7 +257,7 @@ export const Summary = () => {
             </span>
 
             <div className="text-3xl font-black tracking-tighter">
-              {Math.abs(total).toLocaleString('en-US', {
+              {Math.abs(roundedTotal).toLocaleString('en-US', {
                 style: 'currency',
                 currency: 'FJD',
               })}

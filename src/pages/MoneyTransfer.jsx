@@ -99,11 +99,29 @@ const [senderFileName, setSenderFileName] = useState("");
     setTransferDate(getTodayDate());
   }, []);
 
-//   useEffect(() => {
-//   const fetchGST = async () => {
-//     const rate = await getGSTRate();
-//     setGstRate(rate);
-//   };
+  useEffect(() => {
+  const fetchGST = async () => {
+    try {
+      const response = await fetch(
+        "http://182.71.135.110:82/api/method/moneygram.api.get_tax_template_for_company",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            company: "MH Money Express",
+          }),
+        }
+      );
+
+      const result = await response.json();
+      console.log("GST API FULL RESPONSE:", result);
+
+      const taxRate =
+        result?.message?.taxes?.[0]?.tax_rate ?? 0;
+
+      setGstRate(Number(taxRate));
 
 //   fetchGST();
 // }, []);
@@ -265,8 +283,28 @@ const stepLabels = {
         receiving_amount: Number(receiveAmount),
         sending_currency: fromCurrency,
         receiving_currency: toCurrency,
-        sending_amount_summary: `${sendAmount} ${fromCurrency}`,
-        total_to_pay: `${sendAmount} ${fromCurrency}` ,
+        sending_amount_summary: Number(sendAmount),
+        service_fee: Number(serviceFee),
+        sub_total: Number(subTotal),
+        taxes: Number(gst),
+        total_to_pay: Number(totalToPay),
+      },
+    };
+
+    // 🔥 PRINT FULL PAYLOAD
+    console.log("========== FINAL PAYLOAD ==========");
+    console.log(JSON.stringify(payload, null, 2));
+    console.log("===================================");
+
+    const response = await fetch(
+      "http://182.71.135.110:82/api/method/moneygram.moneygram.api.money_exchange.create_money_transfer",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "token 661457e17b8612a:32a5ddcc5a9c177",
+        },
+        body: JSON.stringify(payload),
       }
     };
 

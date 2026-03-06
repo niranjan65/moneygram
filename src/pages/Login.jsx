@@ -5,7 +5,7 @@ import mhlogo from "../assets/mhlogo.png";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 
-const ERPNEXT_BASE_URL = "http://192.168.101.182:81";
+const ERPNEXT_BASE_URL = "http://182.71.135.110:82";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -135,9 +135,9 @@ export default function Login() {
 </h2>
 
 
-      <p className="text-gray-500 text-center mb-6">
+      {/* <p className="text-gray-500 text-center mb-6">
         Access your account to manage transfers.
-      </p>
+      </p> */}
 
       {error && (
         <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-lg text-sm">
