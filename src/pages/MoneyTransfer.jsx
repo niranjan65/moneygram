@@ -8,6 +8,7 @@ import { getExchangeRates } from "../services/exchangeRateService";
 import FormInput from "../components/FormInput";
 import { calculateTransfer } from "../utils/transferCalculator";
 import { validateStepOne } from "../utils/validateStepOne";
+import {getGSTRate} from "../services/gstService";
 import { useERPFileUpload } from "../hooks/useERPFileUpload";
 
 const MoneyTransfer = () => {
@@ -55,10 +56,10 @@ const MoneyTransfer = () => {
   // const [receiverDocFile, setReceiverDocFile] = useState(null);
 
   const [senderOtherDocType, setSenderOtherDocType] = useState("");
-const [receiverOtherDocType, setReceiverOtherDocType] = useState("");
+// const [receiverOtherDocType, setReceiverOtherDocType] = useState("");
 
 const [senderFileName, setSenderFileName] = useState("");
-const [receiverFileName, setReceiverFileName] = useState("");
+// const [receiverFileName, setReceiverFileName] = useState("");
 
 
   // ======================
@@ -67,7 +68,7 @@ const [receiverFileName, setReceiverFileName] = useState("");
   const [sendAmount, setSendAmount] = useState("");
   // const [fromCurrency, setFromCurrency] = useState("USD");
   const [fromCurrency] = useState("FJD"); 
-  const [toCurrency, setToCurrency] = useState("EUR");
+  const [toCurrency, setToCurrency] = useState("");
   const [gstRate, setGstRate] = useState(0);
 
   const [erpCurrencies, setErpCurrencies] = useState([]);
@@ -101,32 +102,8 @@ const [receiverFileName, setReceiverFileName] = useState("");
 
   useEffect(() => {
   const fetchGST = async () => {
-    try {
-      const response = await fetch(
-        "http://192.168.101.182:81/api/method/moneygram.api.get_tax_template_for_company",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            company: "MH Money Express",
-          }),
-        }
-      );
-
-      const result = await response.json();
-      console.log("GST API FULL RESPONSE:", result);
-
-      const taxRate =
-        result?.message?.taxes?.[0]?.tax_rate ?? 0;
-
-      setGstRate(Number(taxRate));
-
-    } catch (error) {
-      console.error("GST fetch error:", error);
-      setGstRate(0);
-    }
+    const rate = await getGSTRate();
+    setGstRate(rate);
   };
 
   fetchGST();
@@ -137,10 +114,15 @@ useEffect(() => {
     try {
       const data = await getExchangeRates();
 
-      setErpRates(data); 
+      setErpRates(data);
 
       const currencyList = data.map(item => item.currency_name);
       setErpCurrencies(currencyList);
+
+      // ✅ Set first currency as default
+      if (currencyList.length > 0) {
+        setToCurrency(currencyList[0]);
+      }
 
     } catch (error) {
       console.error("Failed to load ERP currencies", error);
@@ -651,26 +633,23 @@ const resetForm = () => {
 
                 {/* You Send */}
                 <div>
-                  <label className="text-xs uppercase font-bold text-gray-400">
-                    You Send
-                  </label>
+  <label className="text-xs uppercase font-bold text-gray-400">
+    You Send
+  </label>
 
-                  <div className="flex border border-gray-200 rounded-2xl overflow-hidden">
-                    <input
-                      type="number"
-                      value={sendAmount}
-                      onChange={(e) => setSendAmount(e.target.value)}
-                      className="flex-1 px-5 py-4 font-semibold outline-none"
-                    />
-                    <select
-  value="FJD"
-  disabled
-  className="px-4 border-l border-gray-200 font-semibold bg-gray-100 text-black cursor-not-allowed"
->
-  <option value="FJD">FJD</option>
-</select>
-                  </div>
-                </div>
+  <div className="flex border border-gray-200 rounded-2xl overflow-hidden">
+    <input
+      type="number"
+      value={sendAmount}
+      onChange={(e) => setSendAmount(e.target.value)}
+      className="flex-1 px-5 py-4 font-semibold outline-none"
+    />
+
+    <div className="px-4 border-l border-gray-200 font-semibold bg-gray-100 text-black flex items-center">
+      FJD 
+    </div>
+  </div>
+</div>
 
                 {/* Receiver Gets */}
                 <div>
