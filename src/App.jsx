@@ -9,6 +9,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import { useEffect } from "react";
 import { io } from "socket.io-client";
+import SoldiLanding from "./components/SoldiLanding";
+import SettingsPanel from "./components/Settingspanel";
 
 function App() {
 
@@ -42,7 +44,8 @@ function App() {
           path="/home"
           element={
             <ProtectedRoute>
-              <Home />
+              {/* <Home /> */}
+              <SoldiLanding />
             </ProtectedRoute>
           }
         />
@@ -79,6 +82,23 @@ function App() {
           element={
             <ProtectedRoute>
               <Contact />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/test"
+          element={
+            <ProtectedRoute>
+              <SettingsPanel />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPanel />
             </ProtectedRoute>
           }
         />

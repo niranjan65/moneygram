@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Stepper } from '../components/Stepper';
 import { Summary } from '../components/Summary';
 import { SenderCard } from '../components/SenderCard';
@@ -8,6 +8,7 @@ import Navbar from '../components/layout/Navbar';
 import { TransferSuccess } from '../components/TransferSuccess';
 import { useERPFileUpload } from '../hooks/useERPFileUpload';
 import { ExchangeProvider } from '../context/ExchangeContext';
+import { useSettings } from '../context/SettingsContext';
 
 const Step = {
   ESTIMATE: 1,
@@ -31,6 +32,8 @@ const MoneyExchange = () => {
     email: 'niranjan.ks@anantdv.com',
     phone: '+91 1234567890',
   });
+
+  const { selectedWarehouse} = useSettings();
 
   const [receiverInfo, setReceiverInfo] = useState({
     firstName: '',
@@ -63,6 +66,8 @@ const MoneyExchange = () => {
   const [apiResponseDoc, setApiResponseDoc] = useState(null);
 
   const handleSummaryChange = useCallback((incoming) => {
+
+    console.log("handle summary change called.........", incoming)
     setSummary(prev => ({
       ...prev,
       sendAmount: incoming.sendAmount,
@@ -139,6 +144,9 @@ const MoneyExchange = () => {
   //   // TODO: trigger your actual payment / API call here
   //   console.log('Confirmed! Proceeding to payment with:', transferPayload);
   // }, [transferPayload]);
+
+  
+  
 
   const handleConfirm = useCallback(async () => {
     if (!transferPayload) return;
@@ -312,6 +320,8 @@ const MoneyExchange = () => {
             };
           }) || [];
       }
+
+      
       const apiPayload = {
         data: {
           verification_id_type: transferPayload.idType,
@@ -342,7 +352,9 @@ const MoneyExchange = () => {
 
           denomination: denominationData,
 
-          receiver__gets: receiverData
+          receiver__gets: receiverData,
+
+          warehouse: selectedWarehouse.warehouse
 
         },
       };
@@ -356,7 +368,7 @@ const MoneyExchange = () => {
             "Content-Type": "application/json",
             "Authorization": "token 661457e17b8612a:32a5ddcc5a9c177"
           },
-          credentials: "include", // VERY IMPORTANT for ERPNext session
+          credentials: "include", 
           body: JSON.stringify(apiPayload),
         }
       );
@@ -365,15 +377,15 @@ const MoneyExchange = () => {
 
       console.log("API Success:", result);
 
-      // Store the created Currency Exchange For Customer doc from API
+      
       const createdDoc = result?.message || result?.data || result;
       setApiResponseDoc(createdDoc);
 
-      // Use the doc name from API as transaction ID, fallback to random
+      
       const txId = createdDoc?.name || `#TRX-${Math.floor(100000 + Math.random() * 900000)}`;
       setTransactionId(txId);
 
-      // Move to payment success screen
+      
       setCurrentStep(Step.PAYMENT);
 
     } catch (error) {
@@ -382,10 +394,7 @@ const MoneyExchange = () => {
     }
   }, [transferPayload, senderInfo.email, summary, transferPayload?.receiverDenominationRows]);
 
-  //  const handleDashboard = useCallback(() => {
-  //   // TODO: navigate to dashboard route
-  //   console.log('Navigate to dashboard');
-  // }, []);
+  
 
   const handleDashboard = useCallback(() => {
     // Reset receiver info
@@ -479,50 +488,6 @@ const MoneyExchange = () => {
     );
   };
 
-  // return (
-  //   <div className="min-h-screen flex flex-col">
-  //     <Navbar />
-
-  //     <main className="flex-grow py-8 px-4 sm:px-6 lg:px-8 xl:px-12">
-  //       <div className="max-w-7xl mx-auto flex flex-col gap-10">
-
-  //         <Stepper currentStep={currentStep} />
-
-  //         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-
-  //           {/* ── Main Form Column ── */}
-  //           <div className="lg:col-span-8 flex flex-col gap-10">
-
-  //             {/* Header — hide on Review/Payment since ReviewStep has its own header */}
-  //             {currentStep === Step.DETAILS && (
-  //               <div className="flex flex-col gap-3">
-  //                 <h1 className="text-gray-900 text-3xl sm:text-5xl font-black tracking-tight leading-none">
-  //                   Who are you sending{' '}
-  //                   <span className="text-primary italic">money</span> to?
-  //                 </h1>
-  //                 <p className="text-primary font-black text-sm uppercase tracking-widest opacity-80">
-  //                   Step {currentStep}: Recipient Information
-  //                 </p>
-  //               </div>
-  //             )}
-
-  //             {renderStepContent()}
-  //           </div>
-
-  //           {/* ── Sidebar ── */}
-  //           <div className="lg:col-span-4 relative">
-  //             <Summary summary={summary} />
-  //           </div>
-
-  //         </div>
-  //       </div>
-  //     </main>
-
-  //     <footer className="py-8 px-10 border-t border-gray-100 text-center text-gray-400 text-xs font-bold uppercase tracking-[0.2em]">
-  //       © 2026 MoneyGram Technologies Inc. • Built for Secure Global Commerce
-  //     </footer>
-  //   </div>
-  // );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -542,7 +507,7 @@ const MoneyExchange = () => {
                   <div className="flex flex-col gap-3">
                     <h1 className="text-gray-900 text-3xl sm:text-5xl font-black tracking-tight leading-none">
                       How much are you exchanging{" "}
-                      <span className="text-primary italic">money ?</span>
+                      <span className="text-[#E00000] italic">money ?</span>
                     </h1>
                   </div>
                 )}

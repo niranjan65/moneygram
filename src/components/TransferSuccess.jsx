@@ -471,6 +471,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { useExchange } from '../context/ExchangeContext';
 import { InvoiceDocument } from './SalesInvoice';
+import { printThermalReceipt } from './ThermalReceiptPrint';
 
 const socket_server = 'http://182.71.135.110:8079';
 // const socket_server = 'http://192.168.101.172:5000';
@@ -636,10 +637,10 @@ export const TransferSuccess = ({
   // ── Loading Screen ────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+      <div className="flex items-center justify-center min-h-screen bg-[#421010]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-14 h-14 rounded-full border-4 border-green-400 border-t-transparent animate-spin" />
-          <p className="text-slate-500 font-semibold text-lg">Waiting for confirmation...</p>
+          <div className="w-14 h-14 rounded-full border-4 border-[#b5f000] border-t-transparent animate-spin" />
+          <p className="text-white/80 font-semibold text-lg tracking-wide">Waiting for confirmation...</p>
         </div>
       </div>
     );
@@ -683,109 +684,85 @@ export const TransferSuccess = ({
   const roundedTotal = finalData?.rounded_total ?? grandTotal;
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans flex flex-col">
-
-      
+    <div className="min-h-screen bg-[url('../assets/redbg.png')] bg-cover relative z-10 font-sans flex flex-col">
 
       {/* ── Main ──────────────────────────────────────────────────────────── */}
       <main className="flex-1 flex justify-center py-10 px-4">
-        <div className="w-full max-w-4xl flex flex-col gap-8">
+        <div className="w-full max-w-4xl flex flex-col gap-8 relative z-20">
 
           {/* ── Hero Section ────────────────────────────────────────────── */}
-          <div className="flex flex-col items-center text-center gap-4">
-            {/* <div className="flex flex-col gap-1.5 w-64">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-green-400 flex items-center gap-1">
-                  <Icon name="check_circle" size={13} />
-                  Completed
-                </span>
-                <span className="text-xs font-medium text-slate-400">100%</span>
-              </div>
-              <div className="w-full h-2 bg-green-100 rounded-full overflow-hidden">
-                <div className="h-full w-full bg-green-400 rounded-full" />
-              </div>
-            </div> */}
-
-            <div className="w-20 h-20 rounded-full bg-green-50 text-green-400 flex items-center justify-center ring-8 ring-green-100 mt-2">
+          <div className="flex flex-col items-center text-center gap-4 mt-6">
+            
+            <div className="w-20 h-20 rounded-full bg-green-500 text-white flex items-center justify-center ring-8 ring-green-500/30 mt-2 shadow-xl shadow-green-500/20">
               <Icon name="check_circle" size={48} />
             </div>
 
-            <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-snug drop-shadow-sm">
               Transfer Successful
             </h1>
-            <p className="text-slate-500 text-lg">
+            <p className="text-gray-700 text-lg font-medium drop-shadow-sm">
               Your transaction has been completed successfully
             </p>
           </div>
 
           {/* ── Details Card ────────────────────────────────────────────── */}
-          <div className="bg-white rounded-xl border border-slate-100 shadow-lg shadow-slate-200/50 p-8">
+          <div className="bg-[#602020] rounded-3xl border border-[#E00000]/30 shadow-2xl p-8 md:p-10 text-white">
 
             {/* Meta grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pb-8 border-b border-slate-100">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pb-8 border-b border-[#E00000]/30">
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Transaction ID</p>
-                <p className="font-bold text-slate-800 text-sm">{invoiceData?.name}</p>
+                <p className="text-xs font-bold text-[#b5f000] uppercase tracking-widest mb-1">Transaction ID</p>
+                <p className="font-bold text-white text-sm tracking-wide">{invoiceData?.name}</p>
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Date &amp; Time</p>
-                <p className="font-medium text-slate-800 text-sm">{txnDate}</p>
+                <p className="text-xs font-bold text-[#b5f000] uppercase tracking-widest mb-1">Date &amp; Time</p>
+                <p className="font-medium text-white/90 text-sm tracking-wide">{txnDate}</p>
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Status</p>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-500 border border-green-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+                <p className="text-xs font-bold text-[#b5f000] uppercase tracking-widest mb-1">Status</p>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#b5f000]/20 text-[#b5f000] border border-[#b5f000]/30 shadow-sm">
+                  <span className="w-2 h-2 rounded-full bg-[#b5f000] inline-block animate-pulse" />
                   {txnStatus}
                 </span>
               </div>
               <div className="md:text-right">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Payment Method</p>
-                <p className="font-medium text-slate-800 text-sm">Cash</p>
+                <p className="text-xs font-bold text-[#b5f000] uppercase tracking-widest mb-1">Payment Method</p>
+                <p className="font-medium text-white/90 text-sm tracking-wide">Cash</p>
               </div>
             </div>
 
-            {/* Sender / Receiver */}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 py-8">
-              {/* <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center flex-shrink-0">
-                  <Icon name="person" size={22} />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Sender Details</p>
-                  <h3 className="text-lg font-bold text-slate-900">{senderName}</h3>
-                  <p className="text-sm text-slate-500 mt-0.5">{company}</p>
-                </div>
-              </div> */}
+              
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-lg bg-green-50 text-green-400 flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-white/10 text-white flex items-center justify-center flex-shrink-0 border border-white/20">
                   <Icon name="person_pin" size={22} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Customer Details</p>
-                  <h3 className="text-lg font-bold text-slate-900">{recipientName}</h3>
-                  {/* <p className="text-sm text-slate-500 mt-0.5">Australia | Cash Pickup</p> */}
+                  <p className="text-xs font-bold text-[#b5f000] uppercase tracking-widest mb-1">Customer Details</p>
+                  <h3 className="text-xl font-black text-white">{recipientName}</h3>
                 </div>
               </div>
             </div>
 
             {/* Items Table */}
-            <div className="rounded-lg border border-slate-100 overflow-hidden">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-slate-50">
+            <div className="rounded-xl border border-[#E00000]/30 overflow-hidden bg-[#421010]/30 custom-scrollbar overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[500px]">
+                <thead className="bg-[#421010]/50 border-b border-[#E00000]/30">
                   <tr>
-                    <th className="px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Item</th>
-                    <th className="px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Qty</th>
-                    <th className="px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Rate</th>
-                    <th className="px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Amount ({currency})</th>
+                    <th className="px-6 py-4 text-xs font-bold text-[#b5f000] uppercase tracking-wider">Item</th>
+                    <th className="px-6 py-4 text-xs font-bold text-[#b5f000] uppercase tracking-wider text-right">Qty</th>
+                    <th className="px-6 py-4 text-xs font-bold text-[#b5f000] uppercase tracking-wider text-right">Rate</th>
+                    <th className="px-6 py-4 text-xs font-bold text-[#b5f000] uppercase tracking-wider text-right">Amount ({currency})</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E00000]/20">
                   {rows.map((row, i) => (
-                    <tr key={i} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="px-6 py-4 text-sm font-semibold text-slate-900">{row.label}</td>
-                      <td className="px-6 py-4 text-sm text-slate-500 text-right">{row.qty}</td>
-                      <td className="px-6 py-4 text-sm text-slate-500 text-right">{fmt(row.rate)}</td>
-                      <td className="px-6 py-4 text-sm font-semibold text-slate-900 text-right">{fmt(row.amount)}</td>
+                    <tr key={i} className="hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4 text-sm font-semibold text-white/90">{row.label}</td>
+                      <td className="px-6 py-4 text-sm text-white/70 text-right">{row.qty}</td>
+                      <td className="px-6 py-4 text-sm text-white/70 text-right">{fmt(row.rate)}</td>
+                      <td className="px-6 py-4 text-sm font-bold text-white text-right">{fmt(row.amount)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -793,37 +770,37 @@ export const TransferSuccess = ({
             </div>
 
             {/* Summary */}
-            <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col items-end gap-2">
-              <div className="flex justify-between w-60">
-                <span className="text-sm text-slate-500">Net Amount:</span>
-                <span className="text-sm font-medium text-slate-900">{fmt(netAmount)} {currency}</span>
+            <div className="mt-8 pt-8 border-t border-[#E00000]/30 flex flex-col items-end gap-3">
+              <div className="flex justify-between w-full max-w-[260px]">
+                <span className="text-sm font-medium text-white/70">Net Amount:</span>
+                <span className="text-sm font-bold text-white">{fmt(netAmount)} {currency}</span>
               </div>
-              <div className="flex justify-between w-60">
-                <span className="text-sm text-slate-500">Taxes (VAT):</span>
-                <span className="text-sm font-medium text-slate-900">{fmt(taxAmount)} {currency}</span>
+              <div className="flex justify-between w-full max-w-[260px]">
+                <span className="text-sm font-medium text-white/70">Taxes (VAT):</span>
+                <span className="text-sm font-bold text-white">{fmt(taxAmount)} {currency}</span>
               </div>
-              <div className="flex justify-between w-60 pt-4 mt-2 border-t border-slate-100">
-                <span className="text-[15px] font-bold text-slate-900">Grand Total:</span>
-                <span className="text-[15px] font-black text-green-400">{fmt(roundedTotal)} {currency}</span>
+              <div className="flex justify-between w-full max-w-[260px] pt-5 mt-2 border-t border-[#E00000]/30">
+                <span className="text-lg font-black text-white">Grand Total:</span>
+                <span className="text-lg font-black text-[#b5f000]">{fmt(roundedTotal)} {currency}</span>
               </div>
             </div>
           </div>
 
           {/* ── Action Buttons ───────────────────────────────────────────── */}
-          <div className="flex flex-wrap items-center justify-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-4 mt-4">
             <button
               onClick={onDashboard}
-              className="flex items-center gap-2 bg-green-400 hover:bg-green-300 text-slate-900 font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-green-200"
+              className="flex items-center justify-center gap-2 bg-[#E00000] hover:bg-[#b5f000] text-white hover:text-[#421010] font-bold py-4 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 group"
             >
-              <Icon name="send" size={18} />
+              <Icon name="send" size={20} className="transition-transform group-hover:translate-x-1" />
               Make Another Transfer
             </button>
 
             <button
               onClick={onDashboard}
-              className="flex items-center gap-2 bg-white border-2 border-green-200 hover:border-green-400 text-slate-800 font-bold py-3 px-8 rounded-xl transition-all"
+              className="flex items-center justify-center gap-2 bg-[#602020] border-2 border-[#E00000]/50 hover:border-[#b5f000] text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg hover:bg-white/5"
             >
-              <Icon name="dashboard" size={18} />
+              <Icon name="dashboard" size={20} />
               Go to Dashboard
             </button>
 
@@ -832,25 +809,33 @@ export const TransferSuccess = ({
               <button
                 title="Print Receipt"
                 onClick={() => printInvoice(finalData)}
-                className="w-12 h-12 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                className="w-14 h-14 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold transition-all border border-white/10 shadow-lg"
               >
-                <Icon name="print" size={20} />
+                <Icon name="print" size={22} />
               </button>
 
               {/* Download PDF */}
               <button
                 title="Download PDF"
                 onClick={() => downloadPDF(finalData)}
-                className="w-12 h-12 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                className="w-14 h-14 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold transition-all border border-white/10 shadow-lg"
               >
-                <Icon name="pdf" size={20} />
+                <Icon name="pdf" size={22} />
+              </button>
+
+              <button 
+                onClick={() => printThermalReceipt(finalData, exchange)}
+                className="w-14 h-14 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold transition-all border border-white/10 shadow-lg"
+                title="Print Thermal Receipt"
+              >
+                <Icon name="print" size={22} />
               </button>
             </div>
           </div>
 
-          <p className="text-center text-sm text-slate-400 mb-8">
+          <p className="text-center text-sm text-white/50 mb-8 mt-4">
             Need help with this transfer?{' '}
-            <a href="#" className="text-green-400 font-semibold hover:underline">
+            <a href="#" className="text-[#b5f000] font-bold hover:underline">
               Contact Support
             </a>
           </p>
