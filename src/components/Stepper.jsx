@@ -28,7 +28,7 @@ export const Stepper = ({ currentStep }) => {
               <div
                 className={`flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all
                   ${currentStep > step.id ? 'bg-primary/10 border-primary text-primary' :
-                    currentStep === step.id ? 'bg-primary border-primary text-gray-900 shadow-lg shadow-primary/30' :
+                    currentStep === step.id ? 'bg-primary border-primary text-white shadow-lg shadow-primary/30' :
                       'border-gray-200  text-gray-400'}
                 `}
               >
