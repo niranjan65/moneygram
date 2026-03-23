@@ -6,12 +6,9 @@ import Select from "react-select";
 import { getNames } from "country-list";
 import { getExchangeRates } from "../services/exchangeRateService";
 import FormInput from "../components/FormInput";
-import { createMoneyTransfer } from "../services/moneyTransferService";
+import { calculateTransfer } from "../utils/transferCalculator";
 import { validateStepOne } from "../utils/validateStepOne";
-// import {getGSTRate} from "../services/gstService";
 import { useERPFileUpload } from "../hooks/useERPFileUpload";
-
-
 
 const MoneyTransfer = () => {
   const Step = {
@@ -53,12 +50,15 @@ const MoneyTransfer = () => {
   const [receiverAccountNumber, setReceiverAccountNumber] = useState("");
   const [receiverSwiftCode, setReceiverSwiftCode] = useState("");
 
+  // const [receiverDocType, setReceiverDocType] = useState("");
+  // const [receiverDocNumber, setReceiverDocNumber] = useState("");
+  // const [receiverDocFile, setReceiverDocFile] = useState(null);
 
   const [senderOtherDocType, setSenderOtherDocType] = useState("");
-
+const [receiverOtherDocType, setReceiverOtherDocType] = useState("");
 
 const [senderFileName, setSenderFileName] = useState("");
-
+const [receiverFileName, setReceiverFileName] = useState("");
 
 
   // ======================
@@ -67,8 +67,8 @@ const [senderFileName, setSenderFileName] = useState("");
   const [sendAmount, setSendAmount] = useState("");
   // const [fromCurrency, setFromCurrency] = useState("USD");
   const [fromCurrency] = useState("FJD"); 
-  const [toCurrency, setToCurrency] = useState("");
-  // const [gstRate, setGstRate] = useState(0);
+  const [toCurrency, setToCurrency] = useState("EUR");
+  const [gstRate, setGstRate] = useState(0);
 
   const [erpCurrencies, setErpCurrencies] = useState([]);
   const [erpRates, setErpRates] = useState([]);
@@ -99,29 +99,48 @@ const [senderFileName, setSenderFileName] = useState("");
     setTransferDate(getTodayDate());
   }, []);
 
-//   useEffect(() => {
-//   const fetchGST = async () => {
-//     const rate = await getGSTRate();
-//     setGstRate(rate);
-//   };
+  useEffect(() => {
+  const fetchGST = async () => {
+    try {
+      const response = await fetch(
+        "http://192.168.101.182:81/api/method/moneygram.api.get_tax_template_for_company",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            company: "MH Money Express",
+          }),
+        }
+      );
 
-//   fetchGST();
-// }, []);
+      const result = await response.json();
+      console.log("GST API FULL RESPONSE:", result);
+
+      const taxRate =
+        result?.message?.taxes?.[0]?.tax_rate ?? 0;
+
+      setGstRate(Number(taxRate));
+
+    } catch (error) {
+      console.error("GST fetch error:", error);
+      setGstRate(0);
+    }
+  };
+
+  fetchGST();
+}, []);
 
 useEffect(() => {
   const fetchCurrencies = async () => {
     try {
       const data = await getExchangeRates();
 
-      setErpRates(data);
+      setErpRates(data); 
 
       const currencyList = data.map(item => item.currency_name);
       setErpCurrencies(currencyList);
-
-      // ✅ Set first currency as default
-      if (currencyList.length > 0) {
-        setToCurrency(currencyList[0]);
-      }
 
     } catch (error) {
       console.error("Failed to load ERP currencies", error);
@@ -131,22 +150,18 @@ useEffect(() => {
   fetchCurrencies();
 }, []);
 
-
-
-const rate = erpRates.find(r => r.currency_name === toCurrency)?.rate || 0;
-
- const selectedCurrency = erpRates.find(
-  (item) => item.currency_name === toCurrency
-);
-
-const buyingRate = selectedCurrency?.buying_price || 0;
-
-const receiveAmount =
-  sendAmount && buyingRate
-    ? (Number(sendAmount) * Number(buyingRate)).toFixed(2)
-    : 0;
-
-const totalToPay = Number(sendAmount || 0);
+ const {
+  serviceFee,
+  subTotal,
+  gst,
+  totalToPay,
+  receiveAmount,
+} = calculateTransfer({
+  sendAmount,
+  toCurrency,
+  erpRates,
+  gstPercent: gstRate,
+});
 
 const stepLabels = {
   [Step.DETAILS]: "Sender and Receiver Details",
@@ -204,7 +219,10 @@ const stepLabels = {
     receiverBankName,
     receiverAccountNumber,
     receiverSwiftCode,
-    
+    // receiverDocType,
+    // receiverOtherDocType,
+    // receiverDocNumber,
+    // receiverDocFile,
   });
 
   if (error) {
@@ -224,19 +242,32 @@ const stepLabels = {
  
  const handleConfirm = async () => {
   try {
-
     let senderFileUrl = null;
+    // let receiverFileUrl = null;
 
+    // ======================
+    // Upload Sender File
+    // ======================
     if (senderDocFile) {
       senderFileUrl = await uploadFile(senderDocFile, {
         isPrivate: 1,
       });
     }
 
+    // ======================
+    // Upload Receiver File
+    // ======================
+    // if (receiverDocFile) {
+    //   receiverFileUrl = await uploadFile(receiverDocFile, {
+    //     isPrivate: 1,
+    //   });
+    // }
+
     const payload = {
       data: {
-
-        // Sender
+        // ======================
+        // SENDER
+        // ======================
         sender_full_name: senderFullName,
         sender_phone_number: senderPhone,
         sender_payment_mode: payMode,
@@ -251,40 +282,73 @@ const stepLabels = {
         sender_swift_code: senderSwiftCode || "",
         sender_identity_doc_file: senderFileUrl,
 
-        // Receiver
+        // ======================
+        // RECEIVER
+        // ======================
         receiver_full_name: receiverFullName,
         receiver_phone_number: receiverPhone,
+        // receiver_doc_type: receiverDocType,
+        // receiver_government_id_type: receiverOtherDocType,
+        // receiver_document_number: receiverDocNumber,
         receiver_email_address: receiverEmail,
         receiver_country: receiverCountry,
         receiver_bank_name: receiverBankName || "",
         receiver_account_number: receiverAccountNumber || "",
         receiver_swift_code: receiverSwiftCode || "",
+        // receiver_identity_doc_file: receiverFileUrl,
 
-        // Amount
+        // ======================
+        // AMOUNTS
+        // ======================
         sending_amount: Number(sendAmount),
         receiving_amount: Number(receiveAmount),
         sending_currency: fromCurrency,
         receiving_currency: toCurrency,
-        sending_amount_summary: `${sendAmount} ${fromCurrency}`,
-        total_to_pay: `${sendAmount} ${fromCurrency}` ,
-      }
+        sending_amount_summary: Number(sendAmount),
+        service_fee: Number(serviceFee),
+        sub_total: Number(subTotal),
+        taxes: Number(gst),
+        total_to_pay: Number(totalToPay),
+      },
     };
 
-    console.log("FINAL PAYLOAD", payload);
+    // 🔥 PRINT FULL PAYLOAD
+    console.log("========== FINAL PAYLOAD ==========");
+    console.log(JSON.stringify(payload, null, 2));
+    console.log("===================================");
 
-    const result = await createMoneyTransfer(payload);
+    const response = await fetch(
+      "http://192.168.101.182:81/api/method/moneygram.moneygram.api.money_exchange.create_money_transfer",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "token 661457e17b8612a:32a5ddcc5a9c177",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
 
-    const docName = result?.message?.name || "";
-    const cleanName = docName.replace("Money Transfer-", "");
+    const result = await response.json();
 
-    alert(`Money Transfer Created: ${cleanName}`);
+    if (response.ok) {
+  const docName = result?.message?.name || "";
 
-    resetForm();
+  // Remove "Money Transfer-" prefix
+  const cleanName = docName.replace("Money Transfer-", "");
 
+  alert(`Money Transfer Created: ${cleanName}`);
+
+  console.log("Server Response:", result);
+
+  resetForm();  // 🔥 Clears everything and returns to Step 1
+}
   } catch (error) {
-    alert("Failed to create transfer");
+    console.error("API Error:", error);
+    alert("Something went wrong while creating transfer.");
   }
 };
+
 const resetForm = () => {
   // Sender
   setSenderFullName("");
@@ -309,7 +373,11 @@ const resetForm = () => {
   setReceiverBankName("");
   setReceiverAccountNumber("");
   setReceiverSwiftCode("");
-
+  // setReceiverDocType("");
+  // setReceiverDocNumber("");
+  // setReceiverDocFile(null);
+  // setReceiverOtherDocType("");
+  setReceiverFileName("");
 
   // Amount
   setSendAmount("");
@@ -583,23 +651,26 @@ const resetForm = () => {
 
                 {/* You Send */}
                 <div>
-  <label className="text-xs uppercase font-bold text-gray-400">
-    You Send
-  </label>
+                  <label className="text-xs uppercase font-bold text-gray-400">
+                    You Send
+                  </label>
 
-  <div className="flex border border-gray-200 rounded-2xl overflow-hidden">
-    <input
-      type="number"
-      value={sendAmount}
-      onChange={(e) => setSendAmount(e.target.value)}
-      className="flex-1 px-5 py-4 font-semibold outline-none"
-    />
-
-    <div className="px-4 border-l border-gray-200 font-semibold bg-gray-100 text-black flex items-center">
-      FJD 
-    </div>
-  </div>
-</div>
+                  <div className="flex border border-gray-200 rounded-2xl overflow-hidden">
+                    <input
+                      type="number"
+                      value={sendAmount}
+                      onChange={(e) => setSendAmount(e.target.value)}
+                      className="flex-1 px-5 py-4 font-semibold outline-none"
+                    />
+                    <select
+  value="FJD"
+  disabled
+  className="px-4 border-l border-gray-200 font-semibold bg-gray-100 text-black cursor-not-allowed"
+>
+  <option value="FJD">FJD</option>
+</select>
+                  </div>
+                </div>
 
                 {/* Receiver Gets */}
                 <div>
@@ -700,22 +771,37 @@ const resetForm = () => {
 
             <div className="space-y-4 text-sm font-semibold">
 
-  <div className="flex justify-between">
-    <span>Sending Amount</span>
-    <span>{sendAmount || "0.00"} {fromCurrency}</span>
-  </div>
+              <div className="flex justify-between">
+                <span>Sending Amount</span>
+                <span>{sendAmount || "0.00"} {fromCurrency}</span>
+              </div>
 
-  <div className="flex justify-between">
-    <span>Receiver Gets</span>
-    <span>{receiveAmount || "0.00"} {toCurrency}</span>
-  </div>
+              <div className="flex justify-between">
+                <span>Service Fee (2%)</span>
+                <span>{serviceFee} {fromCurrency}</span>
+              </div>
 
-  <div className="border-t pt-4 flex justify-between text-lg font-black">
-    <span>Total To Pay</span>
-    <span>{totalToPay} {fromCurrency}</span>
-  </div>
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+                <span>{subTotal} {fromCurrency}</span>
+              </div>
 
-</div>
+              <div className="flex justify-between">
+                <span>GST ({gstRate}%)</span>
+                <span>{gst} {fromCurrency}</span>
+              </div>
+
+              <div className="border-t pt-4 flex justify-between font-black text-lg">
+                <span>Total To Pay</span>
+                <span>{totalToPay} {fromCurrency}</span>
+              </div>
+
+              <div className="border-t pt-4 flex justify-between text-green-600 font-black">
+                <span>Receiver Gets</span>
+                <span>{receiveAmount} {toCurrency}</span>
+              </div>
+
+            </div>
 
           </div>
         </div>

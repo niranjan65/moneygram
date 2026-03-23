@@ -1,8 +1,8 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Stepper } from '../components/Stepper';
 import { Summary } from '../components/Summary';
 import { SenderCard } from '../components/SenderCard';
-import { ReceiverForm } from '../components/RecieverForm';
+import { ReceiverForm } from '../features/exchange/components/ReceiverForm';
 import { ReviewStep } from '../components/ReviewStep';
 import Navbar from '../components/layout/Navbar';
 import { TransferSuccess } from '../components/TransferSuccess';
@@ -22,7 +22,7 @@ const TRANSFER_FEE = 4.99;
 
 
 const MoneyExchange = () => {
-  const { uploadFile, loading: fileUploading, error: fileError } = useERPFileUpload();
+  const { uploadFile } = useERPFileUpload();
 
   const [currentStep, setCurrentStep] = useState(Step.DETAILS);
 
@@ -332,6 +332,14 @@ const MoneyExchange = () => {
           destination_country: transferPayload.country,
           city__province: transferPayload.city,
           id_number: transferPayload.idNumber,
+          government_id: transferPayload.government_id,
+          customer_name_and_dob: `${transferPayload.idName}_${transferPayload.dateOfBirth}`,
+          full_name: transferPayload.idName,
+          date_of_birth: transferPayload.dateOfBirth,
+          occupation: transferPayload.occupation,
+          second_last_name_family_name: transferPayload.secondLastName,
+          id_issue_stateprovince: transferPayload.idIssueState,
+          id_issue_country: transferPayload.idIssueCountry,
           ...idDocumentField,
 
           you_send: transferPayload.sendAmount,
@@ -361,7 +369,7 @@ const MoneyExchange = () => {
 
 
       const response = await fetch(
-        "http://182.71.135.110:82/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
+        "http://192.168.101.182:81/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
         {
           method: "POST",
           headers: {
