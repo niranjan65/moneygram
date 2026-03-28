@@ -45,7 +45,11 @@ export const PersonalInfoSection = () => {
       <div className="px-5 py-5 grid grid-cols-1 md:grid-cols-2 gap-4">
         {personalInfoFields.map(({ name, label, placeholder, rules }) => (
           <div key={name}>
-            <FieldLabel required>{label}</FieldLabel>
+            {
+              rules.required 
+              ? <FieldLabel required>{label}</FieldLabel>
+              : <FieldLabel >{label}</FieldLabel>
+            }
             <input 
               type="text" 
               placeholder={placeholder} 

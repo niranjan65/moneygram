@@ -338,7 +338,7 @@ export const printThermalReceipt = (invoiceData, exchange) => {
           <div class="r-row"><span class="label">DATE:</span><span class="value">${invoiceData?.posting_date ?? '—'}</span></div>
           <div class="r-row"><span class="label">TIME:</span><span class="value">${(invoiceData?.posting_time ?? '').split('.')[0] || '—'}</span></div>
           <div class="r-row"><span class="label">SALE REF:</span><span class="value r-bold">${invoiceData?.name ?? '—'}</span></div>
-          <div class="r-row"><span class="label">STATUS:</span><span class="value"><span class="r-status">${invoiceData?.status ?? 'Paid'}</span></span></div>
+          <div class="r-row"><span class="label">STATUS:</span><span class="value"><span class="r-status">${'Paid'}</span></span></div>
 
           <hr class="r-divider" />
           <div class="r-row"><span class="label">CUSTOMER:</span><span class="value r-bold">${invoiceData?.customer_name ?? invoiceData?.customer ?? '—'}</span></div>

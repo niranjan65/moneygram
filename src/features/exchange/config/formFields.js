@@ -16,11 +16,17 @@ export const personalInfoFields = [
     name: "lastName",
     label: "Last/Given Name",
     placeholder: "e.g. Garcia",
-    rules: {  minLength: { value: 2, message: 'Too short' } },
+    rules: { required: 'Last name is required', minLength: { value: 2, message: 'Too short' } },
   },
   {
     name: "secondLastName",
     label: "Second Last/Family Name",
+    placeholder: "optional",
+    rules: { minLength: { value: 2, message: 'Too short' } },
+  },
+  {
+    name: "purposeOfTransaction",
+    label: "Purpose of Transaction",
     placeholder: "optional",
     rules: { minLength: { value: 2, message: 'Too short' } },
   },

@@ -298,7 +298,7 @@ export const Summary = () => {
   const roundedTotal = roundToNearestFiveCents(total);
 
   const fmt = (val) =>
-    Math.abs(val).toLocaleString('en-US', { style: 'currency', currency: 'FJD' });
+    Math.abs(val).toLocaleString('en-US', { style: 'currency', currency: 'FJD', minimumFractionDigits: 2, maximumFractionDigits: 4 });
 
   return (
     <div className="sticky top-24 flex flex-col gap-3">

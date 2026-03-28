@@ -12,6 +12,7 @@ import { LocationSection } from './sections/LocationSection';
 import { ExchangeSection } from './sections/ExchangeSection';
 import { DenominationSection } from './sections/DenominationSection';
 import { SectionDivider } from './ui/FormUtilities';
+import CreditLimit from './sections/CreditLimit';
 
 export const ReceiverForm = ({
   initialData,
@@ -163,6 +164,8 @@ export const ReceiverForm = ({
           </div>
         )}
 
+        
+
         <div className="bg-[#B70000] px-6 sm:px-10 py-7">
           <div className="max-w-5xl mx-auto flex items-start justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
@@ -192,6 +195,7 @@ export const ReceiverForm = ({
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="px-4 sm:px-8 lg:px-12 py-8 flex flex-col gap-5 max-w-5xl mx-auto" noValidate>
+          <CreditLimit />
           <GovernmentIdSection />
           
           <SectionDivider label="Personal Information" />

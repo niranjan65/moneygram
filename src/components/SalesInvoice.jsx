@@ -41,7 +41,8 @@ export const InvoiceDocument = ({ invoiceData }) => {
   const customerId = d.customer ?? '—';
   const contactEmail = d.contact_email ?? '—';
   const contactMobile = d.contact_mobile || '—';
-  const txnStatus = d.status ?? 'Unpaid';
+  // const txnStatus = d.status ?? 'Unpaid';
+  const txnStatus = 'Paid';
   const remarks = d.remarks ?? 'No Remarks';
 
   const rows = (d.items ?? []).map(item => ({

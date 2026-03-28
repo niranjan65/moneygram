@@ -38,7 +38,7 @@ export const DenominationPanel = ({
         </div>
         {targetAmount > 0 && (
           <span className="text-xs font-semibold text-gray-500 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-md">
-            {symbol}{targetAmount.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} {currency}
+            {symbol}{targetAmount.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:4})} {currency}
           </span>
         )}
       </div>
@@ -54,7 +54,7 @@ export const DenominationPanel = ({
           <div key={label} className="flex flex-col items-center py-2.5 px-2">
             <span className="text-[9px] text-gray-400 uppercase tracking-wider mb-0.5">{label}</span>
             <span className="text-sm font-semibold" style={{ color }}>
-              {prefix}{symbol}{val.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+              {prefix}{symbol}{val.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:4})}
             </span>
           </div>
         ))}
@@ -144,7 +144,7 @@ export const DenominationPanel = ({
         </div>
         <div className="text-right">
           <span className="text-lg font-bold" style={{ color: accentColor }}>
-            {symbol}{totalDispensed.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+            {symbol}{totalDispensed.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:4})}
           </span>
           <span className="text-xs text-gray-400 ml-1.5">{currency}</span>
         </div>

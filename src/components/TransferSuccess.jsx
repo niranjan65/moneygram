@@ -473,8 +473,8 @@ import { useExchange } from '../context/ExchangeContext';
 import { InvoiceDocument } from './SalesInvoice';
 import { printThermalReceipt } from './ThermalReceiptPrint';
 
-const socket_server = 'http://182.71.135.110:8079';
-// const socket_server = 'http://192.168.101.172:5000';
+// const socket_server = 'http://182.71.135.110:8079';
+const socket_server = 'http://192.168.101.172:5000';
 const socket = io(socket_server, { transports: ['websocket'] });
 
 // ─── Inline SVG Icons ─────────────────────────────────────────────────────────
@@ -666,7 +666,8 @@ export const TransferSuccess = ({
   const txnDate       = finalData?.posting_date
     ? `${finalData.posting_date}${rawTime ? ' | ' + rawTime : ''}`
     : '—';
-  const txnStatus     = finalData?.status ?? 'Unpaid';
+  // const txnStatus     = finalData?.status ?? 'Unpaid';
+  const txnStatus     = 'Paid';
 
   const rows = (finalData?.items ?? []).map(item => ({
     label:  item.item_code ?? item.item_name ?? '—',
