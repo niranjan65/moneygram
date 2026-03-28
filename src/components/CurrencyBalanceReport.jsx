@@ -12,7 +12,7 @@ const B = {
 };
 
 // ─── API Config ───────────────────────────────────────────────────────────────
-const API_BASE = 'http://192.168.101.182:81';
+const API_BASE = 'http://182.71.135.110:82';
 const REPORT_URL = `${API_BASE}/api/method/frappe.desk.query_report.run`;
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────

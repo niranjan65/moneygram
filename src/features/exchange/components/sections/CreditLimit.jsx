@@ -28,7 +28,7 @@ const CreditLimit = () => {
 
     return (
         <div>
-            {showUploadModal && (
+            {/* {showUploadModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-xl p-7 max-w-sm w-full mx-4 text-center">
               <div className="text-4xl mb-4">📂</div>
@@ -42,7 +42,7 @@ const CreditLimit = () => {
               </button>
             </div>
           </div>
-        )}
+        )} */}
             <div class="bg-red-50 border border-red-100 rounded-2xl p-6 flex items-center justify-between" data-purpose="credit-limit-section">
                 <div class="flex items-center space-x-4">
                     <div class="bg-red-600 p-3 rounded-full">

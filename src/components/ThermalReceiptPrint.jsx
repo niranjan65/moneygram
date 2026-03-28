@@ -39,7 +39,7 @@ export const ThermalReceipt = ({ invoiceData = {}, exchange = {} }) => {
   const sendCcy    = invoiceData?.you_send_currency_type ?? 'AUD';
   const theyGet    = invoiceData?.they_receive ?? 0;
   const getCcy     = invoiceData?.they_receive_currency_type ?? currency;
-  const exRate     = invoiceData?.exchange_rate ?? 0;
+  const exRate     = invoiceData?.exchange_rate ?? exchange?.rate ?? exchange?.exchangeRate ?? 0;
 
   return (
     <>
@@ -199,12 +199,17 @@ export const ThermalReceipt = ({ invoiceData = {}, exchange = {} }) => {
               <span className="label">THEY RECEIVE:</span>
               <span className="value r-bold">{getCcy} {fmt(theyGet)}</span>
             </div>
-            {exRate > 0 && (
-              <div className="r-row">
-                <span className="label">EXCHANGE RATE:</span>
-                <span className="value">1 {sendCcy} = {fmt(exRate, 4)} {getCcy}</span>
-              </div>
-            )}
+            <hr className="r-divider" />
+          </>
+        )}
+
+        {/* Always show rate if available */}
+        {exRate > 0 && (
+          <>
+            <div className="r-row r-bold" style={{ marginBottom: 4 }}>
+              <span className="label">EXCH. RATE:</span>
+              <span className="value">1 {sendCcy} = {fmt(exRate, 4)} {getCcy}</span>
+            </div>
             <hr className="r-divider" />
           </>
         )}
@@ -373,6 +378,15 @@ export const printThermalReceipt = (invoiceData, exchange) => {
             <span class="label r-bold r-heading">TOTAL AMOUNT:</span>
             <span class="value r-xl">${invoiceData?.currency ?? 'FJD'} ${Number(invoiceData?.rounded_total ?? invoiceData?.grand_total ?? exchange?.total ?? 0).toFixed(2)}</span>
           </div>
+
+          ${(() => {
+            const rate = invoiceData?.exchange_rate ?? exchange?.rate ?? exchange?.exchangeRate ?? 0;
+            const sc = invoiceData?.you_send_currency_type ?? '';
+            const rc = invoiceData?.they_receive_currency_type ?? invoiceData?.currency ?? 'FJD';
+            return rate > 0
+              ? `<div class="r-row r-bold" style="margin-top:6px"><span class="label">EXCH. RATE:</span><span class="value">1 ${sc} = ${Number(rate).toFixed(4)} ${rc}</span></div>`
+              : '';
+          })()}
 
           <hr class="r-divider-solid" />
 

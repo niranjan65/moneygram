@@ -473,8 +473,8 @@ import { useExchange } from '../context/ExchangeContext';
 import { InvoiceDocument } from './SalesInvoice';
 import { printThermalReceipt } from './ThermalReceiptPrint';
 
-// const socket_server = 'http://182.71.135.110:8079';
-const socket_server = 'http://192.168.101.172:5000';
+const socket_server = 'http://182.71.135.110:8079';
+// const socket_server = 'http://192.168.101.172:5000';
 const socket = io(socket_server, { transports: ['websocket'] });
 
 // ─── Inline SVG Icons ─────────────────────────────────────────────────────────
@@ -668,6 +668,9 @@ export const TransferSuccess = ({
     : '—';
   // const txnStatus     = finalData?.status ?? 'Unpaid';
   const txnStatus     = 'Paid';
+  const exchangeRate  = finalData?.exchange_rate ?? data?.exchangeRate ?? null;
+  const senderCurrency = finalData?.you_send_currency_type ?? data?.senderCurrency ?? null;
+  const receiverCurrency = finalData?.they_receive_currency_type ?? data?.receiverCurrency ?? 'FJD';
 
   const rows = (finalData?.items ?? []).map(item => ({
     label:  item.item_code ?? item.item_name ?? '—',
@@ -730,6 +733,14 @@ export const TransferSuccess = ({
                 <p className="text-xs font-bold text-[#b5f000] uppercase tracking-widest mb-1">Payment Method</p>
                 <p className="font-medium text-white/90 text-sm tracking-wide">Cash</p>
               </div>
+              {exchangeRate && (
+                <div className="md:text-right col-span-2 md:col-span-1">
+                  <p className="text-xs font-bold text-[#b5f000] uppercase tracking-widest mb-1">Exchange Rate</p>
+                  <p className="font-bold text-white text-sm tracking-wide">
+                    1 {senderCurrency ?? ''} = {fmt(exchangeRate)} FJD
+                  </p>
+                </div>
+              )}
             </div>
 
             
@@ -780,6 +791,14 @@ export const TransferSuccess = ({
                 <span className="text-sm font-medium text-white/70">Taxes (VAT):</span>
                 <span className="text-sm font-bold text-white">{fmt(taxAmount)} {currency}</span>
               </div>
+              {exchangeRate && (
+                <div className="flex justify-between w-full max-w-[260px]">
+                  <span className="text-sm font-medium text-white/70">Exchange Rate:</span>
+                  <span className="text-sm font-bold text-[#b5f000]">
+                    1 {senderCurrency ?? ''} = {fmt(exchangeRate)} FJD
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between w-full max-w-[260px] pt-5 mt-2 border-t border-[#E00000]/30">
                 <span className="text-lg font-black text-white">Grand Total:</span>
                 <span className="text-lg font-black text-[#b5f000]">{fmt(roundedTotal)} {currency}</span>

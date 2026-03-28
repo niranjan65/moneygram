@@ -340,6 +340,7 @@ const MoneyExchange = () => {
           second_last_name_family_name: transferPayload.secondLastName,
           id_issue_stateprovince: transferPayload.idIssueState,
           id_issue_country: transferPayload.idIssueCountry,
+          ticket: transferPayload.ticket,
           ...idDocumentField,
 
           you_send: transferPayload.sendAmount,
@@ -369,7 +370,7 @@ const MoneyExchange = () => {
 
 
       const response = await fetch(
-        "http://192.168.101.182:81/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
+        "http://182.71.135.110:82/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
         {
           method: "POST",
           headers: {

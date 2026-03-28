@@ -12,7 +12,7 @@ export function useCustomers() {
         setError(null);
 
         const response = await fetch(
-          "http://192.168.101.182:81/api/resource/Customer?fields=[\"name\",\"customer_name\",\"customer_group\",\"territory\"]&limit_page_length=500",
+          "http://182.71.135.110:82/api/resource/Customer?fields=[\"name\",\"customer_name\",\"customer_group\",\"territory\"]&limit_page_length=500",
           {
             method: "GET",
             headers: {

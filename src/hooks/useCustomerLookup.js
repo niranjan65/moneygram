@@ -10,7 +10,7 @@ export const useCustomerLookup = (setValue) => {
       setLoading(true);
 
       const res = await fetch(
-        `http://192.168.101.182:81/api/resource/Customer/${idNumber}`,
+        `http://182.71.135.110:82/api/resource/Customer/${idNumber}`,
         {
           headers: {
             Authorization:
@@ -31,7 +31,7 @@ export const useCustomerLookup = (setValue) => {
       if (data.image) {
         const url = data.image.startsWith("http")
           ? data.image
-          : `http://192.168.101.182:81${data.image}`;
+          : `http://182.71.135.110:82${data.image}`;
 
         setValue("docFile", url);
       }

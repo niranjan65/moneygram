@@ -28,7 +28,7 @@ export const DenominationSection = ({
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {senderInfo ? (
           <DenominationPanel
-            title="Sender Pays — Cash In" 
+            title="Cash In" 
             subtitle="Cash received from customer"
             flag={senderInfo.flag} 
             symbol={senderInfo.symbol} 
@@ -58,7 +58,7 @@ export const DenominationSection = ({
           </div>
         ) : receiverInfo ? (
           <DenominationPanel
-            title="Receiver Gets — Cash Out"
+            title=" Cash Out"
             subtitle={`Cash to disburse to ${selectedDenomCountry ?? ''}`}
             flag={receiverInfo.flag} 
             symbol={receiverInfo.symbol} 
