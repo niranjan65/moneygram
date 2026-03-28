@@ -51,11 +51,12 @@ export const useExchangeCalculation = ({
       receiverAmount = sendAmount * effectiveRate; 
     }
     
-    receiverAmount = Math.round((receiverAmount + Number.EPSILON) * 100) / 100;
+    // receiverAmount = Math.round((receiverAmount + Number.EPSILON) * 100) / 100;
+    // receiverAmount = Math.round((receiverAmount + Number.EPSILON) * 10000) / 10000;
     return { 
       rate: effectiveRate, 
       rawAmount: receiverAmount,
-      formatted: receiverAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
+      formatted: receiverAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }) 
     };
   }, [effectiveRate, sendAmount, exchangeType]);
 

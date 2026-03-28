@@ -39,7 +39,7 @@ export const ThermalReceipt = ({ invoiceData = {}, exchange = {} }) => {
   const sendCcy    = invoiceData?.you_send_currency_type ?? 'AUD';
   const theyGet    = invoiceData?.they_receive ?? 0;
   const getCcy     = invoiceData?.they_receive_currency_type ?? currency;
-  const exRate     = invoiceData?.exchange_rate ?? 0;
+  const exRate     = invoiceData?.exchange_rate ?? exchange?.rate ?? exchange?.exchangeRate ?? 0;
 
   return (
     <>
@@ -193,18 +193,23 @@ export const ThermalReceipt = ({ invoiceData = {}, exchange = {} }) => {
             <div className="r-heading r-bold" style={{ marginBottom: 6 }}>EXCHANGE DETAILS</div>
             <div className="r-row">
               <span className="label">YOU SEND:</span>
-              <span className="value r-bold">{sendCcy} {fmt(youSend)}</span>
+              <span className="value r-bold">{sendCcy} {fmt(youSend, 4)}</span>
             </div>
             <div className="r-row">
               <span className="label">THEY RECEIVE:</span>
-              <span className="value r-bold">{getCcy} {fmt(theyGet)}</span>
+              <span className="value r-bold">{getCcy} {fmt(theyGet, 4)}</span>
             </div>
-            {exRate > 0 && (
-              <div className="r-row">
-                <span className="label">EXCHANGE RATE:</span>
-                <span className="value">1 {sendCcy} = {fmt(exRate, 4)} {getCcy}</span>
-              </div>
-            )}
+            <hr className="r-divider" />
+          </>
+        )}
+
+        {/* Always show rate if available */}
+        {exRate > 0 && (
+          <>
+            <div className="r-row r-bold" style={{ marginBottom: 4 }}>
+              <span className="label">EXCH. RATE:</span>
+              <span className="value">1 {sendCcy} = {fmt(exRate, 4)} {getCcy}</span>
+            </div>
             <hr className="r-divider" />
           </>
         )}
@@ -217,8 +222,8 @@ export const ThermalReceipt = ({ invoiceData = {}, exchange = {} }) => {
               <div key={i} style={{ marginBottom: 6 }}>
                 <div style={{ textTransform: 'uppercase', fontWeight: 700 }}>{row.label}</div>
                 <div className="r-row r-small">
-                  <span>  {row.qty} x {fmt(row.rate)}</span>
-                  <span className="r-bold">{fmt(row.amount)} {currency}</span>
+                  <span>  {row.qty} x {fmt(row.rate, 4)}</span>
+                  <span className="r-bold">{fmt(row.amount, 4)} {currency}</span>
                 </div>
               </div>
             ))}
@@ -229,11 +234,11 @@ export const ThermalReceipt = ({ invoiceData = {}, exchange = {} }) => {
         {/* Totals */}
         <div className="r-row">
           <span className="label">NET AMOUNT:</span>
-          <span className="value">{currency} {fmt(netAmount)}</span>
+          <span className="value">{currency} {fmt(netAmount, 4)}</span>
         </div>
         <div className="r-row">
           <span className="label">VAT/TAX:</span>
-          <span className="value">{currency} {fmt(taxAmount)}</span>
+          <span className="value">{currency} {fmt(taxAmount, 4)}</span>
         </div>
 
         <hr className="r-divider-solid" />
@@ -338,7 +343,7 @@ export const printThermalReceipt = (invoiceData, exchange) => {
           <div class="r-row"><span class="label">DATE:</span><span class="value">${invoiceData?.posting_date ?? '—'}</span></div>
           <div class="r-row"><span class="label">TIME:</span><span class="value">${(invoiceData?.posting_time ?? '').split('.')[0] || '—'}</span></div>
           <div class="r-row"><span class="label">SALE REF:</span><span class="value r-bold">${invoiceData?.name ?? '—'}</span></div>
-          <div class="r-row"><span class="label">STATUS:</span><span class="value"><span class="r-status">${invoiceData?.status ?? 'Paid'}</span></span></div>
+          <div class="r-row"><span class="label">STATUS:</span><span class="value"><span class="r-status">${'Paid'}</span></span></div>
 
           <hr class="r-divider" />
           <div class="r-row"><span class="label">CUSTOMER:</span><span class="value r-bold">${invoiceData?.customer_name ?? invoiceData?.customer ?? '—'}</span></div>
@@ -346,8 +351,8 @@ export const printThermalReceipt = (invoiceData, exchange) => {
 
           ${invoiceData?.you_send ? `
           <div class="r-heading r-bold" style="margin-bottom:6px">EXCHANGE DETAILS</div>
-          <div class="r-row"><span class="label">YOU SEND:</span><span class="value r-bold">${invoiceData?.you_send_currency_type ?? ''} ${Number(invoiceData?.you_send ?? 0).toFixed(2)}</span></div>
-          <div class="r-row"><span class="label">THEY RECEIVE:</span><span class="value r-bold">${invoiceData?.they_receive_currency_type ?? ''} ${Number(invoiceData?.they_receive ?? 0).toFixed(2)}</span></div>
+          <div class="r-row"><span class="label">YOU SEND:</span><span class="value r-bold">${invoiceData?.you_send_currency_type ?? ''} ${Number(invoiceData?.you_send ?? 0).toFixed(4)}</span></div>
+          <div class="r-row"><span class="label">THEY RECEIVE:</span><span class="value r-bold">${invoiceData?.they_receive_currency_type ?? ''} ${Number(invoiceData?.they_receive ?? 0).toFixed(4)}</span></div>
           ${invoiceData?.exchange_rate ? `<div class="r-row"><span class="label">EXCHANGE RATE:</span><span class="value">1 ${invoiceData?.you_send_currency_type} = ${Number(invoiceData.exchange_rate).toFixed(4)} ${invoiceData?.they_receive_currency_type}</span></div>` : ''}
           <hr class="r-divider" />
           ` : ''}
@@ -356,16 +361,16 @@ export const printThermalReceipt = (invoiceData, exchange) => {
             <div style="margin-bottom:6px">
               <div style="text-transform:uppercase;font-weight:700">${item.item_name ?? item.item_code ?? '—'}</div>
               <div class="r-row r-small">
-                <span>  ${item.qty ?? 1} x ${Number(item.rate ?? 0).toFixed(2)}</span>
-                <span class="r-bold">${Number(item.amount ?? 0).toFixed(2)} ${invoiceData?.currency ?? 'FJD'}</span>
+                <span>  ${item.qty ?? 1} x ${Number(item.rate ?? 0).toFixed(4)}</span>
+                <span class="r-bold">${Number(item.amount ?? 0).toFixed(4)} ${invoiceData?.currency ?? 'FJD'}</span>
               </div>
             </div>
           `).join('')}
 
           ${(invoiceData?.items ?? []).length ? '<hr class="r-divider" />' : ''}
 
-          <div class="r-row"><span class="label">NET AMOUNT:</span><span class="value">${invoiceData?.currency ?? 'FJD'} ${Number(invoiceData?.net_total ?? invoiceData?.total ?? 0).toFixed(2)}</span></div>
-          <div class="r-row"><span class="label">VAT/TAX:</span><span class="value">${invoiceData?.currency ?? 'FJD'} ${Number(invoiceData?.total_taxes_and_charges ?? 0).toFixed(2)}</span></div>
+          <div class="r-row"><span class="label">NET AMOUNT:</span><span class="value">${invoiceData?.currency ?? 'FJD'} ${Number(invoiceData?.net_total ?? invoiceData?.total ?? 0).toFixed(4)}</span></div>
+          <div class="r-row"><span class="label">VAT/TAX:</span><span class="value">${invoiceData?.currency ?? 'FJD'} ${Number(invoiceData?.total_taxes_and_charges ?? 0).toFixed(4)}</span></div>
 
           <hr class="r-divider-solid" />
 
@@ -373,6 +378,15 @@ export const printThermalReceipt = (invoiceData, exchange) => {
             <span class="label r-bold r-heading">TOTAL AMOUNT:</span>
             <span class="value r-xl">${invoiceData?.currency ?? 'FJD'} ${Number(invoiceData?.rounded_total ?? invoiceData?.grand_total ?? exchange?.total ?? 0).toFixed(2)}</span>
           </div>
+
+          ${(() => {
+            const rate = invoiceData?.exchange_rate ?? exchange?.rate ?? exchange?.exchangeRate ?? 0;
+            const sc = invoiceData?.you_send_currency_type ?? '';
+            const rc = invoiceData?.they_receive_currency_type ?? invoiceData?.currency ?? 'FJD';
+            return rate > 0
+              ? `<div class="r-row r-bold" style="margin-top:6px"><span class="label">EXCH. RATE:</span><span class="value">1 ${sc} = ${Number(rate).toFixed(4)} ${rc}</span></div>`
+              : '';
+          })()}
 
           <hr class="r-divider-solid" />
 

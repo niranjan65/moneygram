@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import { io } from "socket.io-client";
 import SoldiLanding from "./components/SoldiLanding";
 import SettingsPanel from "./components/Settingspanel";
+import CurrencyBalanceReport from "./components/CurrencyBalanceReport";
 
 function App() {
 
@@ -91,6 +92,15 @@ function App() {
           element={
             <ProtectedRoute>
               <SettingsPanel />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/report"
+          element={
+            <ProtectedRoute>
+              <CurrencyBalanceReport />
             </ProtectedRoute>
           }
         />

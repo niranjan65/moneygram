@@ -4,6 +4,7 @@ import { UserPlus, ArrowRight, AlertCircle } from 'lucide-react';
 import { useExchange } from '../../../context/ExchangeContext';
 import { useERPNextRates } from '../../../hooks/useERPNextRates';
 import { useBaseCurrency, useDenomination } from '../../../hooks/useDenomination';
+import { useERPFileUpload } from '../../../hooks/useERPFileUpload';
 import { useExchangeCalculation } from '../hooks/useExchangeCalculation';
 
 import { GovernmentIdSection } from './sections/GovernmentIdSection';
@@ -12,6 +13,7 @@ import { LocationSection } from './sections/LocationSection';
 import { ExchangeSection } from './sections/ExchangeSection';
 import { DenominationSection } from './sections/DenominationSection';
 import { SectionDivider } from './ui/FormUtilities';
+import CreditLimit from './sections/CreditLimit';
 
 export const ReceiverForm = ({
   initialData,
@@ -26,18 +28,20 @@ export const ReceiverForm = ({
       firstName: initialData?.firstName ?? '',
       lastName: initialData?.lastName ?? '',
       city: initialData?.city ?? '',
-      idType: 'PASSPORT', 
+      idType: 'PASSPORT',
       idNumber: '',
       docFile: null,
+      ticketFile: null,
       pastReceiver: 'New Receiver',
       exchangeType: 'BUY',
       government_id: 'Passport'
     },
   });
 
-  const { handleSubmit } = methods;
+  const { handleSubmit, setFocus } = methods;
   const { receiverGets } = useExchange();
-  
+  const { uploadFile, loading: uploadLoading } = useERPFileUpload();
+
   const {
     availableCurrencies,
     loading: ratesLoading,
@@ -81,26 +85,26 @@ export const ReceiverForm = ({
   const receiverDenomRowsRef = useRef([]);
 
   const formatDate = (date) => {
-  if (!date) return null;
+    if (!date) return null;
 
-  const d = new Date(date); // ✅ convert
-  if (isNaN(d)) return null; // safety check
+    const d = new Date(date); // ✅ convert
+    if (isNaN(d)) return null; // safety check
 
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
 
-  return `${y}-${m}-${day}`;
-};
+    return `${y}-${m}-${day}`;
+  };
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
 
     if (!sendAmount || sendAmount <= 0) {
       setSendAmountError('Please enter a valid send amount');
       return;
     }
     if (!effectiveRate || effectiveRate <= 0) return;
-    if (useManualRate && (!manualRate || parseFloat(manualRate) <= 0)) return; 
+    if (useManualRate && (!manualRate || parseFloat(manualRate) <= 0)) return;
     setSendAmountError('');
 
     const getDenomType = (denom, notesArr = [], coinsArr = []) => {
@@ -109,9 +113,21 @@ export const ReceiverForm = ({
       return denom >= 1 ? 'Note' : 'Coin';
     };
 
+    let ticketUrl = null;
+    if (data.ticketFile) {
+      ticketUrl = await uploadFile(data.ticketFile);
+
+      console.log("ticketUrl", ticketUrl);
+      if (!ticketUrl) {
+        // If upload fails, error is likely handled via hook state, but we should stop submission
+        setSendAmountError('Failed to upload ticket document. Please try again.');
+        return;
+      }
+    }
+
     onContinue?.({
       ...data,
-      dateOfBirth: data.dateOfBirth ? formatDate(data.dateOfBirth) : null, 
+      dateOfBirth: data.dateOfBirth ? formatDate(data.dateOfBirth) : null,
       sender_notes: senderInfo?.notes ?? [],
       sender_notes_name: senderInfo?.notes_name ?? [],
       sender_coins: senderInfo?.coins ?? [],
@@ -127,6 +143,7 @@ export const ReceiverForm = ({
       receiverGets: exchangePreview?.rawAmount ?? 0,
       rateSource: useManualRate ? 'manual' : 'erpnext',
       rateDate: useManualRate ? null : rateDate,
+      ticket: ticketUrl,
       senderDenominationRows: senderDenomRowsRef.current.filter(r => r.count > 0).map(r => ({
         denomination_value: r.denom,
         denomination_type: getDenomType(r.denom, senderInfo?.notes, senderInfo?.coins),
@@ -141,7 +158,29 @@ export const ReceiverForm = ({
       })),
     });
   };
-  
+
+  // Ordered list of fields: text-focusable ones use setFocus, file ones use element id scroll
+  const FIELD_ORDER = [
+    'idName', 'dateOfBirth', 'government_id', 'idNumber',
+    'idIssueCountry', 'idIssueState', 'docFile', 'ticketFile',
+    'firstName', 'lastName', 'city', 'country', 'exchangeType',
+  ];
+  const FILE_FIELDS = new Set(['docFile', 'ticketFile']);
+
+  const onError = (errors) => {
+    const firstErrorField = FIELD_ORDER.find(f => errors[f]);
+    if (!firstErrorField) return;
+    if (FILE_FIELDS.has(firstErrorField)) {
+      const el = document.getElementById(`field-${firstErrorField}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      try { setFocus(firstErrorField); } catch (_) { }
+      const el = document.getElementById(`field-${firstErrorField}`) ||
+        document.querySelector(`[name="${firstErrorField}"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
   const FJD = { code: 'FJD', symbol: 'FJ$', name: 'Fijian Dollar' };
 
   return (
@@ -162,6 +201,8 @@ export const ReceiverForm = ({
             </div>
           </div>
         )}
+
+
 
         <div className="bg-[#B70000] px-6 sm:px-10 py-7">
           <div className="max-w-5xl mx-auto flex items-start justify-between flex-wrap gap-4">
@@ -191,15 +232,16 @@ export const ReceiverForm = ({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="px-4 sm:px-8 lg:px-12 py-8 flex flex-col gap-5 max-w-5xl mx-auto" noValidate>
-          <GovernmentIdSection />
-          
+        <form onSubmit={handleSubmit(onSubmit, onError)} className="px-4 sm:px-8 lg:px-12 py-8 flex flex-col gap-5 max-w-5xl mx-auto" noValidate>
+          <CreditLimit />
+          <GovernmentIdSection exchangeType={exchangeType} />
+
           <SectionDivider label="Personal Information" />
           <PersonalInfoSection />
           <LocationSection />
 
           <SectionDivider label="Exchange Details" />
-          <ExchangeSection 
+          <ExchangeSection
             exchangeType={exchangeType}
             availableCurrencies={availableCurrencies}
             ratesLoading={ratesLoading}
@@ -217,7 +259,7 @@ export const ReceiverForm = ({
           />
 
           <SectionDivider label="Cash Denomination Counts" />
-          <DenominationSection 
+          <DenominationSection
             senderInfo={senderInfo}
             receiverInfo={receiverInfo}
             exchangeType={exchangeType}
@@ -249,10 +291,10 @@ export const ReceiverForm = ({
             </button>
 
             <button type="submit"
-              disabled={!effectiveRate || effectiveRate <= 0 || ratesLoading}
+              disabled={!effectiveRate || effectiveRate <= 0 || ratesLoading || uploadLoading}
               className="flex items-center gap-2 bg-[#E00000] hover:bg-[#B70000] disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-semibold h-11 px-8 rounded-xl transition-colors group">
-              Continue
-              <ArrowRight size={16} strokeWidth={2} className="group-hover:translate-x-0.5 transition-transform" />
+              {uploadLoading ? 'Uploading...' : 'Continue'}
+              {!uploadLoading && <ArrowRight size={16} strokeWidth={2} className="group-hover:translate-x-0.5 transition-transform" />}
             </button>
           </div>
         </form>
