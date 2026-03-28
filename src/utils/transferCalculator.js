@@ -42,9 +42,9 @@ export const calculateTransfer = ({
   const totalToPay = amount + serviceFee + gst;
 
   return {
-    serviceFee: serviceFee.toFixed(2),
-    subTotal: subTotal.toFixed(2),
-    gst: gst.toFixed(2),
+    serviceFee: serviceFee.toFixed(4),
+    subTotal: subTotal.toFixed(4),
+    gst: gst.toFixed(4),
     totalToPay: totalToPay.toFixed(2),
     receiveAmount: receiveAmount.toFixed(2),
   };

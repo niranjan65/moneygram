@@ -737,7 +737,7 @@ export const TransferSuccess = ({
                 <div className="md:text-right col-span-2 md:col-span-1">
                   <p className="text-xs font-bold text-[#b5f000] uppercase tracking-widest mb-1">Exchange Rate</p>
                   <p className="font-bold text-white text-sm tracking-wide">
-                    1 {senderCurrency ?? ''} = {fmt(exchangeRate)} FJD
+                    1 {senderCurrency ?? ''} = {fmt(exchangeRate, 4)} FJD
                   </p>
                 </div>
               )}
@@ -773,8 +773,8 @@ export const TransferSuccess = ({
                     <tr key={i} className="hover:bg-white/5 transition-colors">
                       <td className="px-6 py-4 text-sm font-semibold text-white/90">{row.label}</td>
                       <td className="px-6 py-4 text-sm text-white/70 text-right">{row.qty}</td>
-                      <td className="px-6 py-4 text-sm text-white/70 text-right">{fmt(row.rate)}</td>
-                      <td className="px-6 py-4 text-sm font-bold text-white text-right">{fmt(row.amount)}</td>
+                      <td className="px-6 py-4 text-sm text-white/70 text-right">{fmt(row.rate, 4)}</td>
+                      <td className="px-6 py-4 text-sm font-bold text-white text-right">{fmt(row.amount, 4)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -785,17 +785,17 @@ export const TransferSuccess = ({
             <div className="mt-8 pt-8 border-t border-[#E00000]/30 flex flex-col items-end gap-3">
               <div className="flex justify-between w-full max-w-[260px]">
                 <span className="text-sm font-medium text-white/70">Net Amount:</span>
-                <span className="text-sm font-bold text-white">{fmt(netAmount)} {currency}</span>
+                <span className="text-sm font-bold text-white">{fmt(netAmount, 4)} {currency}</span>
               </div>
               <div className="flex justify-between w-full max-w-[260px]">
                 <span className="text-sm font-medium text-white/70">Taxes (VAT):</span>
-                <span className="text-sm font-bold text-white">{fmt(taxAmount)} {currency}</span>
+                <span className="text-sm font-bold text-white">{fmt(taxAmount, 4)} {currency}</span>
               </div>
               {exchangeRate && (
                 <div className="flex justify-between w-full max-w-[260px]">
                   <span className="text-sm font-medium text-white/70">Exchange Rate:</span>
                   <span className="text-sm font-bold text-[#b5f000]">
-                    1 {senderCurrency ?? ''} = {fmt(exchangeRate)} FJD
+                    1 {senderCurrency ?? ''} = {fmt(exchangeRate, 4)} FJD
                   </span>
                 </div>
               )}

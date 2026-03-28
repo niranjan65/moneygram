@@ -124,8 +124,8 @@ export default function SettingsPanel() {
 
           {/* warehouse */}
           <div>
-            <p className="text-xs font-bold tracking-widest uppercase text-[#E00000] mb-5">Warehouse</p>
-            <Field label="Active Warehouse">
+            <p className="text-xs font-bold tracking-widest uppercase text-[#E00000] mb-5">Location</p>
+            <Field label="Active Location">
               <div className="relative">
                 <select
                   value={selectedWarehouse?.warehouse}
