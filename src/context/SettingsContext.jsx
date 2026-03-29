@@ -1,68 +1,97 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { useUser } from "./UserContext";
 
 const SettingsContext = createContext(null);
 
 
 
-const defaultUser = {
-  name: "Niranjan Singh",
-  email: "niranjan.ks@anantdv.com",
-  role: "Admin",
-  avatar: "NS",
-  phone: "+91 98300 12345",
-  joined: "January 2024",
-};
-
 export function SettingsProvider({ children }) {
-  const [user, setUser] = useState(defaultUser);
+  const loginUser = useUser();
+  
+  const [user, setUser] = useState(() => {
+    const u = loginUser?.user || {};
+    return {
+      name: u.full_name || u.user || "Current User",
+      email: u.email || "",
+      role: "User",
+      avatar: (u.full_name || u.user || "U").substring(0, 2).toUpperCase(),
+      phone: u.phone || "",
+      joined: u.loginTime ? new Date(u.loginTime).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : "",
+    };
+  });
   const [warehouses, setWarehouses] = useState([])
   const [selectedWarehouse, setSelectedWarehouse] = useState();
   const [theme, setTheme] = useState("dark");
 
+  useEffect(() => {
+    if (loginUser?.user) {
+      const u = loginUser.user;
+      setUser({
+        name: u.full_name || u.user || "Current User",
+        email: u.email || "",
+        role: "User",
+        avatar: (u.full_name || u.user || "U").substring(0, 2).toUpperCase(),
+        phone: u.phone || "",
+        joined: u.loginTime ? new Date(u.loginTime).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : "",
+      });
+    } else {
+      setUser({
+        name: "Current User",
+        email: "",
+        role: "User",
+        avatar: "U",
+        phone: "",
+        joined: "",
+      });
+    }
+  }, [loginUser?.user]);
+
   const updateUser = (fields) => setUser((prev) => ({ ...prev, ...fields }));
 
   const getWarehouseForUser = async () => {
-  try {
-    const userRes = await fetch(
-      "http://182.71.135.110:82/api/method/frappe.auth.get_logged_user",
-      {
-        headers: {
-          Authorization: "token 661457e17b8612a:32a5ddcc5a9c177",
-        },
-      }
-    );
+    try {
+      const userRes = await fetch(
+        "http://182.71.135.110:82/api/method/frappe.auth.get_logged_user",
+        {
+          headers: {
+            Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
+          },
+        }
+      );
 
-    const userData = await userRes.json();
+      const userData = await userRes.json();
 
-    const warehouseRes = await fetch(
-      "http://182.71.135.110:82/api/method/moneygram.api.get_user_warehouse",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "token 661457e17b8612a:32a5ddcc5a9c177",
-        },
-        credentials: "include",
-        body: JSON.stringify({ user: userData.message.email }),
-      }
-    );
+      console.log("userData", userData)
 
-    const warehouseData = await warehouseRes.json();
+      const warehouseRes = await fetch(
+        "http://182.71.135.110:82/api/method/moneygram.api.get_user_warehouse",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
+          },
+          credentials: "include",
+          body: JSON.stringify({ user: userData.message.email }),
+        }
+      );
 
-    return warehouseData?.message; // ✅ NOW this works
-  } catch (error) {
-    console.error("Error fetching warehouse:", error);
-    return null;
-  }
-};
-   
+      const warehouseData = await warehouseRes.json();
+
+      return warehouseData?.message; // ✅ NOW this works
+    } catch (error) {
+      console.error("Error fetching warehouse:", error);
+      return null;
+    }
+  };
+
   useEffect(() => {
     getWarehouseForUser().then(r => {
-        setWarehouses(r)
-        setSelectedWarehouse(r[0])
+      setWarehouses(r)
+      setSelectedWarehouse(r[0])
     })
   }, [])
-  
+
 
   return (
     <SettingsContext.Provider

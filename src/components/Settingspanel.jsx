@@ -132,7 +132,7 @@ export default function SettingsPanel() {
                   onChange={(e) => setSelectedWarehouse(warehouses.find((w) => w.warehouse === e.target.value))}
                   className="w-full appearance-none border border-gray-300 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#E00000] bg-gray-50 text-gray-900 transition cursor-pointer"
                 >
-                  {warehouses.map((wh) => (
+                  {warehouses?.map((wh) => (
                     <option key={wh.name} value={wh.warehouse} className="bg-white text-gray-900">{wh.warehouse}</option>
                   ))}
                 </select>
