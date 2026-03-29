@@ -15,16 +15,16 @@ import CurrencyBalanceReport from "./components/CurrencyBalanceReport";
 
 function App() {
 
-//   const socket = io("http://182.71.135.110:8079");
+  //   const socket = io("http://182.71.135.110:8079");
 
-// useEffect(() => {
-//   console.log("object")
-//   socket.on("new-sales-invoice", (data) => {
-//     console.log("New Invoice:", data);
+  // useEffect(() => {
+  //   console.log("object")
+  //   socket.on("new-sales-invoice", (data) => {
+  //     console.log("New Invoice:", data);
 
-//     // Update state here
-//   });
-// }, []);
+  //     // Update state here
+  //   });
+  // }, []);
 
   return (
     <BrowserRouter>

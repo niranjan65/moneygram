@@ -1,8 +1,8 @@
 import React, { useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
-import { UserPlus, ArrowRight, AlertCircle } from 'lucide-react';
+import { UserPlus, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useExchange } from '../../../context/ExchangeContext';
-import { useERPNextRates } from '../../../hooks/useERPNextRates';
+
 import { useBaseCurrency, useDenomination } from '../../../hooks/useDenomination';
 import { useERPFileUpload } from '../../../hooks/useERPFileUpload';
 import { useExchangeCalculation } from '../hooks/useExchangeCalculation';
@@ -21,6 +21,7 @@ export const ReceiverForm = ({
   onContinue,
   onBack,
   onSummaryChange,
+  ratesData,
 }) => {
   const methods = useForm({
     defaultValues: {
@@ -50,7 +51,7 @@ export const ReceiverForm = ({
     noDataForToday,
     showUploadModal,
     setShowUploadModal,
-  } = useERPNextRates();
+  } = ratesData || {};
 
   const exchangeType = methods.watch('exchangeType');
 
@@ -192,7 +193,7 @@ export const ReceiverForm = ({
               <div className="text-4xl mb-4">📂</div>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">No Exchange Rates Found</h2>
               <p className="text-gray-500 text-sm mb-6 leading-relaxed">
-                Upload exchange rates in <strong>Currency Master Data</strong> first.
+                Please contact admin to update the rates.
               </p>
               <button type="button" onClick={() => setShowUploadModal(false)}
                 className="w-full bg-[#E00000] hover:bg-[#B70000] text-white font-semibold text-sm py-2.5 rounded-xl transition-colors">
@@ -233,6 +234,25 @@ export const ReceiverForm = ({
         </div>
 
         <form onSubmit={handleSubmit(onSubmit, onError)} className="px-4 sm:px-8 lg:px-12 py-8 flex flex-col gap-5 max-w-5xl mx-auto" noValidate>
+          {(!effectiveRate || effectiveRate <= 0) && !ratesLoading && (
+            <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl border border-[#E00000]/20 bg-[#E00000]/5">
+              <AlertCircle size={15} className="text-[#E00000] flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-sm text-red-800">Exchange Rates Unavailable</p>
+                <p className="text-xs text-[#E00000] mt-0.5">
+                  No rates found for today. Please contact admin to update the rates.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {effectiveRate > 0 && !ratesLoading && !noDataForToday && rateDate && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3.5 rounded-xl flex items-center gap-3 text-sm font-semibold shadow-sm">
+              <CheckCircle2 size={20} className="text-green-600 flex-shrink-0" />
+              Today's exchange rate is available (Date: {rateDate}).
+            </div>
+          )}
+
           <CreditLimit />
           <GovernmentIdSection exchangeType={exchangeType} />
 
@@ -272,17 +292,7 @@ export const ReceiverForm = ({
             receiverDenomRowsRef={receiverDenomRowsRef}
           />
 
-          {(!effectiveRate || effectiveRate <= 0) && !ratesLoading && (
-            <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl border border-[#E00000]/20 bg-[#E00000]/5 mt-2">
-              <AlertCircle size={15} className="text-[#E00000] flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-sm text-red-800">Exchange Rates Unavailable</p>
-                <p className="text-xs text-[#E00000] mt-0.5">
-                  No rates found for today. Please upload rates in Currency Master Data before proceeding.
-                </p>
-              </div>
-            </div>
-          )}
+
 
           <div className="flex items-center justify-between pt-2 pb-8">
             <button type="button" onClick={onBack}
