@@ -5,7 +5,7 @@ const API_URL =
 
 const HEADERS = {
   "Content-Type": "application/json",
-  Authorization: "token 661457e17b8612a:32a5ddcc5a9c177",
+  // Authorization: "token 661457e17b8612a:32a5ddcc5a9c177",
 };
 
 export function useCurrentUser() {
@@ -13,13 +13,14 @@ export function useCurrentUser() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  
+
 
   async function fetchUser() {
     try {
       const response = await fetch(API_URL, {
         method: "GET",
-        headers: HEADERS
+        headers: HEADERS,
+        credentials: "include",
       });
 
       if (!response.ok) {

@@ -9,6 +9,8 @@ import { TransferSuccess } from '../components/TransferSuccess';
 import { useERPFileUpload } from '../hooks/useERPFileUpload';
 import { ExchangeProvider } from '../context/ExchangeContext';
 import { useSettings } from '../context/SettingsContext';
+import { useERPNextRates } from '../hooks/useERPNextRates';
+import { CheckCircle2 } from 'lucide-react';
 
 const Step = {
   ESTIMATE: 1,
@@ -23,6 +25,7 @@ const TRANSFER_FEE = 4.99;
 
 const MoneyExchange = () => {
   const { uploadFile } = useERPFileUpload();
+  const ratesData = useERPNextRates();
 
   const [currentStep, setCurrentStep] = useState(Step.DETAILS);
 
@@ -486,6 +489,7 @@ const MoneyExchange = () => {
           onContinue={handleContinue}
           onBack={handleBack}
           onSummaryChange={handleSummaryChange}
+          ratesData={ratesData}
         />
 
         <div className="text-gray-400 text-xs font-semibold max-w-2xl px-2 leading-relaxed">
