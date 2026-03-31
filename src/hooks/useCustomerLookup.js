@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useUser } from "../context/UserContext";
 
 export const useCustomerLookup = (setValue) => {
   const [loading, setLoading] = useState(false);
-
+  const loginUser = useUser();
   const fetchCustomer = async (idNumber) => {
     if (!idNumber || idNumber.length < 3) return;
 
@@ -13,8 +14,8 @@ export const useCustomerLookup = (setValue) => {
         `http://192.168.101.182:81/api/resource/Customer/${idNumber}`,
         {
           headers: {
-            Authorization:
-              "token 661457e17b8612a:5a5fb35fb41cc58",
+            "Content-Type": "application/json",
+            Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
           },
         }
       );

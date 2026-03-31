@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import Navbar from "../components/layout/Navbar";
 import axios from "axios";
+// import React from "react";
+import { useUser } from "../context/UserContext";
 
 // const data = {
 //   Australia: [
@@ -140,7 +142,7 @@ export default function Stocks() {
   (country) => data[country]?.length > 0
 );
   const [active, setActive] = useState(countries[0]);
-
+  const loginUser = useUser();
   const currencyStock = async () => {
     try {
 
@@ -148,8 +150,8 @@ export default function Stocks() {
         method: 'POST',
         url: 'http://192.168.101.182:81/api/method/moneygram.moneygram.api.get_denomination.get_all_countries_stock',
         headers: {
-          authorization: 'token 661457e17b8612a:5a5fb35fb41cc58',
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
+          Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
         },
         data: { warehouse: 'Stores - MME' }
       };

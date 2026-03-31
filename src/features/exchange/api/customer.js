@@ -1,11 +1,15 @@
 export const getCustomerById = async (idNumber) => {
+  const loginUser = useUser();
   if (!idNumber || idNumber.length < 3) return null;
   try {
     const res = await fetch(
       `http://192.168.101.182:81/api/resource/Customer/${idNumber}`,
       {
         method: 'GET',
-        headers: { Authorization: 'token 661457e17b8612a:5a5fb35fb41cc58' }
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`, 
+        }
       }
     );
     
