@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useUser } from "../context/UserContext";
 
 export function useERPNextRates() {
   const [rates, setRates] = useState({});
@@ -15,7 +16,7 @@ export function useERPNextRates() {
         setLoading(true);
         setError(null);
         setNoDataForToday(false);
-
+        const loginUser = useUser();
         const today = new Date().toISOString().split("T")[0];
 
         const response = await fetch(
@@ -23,8 +24,8 @@ export function useERPNextRates() {
           {
             method: "POST", 
             headers: {
-              "Content-Type": "application/json",
-              "Authorization": "token 661457e17b8612a:5a5fb35fb41cc58",
+               "Content-Type": "application/json",
+                Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
 
             },
             // credentials: "include", 

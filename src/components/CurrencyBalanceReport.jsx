@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useUser } from "../context/UserContext";
 
 // ─── Brand colors (extend tailwind.config.js to replace style= props) ────────
 const B = {
@@ -11,8 +12,10 @@ const B = {
   borderAccent: 'rgba(181,240,0,0.3)',
 };
 
+
 // ─── API Config ───────────────────────────────────────────────────────────────
 const API_BASE = 'http://192.168.101.182:81';
+
 const REPORT_URL = `${API_BASE}/api/method/frappe.desk.query_report.run`;
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
@@ -175,6 +178,8 @@ const TrialRow = ({ row, isExpanded, hasChildren, onToggle, isTotal }) => {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export const TrialBalanceReport = () => {
 
+  const loginUser = useUser();
+
   // ── Filter state ─────────────────────────────────────────────────────────
   const currentYear = new Date().getFullYear();
   const [company,     setCompany]     = useState('MH Money Express');
@@ -221,13 +226,13 @@ export const TrialBalanceReport = () => {
         parent_field:             'parent_account',
         are_default_filters:      'false',
       });
-
+      const HEADERS = {
+      "Content-Type": "application/json",
+      Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
+      };
       const res = await fetch(REPORT_URL, {
         method:  'POST',
-        headers: { 
-            'Content-Type': 'application/x-www-form-urlencoded',
-            "Authorization": "token 661457e17b8612a:5a5fb35fb41cc58",
-         },
+        headers: HEADERS,
         body,
       });
 
@@ -255,7 +260,8 @@ export const TrialBalanceReport = () => {
   try {
     const res = await fetch(`${API_BASE}/api/resource/Company`, {
       headers: {
-        "Authorization": "token 661457e17b8612a:5a5fb35fb41cc58",
+        "Content-Type": "application/json",
+        Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
       }
     });
 
@@ -281,7 +287,8 @@ const fetchFiscalYears = async () => {
   try {
     const res = await fetch(`${API_BASE}/api/resource/Fiscal Year`, {
       headers: {
-        "Authorization": "token 661457e17b8612a:5a5fb35fb41cc58",
+        "Content-Type": "application/json",
+        Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
       }
     });
 

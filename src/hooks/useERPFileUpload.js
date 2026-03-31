@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useUser } from "../context/UserContext"; 
 
 export const useERPFileUpload = () => {
   const [loading, setLoading] = useState(false);
@@ -24,14 +25,15 @@ export const useERPFileUpload = () => {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("is_private", isPrivate);
-     
+      const loginUser = useUser();
 
       const response = await fetch(
         "http://192.168.101.182:81/api/method/upload_file",
         {
           method: "POST",
            headers: {
-              "Authorization": "token 661457e17b8612a:5a5fb35fb41cc58"
+              "Content-Type": "application/json",
+              Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
             },
           // credentials: "include",
           body: formData,
