@@ -12,7 +12,7 @@ const B = {
 };
 
 // ─── API Config ───────────────────────────────────────────────────────────────
-const API_BASE = 'http://182.71.135.110:82';
+const API_BASE = 'http://192.168.101.182:81';
 const REPORT_URL = `${API_BASE}/api/method/frappe.desk.query_report.run`;
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
@@ -226,7 +226,7 @@ export const TrialBalanceReport = () => {
         method:  'POST',
         headers: { 
             'Content-Type': 'application/x-www-form-urlencoded',
-            "Authorization": "token 661457e17b8612a:32a5ddcc5a9c177",
+            "Authorization": "token 661457e17b8612a:5a5fb35fb41cc58",
          },
         body,
       });
@@ -255,7 +255,7 @@ export const TrialBalanceReport = () => {
   try {
     const res = await fetch(`${API_BASE}/api/resource/Company`, {
       headers: {
-        "Authorization": "token 661457e17b8612a:32a5ddcc5a9c177",
+        "Authorization": "token 661457e17b8612a:5a5fb35fb41cc58",
       }
     });
 
@@ -281,7 +281,7 @@ const fetchFiscalYears = async () => {
   try {
     const res = await fetch(`${API_BASE}/api/resource/Fiscal Year`, {
       headers: {
-        "Authorization": "token 661457e17b8612a:32a5ddcc5a9c177",
+        "Authorization": "token 661457e17b8612a:5a5fb35fb41cc58",
       }
     });
 

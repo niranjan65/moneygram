@@ -8,11 +8,11 @@
 
 //   const [userDetail, setUserDetail] = useState(null)
 //   const API_URL =
-//   "http://182.71.135.110:82/api/method/frappe.auth.get_logged_user";
+//   "http://192.168.101.182:81/api/method/frappe.auth.get_logged_user";
 
 // const HEADERS = {
 //   "Content-Type": "application/json",
-//   Authorization: "token 661457e17b8612a:32a5ddcc5a9c177",
+//   Authorization: "token 661457e17b8612a:5a5fb35fb41cc58",
 // };
 
 // async function fetchCurrentUser () {

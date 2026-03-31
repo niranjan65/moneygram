@@ -103,7 +103,7 @@ const [receiverFileName, setReceiverFileName] = useState("");
   const fetchGST = async () => {
     try {
       const response = await fetch(
-        "http://182.71.135.110:82/api/method/moneygram.api.get_tax_template_for_company",
+        "http://192.168.101.182:81/api/method/moneygram.api.get_tax_template_for_company",
         {
           method: "POST",
           headers: {
@@ -318,12 +318,12 @@ const stepLabels = {
     console.log("===================================");
 
     const response = await fetch(
-      "http://182.71.135.110:82/api/method/moneygram.moneygram.api.money_exchange.create_money_transfer",
+      "http://192.168.101.182:81/api/method/moneygram.moneygram.api.money_exchange.create_money_transfer",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "token 661457e17b8612a:32a5ddcc5a9c177",
+          "Authorization": "token 661457e17b8612a:5a5fb35fb41cc58",
         },
         body: JSON.stringify(payload),
       }

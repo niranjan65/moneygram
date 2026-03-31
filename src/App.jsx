@@ -12,6 +12,7 @@ import { io } from "socket.io-client";
 import SoldiLanding from "./components/SoldiLanding";
 import SettingsPanel from "./components/Settingspanel";
 import CurrencyBalanceReport from "./components/CurrencyBalanceReport";
+import Stocks from "./pages/Stocks";
 
 function App() {
 
@@ -25,6 +26,8 @@ function App() {
   //     // Update state here
   //   });
   // }, []);
+
+  
 
   return (
     <BrowserRouter>
@@ -109,6 +112,15 @@ function App() {
           element={
             <ProtectedRoute>
               <SettingsPanel />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/stocks"
+          element={
+            <ProtectedRoute>
+              <Stocks />
             </ProtectedRoute>
           }
         />

@@ -142,6 +142,7 @@ export const ReceiverForm = ({
       receiverCurrency: toCurrency?.code ?? '',
       exchangeRate: exchangePreview?.rate ?? 0,
       receiverGets: exchangePreview?.rawAmount ?? 0,
+      totalAmount: exchangePreview?.rawAmount ?? 0,
       rateSource: useManualRate ? 'manual' : 'erpnext',
       rateDate: useManualRate ? null : rateDate,
       ticket: ticketUrl,
@@ -245,13 +246,13 @@ export const ReceiverForm = ({
               </div>
             </div>
           )}
-
+{/* 
           {effectiveRate > 0 && !ratesLoading && !noDataForToday && rateDate && (
             <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3.5 rounded-xl flex items-center gap-3 text-sm font-semibold shadow-sm">
               <CheckCircle2 size={20} className="text-green-600 flex-shrink-0" />
               Today's exchange rate is available (Date: {rateDate}).
             </div>
-          )}
+          )} */}
 
           <CreditLimit />
           <GovernmentIdSection exchangeType={exchangeType} />

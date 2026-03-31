@@ -27,11 +27,11 @@ export const useERPFileUpload = () => {
      
 
       const response = await fetch(
-        "http://182.71.135.110:82/api/method/upload_file",
+        "http://192.168.101.182:81/api/method/upload_file",
         {
           method: "POST",
            headers: {
-              "Authorization": "token 661457e17b8612a:32a5ddcc5a9c177"
+              "Authorization": "token 661457e17b8612a:5a5fb35fb41cc58"
             },
           // credentials: "include",
           body: formData,

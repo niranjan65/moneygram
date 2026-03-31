@@ -10,11 +10,11 @@ export const useCustomerLookup = (setValue) => {
       setLoading(true);
 
       const res = await fetch(
-        `http://182.71.135.110:82/api/resource/Customer/${idNumber}`,
+        `http://192.168.101.182:81/api/resource/Customer/${idNumber}`,
         {
           headers: {
             Authorization:
-              "token 661457e17b8612a:32a5ddcc5a9c177",
+              "token 661457e17b8612a:5a5fb35fb41cc58",
           },
         }
       );
@@ -31,7 +31,7 @@ export const useCustomerLookup = (setValue) => {
       if (data.image) {
         const url = data.image.startsWith("http")
           ? data.image
-          : `http://182.71.135.110:82${data.image}`;
+          : `http://192.168.101.182:81${data.image}`;
 
         setValue("docFile", url);
       }
