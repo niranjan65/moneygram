@@ -12,12 +12,12 @@ export function useCustomers() {
         setError(null);
 
         const response = await fetch(
-          "http://182.71.135.110:82/api/resource/Customer?fields=[\"name\",\"customer_name\",\"customer_group\",\"territory\"]&limit_page_length=500",
+          "http://192.168.101.182:81/api/resource/Customer?fields=[\"name\",\"customer_name\",\"customer_group\",\"territory\"]&limit_page_length=500",
           {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": "token 661457e17b8612a:32a5ddcc5a9c177"
+              "Authorization": "token 661457e17b8612a:5a5fb35fb41cc58"
             },
             credentials: "include",
           }

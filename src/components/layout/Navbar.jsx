@@ -155,6 +155,7 @@ export default function Navbar() {
     { label: "Money Transfer", href: "/money-transfer" },
     { label: "Currency Exchange", href: "/exchange" },
     { label: "Contact Us", href: "/contact-us" },
+    { label: "Stocks", href: "/stocks" },
     { label: "Settings", href: "/settings" },
   ];
 
