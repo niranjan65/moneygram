@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useUser } from "../context/UserContext";
 
 export const useCustomerLookup = (setValue) => {
   const [loading, setLoading] = useState(false);
-
+  const loginUser = useUser();
   const fetchCustomer = async (idNumber) => {
     if (!idNumber || idNumber.length < 3) return;
 
@@ -10,11 +11,11 @@ export const useCustomerLookup = (setValue) => {
       setLoading(true);
 
       const res = await fetch(
-        `http://192.168.101.182:81/api/resource/Customer/${idNumber}`,
+        `http://182.71.135.110:82/api/resource/Customer/${idNumber}`,
         {
           headers: {
-            Authorization:
-              "token 661457e17b8612a:5a5fb35fb41cc58",
+            "Content-Type": "application/json",
+            Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
           },
         }
       );
@@ -31,7 +32,7 @@ export const useCustomerLookup = (setValue) => {
       if (data.image) {
         const url = data.image.startsWith("http")
           ? data.image
-          : `http://192.168.101.182:81${data.image}`;
+          : `http://182.71.135.110:82${data.image}`;
 
         setValue("docFile", url);
       }

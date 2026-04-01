@@ -9,6 +9,7 @@ import FormInput from "../components/FormInput";
 import { calculateTransfer } from "../utils/transferCalculator";
 import { validateStepOne } from "../utils/validateStepOne";
 import { useERPFileUpload } from "../hooks/useERPFileUpload";
+import { useUser } from "../context/UserContext";
 
 const MoneyTransfer = () => {
   const Step = {
@@ -103,7 +104,7 @@ const [receiverFileName, setReceiverFileName] = useState("");
   const fetchGST = async () => {
     try {
       const response = await fetch(
-        "http://192.168.101.182:81/api/method/moneygram.api.get_tax_template_for_company",
+        "http://182.71.135.110:82/api/method/moneygram.api.get_tax_template_for_company",
         {
           method: "POST",
           headers: {
@@ -316,14 +317,14 @@ const stepLabels = {
     console.log("========== FINAL PAYLOAD ==========");
     console.log(JSON.stringify(payload, null, 2));
     console.log("===================================");
-
+    const loginUser = useUser();
     const response = await fetch(
-      "http://192.168.101.182:81/api/method/moneygram.moneygram.api.money_exchange.create_money_transfer",
+      "http://182.71.135.110:82/api/method/moneygram.moneygram.api.money_exchange.create_money_transfer",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "token 661457e17b8612a:5a5fb35fb41cc58",
+          Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
         },
         body: JSON.stringify(payload),
       }

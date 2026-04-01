@@ -46,7 +46,7 @@ export const useCustomer = () => {
       if (customer.image) {
         const url = customer.image.startsWith('http') 
           ? customer.image 
-          : `http://192.168.101.182:81${customer.image}`;
+          : `http://182.71.135.110:82${customer.image}`;
           
         setPreviewUrl(url);
         setPreviewFile(null);

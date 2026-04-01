@@ -11,6 +11,7 @@ import { ExchangeProvider } from '../context/ExchangeContext';
 import { useSettings } from '../context/SettingsContext';
 import { useERPNextRates } from '../hooks/useERPNextRates';
 import { CheckCircle2 } from 'lucide-react';
+import { useUser } from '../context/UserContext';
 
 const Step = {
   ESTIMATE: 1,
@@ -371,14 +372,14 @@ const MoneyExchange = () => {
         },
       };
 
-
+      const loginUser = useUser();
       const response = await fetch(
-        "http://192.168.101.182:81/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
+        "http://182.71.135.110:82/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": "token 661457e17b8612a:5a5fb35fb41cc58"
+            Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
           },
           credentials: "include", 
           body: JSON.stringify(apiPayload),

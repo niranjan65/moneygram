@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { useUser } from "../context/UserContext";
 
 export function useCustomers() {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const loginUser = useUser();
 
   useEffect(() => {
     async function fetchCustomers() {
@@ -12,12 +14,12 @@ export function useCustomers() {
         setError(null);
 
         const response = await fetch(
-          "http://192.168.101.182:81/api/resource/Customer?fields=[\"name\",\"customer_name\",\"customer_group\",\"territory\"]&limit_page_length=500",
+          "http://182.71.135.110:82/api/resource/Customer?fields=[\"name\",\"customer_name\",\"customer_group\",\"territory\"]&limit_page_length=500",
           {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": "token 661457e17b8612a:5a5fb35fb41cc58"
+              Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
             },
             credentials: "include",
           }
