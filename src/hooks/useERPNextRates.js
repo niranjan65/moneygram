@@ -10,13 +10,15 @@ export function useERPNextRates() {
   const [noDataForToday, setNoDataForToday] = useState(false);
    const [showUploadModal, setShowUploadModal] = useState(false);
 
+   const loginUser = useUser();
+
   useEffect(() => {
     async function fetchRates() {
       try {
         setLoading(true);
         setError(null);
         setNoDataForToday(false);
-        const loginUser = useUser();
+        
         const today = new Date().toISOString().split("T")[0];
 
         const response = await fetch(

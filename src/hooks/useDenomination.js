@@ -96,8 +96,8 @@ const extractNames = (arr = []) =>
     .map((item) => item.name);
 
 // Shared fetcher
-async function fetchCountryDenomination(country) {
-  const loginUser = useUser();
+async function fetchCountryDenomination(country, loginUser) {
+  
   const API_URL =
     "http://182.71.135.110:82/api/method/moneygram.moneygram.api.get_denomination.get_denomination";
 
@@ -133,6 +133,7 @@ async function fetchCountryDenomination(country) {
 
 // ── Foreign country denomination ─────────────────────────────────────────────
 export function useDenomination(country) {
+  const loginUser = useUser();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -143,7 +144,7 @@ export function useDenomination(country) {
     setLoading(true);
     setError(null);
 
-    fetchCountryDenomination(country)
+    fetchCountryDenomination(country, loginUser)
       .then((d) => setData(d))
       .catch((err) => {
         console.error("[useDenomination]", err);
@@ -157,12 +158,13 @@ export function useDenomination(country) {
 
 // ── Base currency (Fiji / FJD) ────────────────────────────────────────────────
 export function useBaseCurrency() {
+  const loginUser = useUser();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchCountryDenomination("Fiji")
+    fetchCountryDenomination("Fiji", loginUser)
       .then((d) => setData(d))
       .catch((err) => {
         console.error("[useBaseCurrency]", err);
