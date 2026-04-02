@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { UserPlus, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useExchange } from '../../../context/ExchangeContext';
@@ -25,7 +25,7 @@ export const ReceiverForm = ({
 }) => {
   const methods = useForm({
     defaultValues: {
-      country: initialData?.country ?? 'India',
+      country: initialData?.country ?? '',
       firstName: initialData?.firstName ?? '',
       lastName: initialData?.lastName ?? '',
       city: initialData?.city ?? '',
@@ -77,13 +77,18 @@ export const ReceiverForm = ({
 
   const { data: baseCurrencyInfo } = useBaseCurrency();
   const selectedDenomCountry = toCurrency?.country ?? null;
-  const { data: foreignCurrencyInfo, loading: denomLoading, error: denomError } = useDenomination(selectedDenomCountry);
+  const { data: foreignCurrencyInfo, loading: denomLoading, error: denomLoadError } = useDenomination(selectedDenomCountry);
 
   const senderInfo = exchangeType === 'BUY' ? baseCurrencyInfo : foreignCurrencyInfo;
   const receiverInfo = exchangeType === 'BUY' ? foreignCurrencyInfo : baseCurrencyInfo;
 
   const senderDenomRowsRef = useRef([]);
   const receiverDenomRowsRef = useRef([]);
+  // { total, target } for each panel — updated on every row change
+  const senderDenomStatusRef   = useRef({ total: 0, target: 0 });
+  const receiverDenomStatusRef = useRef({ total: 0, target: 0 });
+  const [denomBalanceError, setDenomBalanceError] = useState('');
+  const denomErrorRef = useRef(null);
 
   const formatDate = (date) => {
     if (!date) return null;
@@ -104,9 +109,39 @@ export const ReceiverForm = ({
       setSendAmountError('Please enter a valid send amount');
       return;
     }
-    if (!effectiveRate || effectiveRate <= 0) return;
+    if (!effectiveRate || effectiveRate <= 0) {
+      setSendAmountError('Please select a currency and rate before continuing.');
+      return;
+    }
     if (useManualRate && (!manualRate || parseFloat(manualRate) <= 0)) return;
     setSendAmountError('');
+
+    // ── Denomination balance check ──────────────────────────────────────────
+    const senderTarget = senderDenomStatusRef.current.target;
+    const senderTotal  = senderDenomStatusRef.current.total;
+    const receiverTarget = receiverDenomStatusRef.current.target;
+    const receiverTotal  = receiverDenomStatusRef.current.total;
+
+    const senderDiff   = senderTotal - senderTarget;
+    const receiverDiff = receiverTotal - receiverTarget;
+    const senderOk     = Math.abs(senderDiff) < 0.01;
+    const receiverOk   = Math.abs(receiverDiff) < 0.01;
+
+    if (!senderOk || !receiverOk) {
+      const lines = [];
+      if (!senderOk) {
+        const label = senderDiff > 0 ? 'overage' : 'shortfall';
+        lines.push(`Currency In has a ${label} of ${senderDiff > 0 ? '+' : ''}${senderDiff.toFixed(2)} (counted ${senderTotal.toFixed(2)}, expected ${senderTarget.toFixed(2)})`);
+      }
+      if (!receiverOk) {
+        const label = receiverDiff > 0 ? 'overage' : 'shortfall';
+        lines.push(`Currency Out has a ${label} of ${receiverDiff > 0 ? '+' : ''}${receiverDiff.toFixed(2)} (counted ${receiverTotal.toFixed(2)}, expected ${receiverTarget.toFixed(2)})`);
+      }
+      setDenomBalanceError(lines.join(' · '));
+      setTimeout(() => denomErrorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+      return;
+    }
+    setDenomBalanceError('');
 
     const getDenomType = (denom, notesArr = [], coinsArr = []) => {
       if (notesArr.includes(denom)) return 'Note';
@@ -235,7 +270,7 @@ export const ReceiverForm = ({
         </div>
 
         <form onSubmit={handleSubmit(onSubmit, onError)} className="px-4 sm:px-8 lg:px-12 py-8 flex flex-col gap-5 max-w-5xl mx-auto" noValidate>
-          {(!effectiveRate || effectiveRate <= 0) && !ratesLoading && (
+          {!ratesLoading && availableCurrencies?.length === 0 && (
             <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl border border-[#E00000]/20 bg-[#E00000]/5">
               <AlertCircle size={15} className="text-[#E00000] flex-shrink-0 mt-0.5" />
               <div>
@@ -280,6 +315,15 @@ export const ReceiverForm = ({
           />
 
           <SectionDivider label="Cash Denomination Counts" />
+          {denomBalanceError && (
+            <div ref={denomErrorRef} className="flex items-start gap-3 px-4 py-3.5 rounded-xl border border-[#E00000]/30 bg-[#E00000]/5">
+              <AlertCircle size={15} className="text-[#E00000] flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-sm text-red-800">Denomination Imbalance</p>
+                <p className="text-xs text-[#E00000] mt-0.5">{denomBalanceError}</p>
+              </div>
+            </div>
+          )}
           <DenominationSection
             senderInfo={senderInfo}
             receiverInfo={receiverInfo}
@@ -287,10 +331,12 @@ export const ReceiverForm = ({
             sendAmount={sendAmount}
             receiverGets={receiverGets}
             denomLoading={denomLoading}
-            denomError={denomError}
+            denomError={denomLoadError}
             selectedDenomCountry={selectedDenomCountry}
             senderDenomRowsRef={senderDenomRowsRef}
             receiverDenomRowsRef={receiverDenomRowsRef}
+            onSenderStatusChange={s => { senderDenomStatusRef.current = s; }}
+            onReceiverStatusChange={s => { receiverDenomStatusRef.current = s; }}
           />
 
 
@@ -302,7 +348,7 @@ export const ReceiverForm = ({
             </button>
 
             <button type="submit"
-              disabled={!effectiveRate || effectiveRate <= 0 || ratesLoading || uploadLoading}
+              disabled={ratesLoading || uploadLoading || (!ratesLoading && availableCurrencies?.length === 0)}
               className="flex items-center gap-2 bg-[#E00000] hover:bg-[#B70000] disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-semibold h-11 px-8 rounded-xl transition-colors group">
               {uploadLoading ? 'Uploading...' : 'Continue'}
               {!uploadLoading && <ArrowRight size={16} strokeWidth={2} className="group-hover:translate-x-0.5 transition-transform" />}

@@ -23,8 +23,8 @@ export const ExchangeSection = ({
   const FJD = { code: 'FJD', symbol: 'FJ$' };
 
   const exchangeTypes = [
-    { key: 'BUY', label: 'Buy Foreign', Icon: TrendingUp },
-    { key: 'SELL', label: 'Sell Foreign', Icon: ArrowLeftRight },
+    { key: 'BUY', label: 'Buy Forex', Icon: TrendingUp },
+    { key: 'SELL', label: 'Sell Forex', Icon: ArrowLeftRight },
   ];
 
   return (
@@ -112,6 +112,7 @@ export const ExchangeSection = ({
                       setToCurrency(found ?? null);
                       if (!useManualRate) setManualRate('');
                     }}>
+                    <option value="" disabled>— Select Rate —</option>
                     {availableCurrencies?.map(c => (
                       <option key={c.code} value={c.code}>
                         {c.code} — {exchangeType === 'BUY' ? `Buy: ${c.buyingRate ?? '—'}` : `Sell: ${c.sellingRate ?? '—'}`}

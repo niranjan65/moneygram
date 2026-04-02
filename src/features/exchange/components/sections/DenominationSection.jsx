@@ -12,7 +12,9 @@ export const DenominationSection = ({
   denomError,
   selectedDenomCountry,
   senderDenomRowsRef,
-  receiverDenomRowsRef
+  receiverDenomRowsRef,
+  onSenderStatusChange,
+  onReceiverStatusChange,
 }) => {
 
   return (
@@ -28,7 +30,7 @@ export const DenominationSection = ({
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {senderInfo ? (
           <DenominationPanel
-            title="Cash In" 
+            title="Currency In" 
             subtitle="Cash received from customer"
             flag={senderInfo.flag} 
             symbol={senderInfo.symbol} 
@@ -36,7 +38,12 @@ export const DenominationSection = ({
             notes={senderInfo.notes} 
             coins={senderInfo.coins}
             targetAmount={exchangeType === 'BUY' ? receiverGets : sendAmount}
-            onRowsChange={rows => { senderDenomRowsRef.current = rows; }}
+            onRowsChange={rows => {
+              senderDenomRowsRef.current = rows;
+              const total = rows.reduce((s, r) => s + r.denom * r.count, 0);
+              const target = exchangeType === 'BUY' ? receiverGets : sendAmount;
+              onSenderStatusChange?.({ total, target });
+            }}
             accentColor="#f97316"
           />
         ) : (
@@ -58,7 +65,7 @@ export const DenominationSection = ({
           </div>
         ) : receiverInfo ? (
           <DenominationPanel
-            title=" Cash Out"
+            title=" Currency Out"
             subtitle={`Cash to disburse to ${selectedDenomCountry ?? ''}`}
             flag={receiverInfo.flag} 
             symbol={receiverInfo.symbol} 
@@ -66,7 +73,12 @@ export const DenominationSection = ({
             notes={receiverInfo.notes} 
             coins={receiverInfo.coins}
             targetAmount={exchangeType === 'BUY' ? sendAmount : receiverGets}
-            onRowsChange={rows => { receiverDenomRowsRef.current = rows; }}
+            onRowsChange={rows => {
+              receiverDenomRowsRef.current = rows;
+              const total = rows.reduce((s, r) => s + r.denom * r.count, 0);
+              const target = exchangeType === 'BUY' ? sendAmount : receiverGets;
+              onReceiverStatusChange?.({ total, target });
+            }}
             accentColor="#dc2626"
           />
         ) : (

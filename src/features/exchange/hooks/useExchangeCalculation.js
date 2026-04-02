@@ -14,12 +14,7 @@ export const useExchangeCalculation = ({
   const [sendAmount, setSendAmount] = useState(externalSendAmount ?? 1000);
   const [sendAmountError, setSendAmountError] = useState('');
 
-  // Auto-select first available currency
-  useEffect(() => {
-    if (availableCurrencies?.length && !toCurrency) {
-      setToCurrency(availableCurrencies[0]);
-    }
-  }, [availableCurrencies, toCurrency]);
+  // No auto-select — user must pick a currency from the dropdown
 
   // Handle fallback if no data for today
   useEffect(() => {

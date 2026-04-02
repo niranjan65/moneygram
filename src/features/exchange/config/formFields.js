@@ -14,7 +14,7 @@ export const personalInfoFields = [
   
   {
     name: "lastName",
-    label: "Last/Given Name",
+    label: "Last/Family Name",
     placeholder: "e.g. Garcia",
     rules: { required: 'Last name is required', minLength: { value: 2, message: 'Too short' } },
   },
@@ -27,7 +27,7 @@ export const personalInfoFields = [
   {
     name: "purposeOfTransaction",
     label: "Purpose of Transaction",
-    placeholder: "optional",
+    placeholder: "eg: Travel, Education, Medical",
     rules: { minLength: { value: 2, message: 'Too short' } },
   },
    

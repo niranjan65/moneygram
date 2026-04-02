@@ -8,7 +8,7 @@
 
 //   const [userDetail, setUserDetail] = useState(null)
 //   const API_URL =
-//   "http://182.71.135.110:82/api/method/frappe.auth.get_logged_user";
+//   "http://192.168.101.182:81/api/method/frappe.auth.get_logged_user";
 
 // const HEADERS = {
 //   "Content-Type": "application/json",
@@ -87,6 +87,8 @@ export const SenderCard = () => {
     return <div className="p-6 text-red-500">Failed to load user</div>;
   }
 
+  console.log("Current user data:", user); // Debug log to check user data
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       <div className="px-6 py-4 flex items-center justify-between border-b border-gray-50 bg-gray-50/50">
@@ -122,10 +124,10 @@ export const SenderCard = () => {
 
         <div className="flex flex-col gap-1">
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-            Phone Number
+            Mobile Number
           </span>
           <span className="text-sm font-bold text-gray-900">
-            {user?.phone || "Not Available"}
+            {user?.mobile_no || "Not Available"}
           </span>
         </div>
       </div>
