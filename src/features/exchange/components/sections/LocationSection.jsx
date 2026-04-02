@@ -7,8 +7,9 @@ import { useCountries } from '../../../../hooks/useCountry';
 // import { useCountries } from '../../../../../hooks/useCountry'; 
 
 export const LocationSection = () => {
-  const { register, formState: { errors } } = useFormContext();
+  const { register, watch, setValue, formState: { errors } } = useFormContext();
   const { countries, loading: countryLoading, error: countryError } = useCountries();
+  const countryValue = watch('country') ?? '';
 
   return (
     <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
@@ -22,6 +23,8 @@ export const LocationSection = () => {
       <div className="px-5 py-5 grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <FieldLabel required icon={Globe}>Country</FieldLabel>
+          {/* hidden input keeps RHF validation wired up */}
+          <input type="hidden" {...register('country', { required: 'Please select a country' })} />
           {countryError ? (
             <p className="text-[#E00000] text-sm font-medium mt-1">Failed to load countries</p>
           ) : countryLoading ? (
@@ -29,8 +32,11 @@ export const LocationSection = () => {
           ) : (
             <div className="relative mt-1">
               <Globe size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              <select {...register('country', { required: 'Please select a country' })}
+              <select
+                value={countryValue}
+                onChange={e => setValue('country', e.target.value, { shouldValidate: true })}
                 className={`${fieldCls(errors.country)} appearance-none pl-9 pr-9`}>
+                {/* <option value="" disabled>Select Country</option> */}
                 <option value="">Select Country</option>
                 {countries?.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
               </select>

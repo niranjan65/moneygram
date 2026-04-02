@@ -42,7 +42,7 @@ const MoneyExchange = () => {
   const [receiverInfo, setReceiverInfo] = useState({
     firstName: '',
     lastName: '',
-    country: 'Spain',
+    country: '',
     city: '',
     deliveryMethod: 'BANK_DEPOSIT',
     bankName: '',
@@ -112,7 +112,7 @@ const MoneyExchange = () => {
     setReceiverInfo({
       firstName: '',
       lastName: '',
-      country: 'Spain',
+      country: '',
       city: '',
       deliveryMethod: 'BANK_DEPOSIT',
       bankName: '',
@@ -374,7 +374,7 @@ const MoneyExchange = () => {
 
       const loginUser = useUser();
       const response = await fetch(
-        "http://182.71.135.110:82/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
+        "http://192.168.101.182:81/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
         {
           method: "POST",
           headers: {
@@ -414,7 +414,7 @@ const MoneyExchange = () => {
     setReceiverInfo({
       firstName: '',
       lastName: '',
-      country: 'Spain',
+      country: '',
       city: '',
       deliveryMethod: 'BANK_DEPOSIT',
       bankName: '',
@@ -520,8 +520,8 @@ const MoneyExchange = () => {
                 {currentStep === Step.DETAILS && (
                   <div className="flex flex-col gap-3">
                     <h1 className="text-gray-900 text-3xl sm:text-5xl font-black tracking-tight leading-none">
-                      How much are you exchanging{" "}
-                      <span className="text-[#E00000] italic">money ?</span>
+                      How much money are you exchanging{" "}
+                      <span className="text-[#E00000] italic">today ?</span>
                     </h1>
                   </div>
                 )}

@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import { ChevronDown, BadgeCheck, Upload, FileText, CheckCircle2, ShieldCheck, X, Calendar, Ticket } from 'lucide-react';
+import { ChevronDown, BadgeCheck, Upload, FileText, CheckCircle2, ShieldCheck, X, Calendar, Ticket, Globe } from 'lucide-react';
 import { FieldLabel, fieldCls, ErrorMsg } from '../ui/FormUtilities';
 import { useCustomer } from '../../hooks/useCustomer';
+import { useCountries } from '../../../../hooks/useCountry';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
 export const GovernmentIdSection = ({ exchangeType }) => {
+  const { countries, loading: countryLoading, error: countryError } = useCountries();
   const { register, watch, setValue, formState: { errors } } = useFormContext();
   const [dragOver, setDragOver] = useState(false);
   const [ticketDragOver, setTicketDragOver] = useState(false);
@@ -75,9 +77,11 @@ export const GovernmentIdSection = ({ exchangeType }) => {
 
   const formatDate = (date) => {
     if (!date) return null;
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
+    const dObj = new Date(date);
+    if (isNaN(dObj.getTime())) return null;
+    const y = dObj.getFullYear();
+    const m = String(dObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dObj.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
   };
 
@@ -206,14 +210,23 @@ export const GovernmentIdSection = ({ exchangeType }) => {
         </div>
 
         <div>
-          <FieldLabel required icon={BadgeCheck}>ID Issue Country</FieldLabel>
-          <input type="text" placeholder={'Fiji - Fiji'}
-            {...register('idIssueCountry', {
-              required: 'ID Issue Country is required',
-              minLength: { value: 3, message: 'ID Isuue Country is too short' },
-
-            })}
-            className={`${fieldCls(errors.idIssueCountry)} mt-1`} />
+          <FieldLabel required icon={Globe}>ID Issue Country</FieldLabel>
+          {countryError ? (
+            <p className="text-[#E00000] text-sm font-medium mt-1">Failed to load countries</p>
+          ) : countryLoading ? (
+            <div className="h-12 rounded-lg animate-pulse bg-gray-100 mt-1" />
+          ) : (
+            <div className="relative mt-1">
+              <Globe size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <select
+                {...register('idIssueCountry', { required: 'ID Issue Country is required' })}
+                className={`${fieldCls(errors.idIssueCountry)} appearance-none pl-9 pr-9`}>
+                <option value="">Select Country</option>
+                {countries?.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+              </select>
+              <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            </div>
+          )}
           <ErrorMsg message={errors.idIssueCountry?.message} />
         </div>
 

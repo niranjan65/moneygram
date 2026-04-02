@@ -1,8 +1,10 @@
 import { useState, useCallback } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { getCustomerById } from '../api/customer';
+import { useUser } from '../../../context/UserContext';
 
 export const useCustomer = () => {
+  const loginUser = useUser();
   const { setValue } = useFormContext();
   const [loading, setLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -23,7 +25,7 @@ export const useCustomer = () => {
     if (!idNumber || idNumber.length < 3) return;
     
     setLoading(true);
-    const customer = await getCustomerById(idNumber);
+    const customer = await getCustomerById(idNumber, loginUser);
     setLoading(false);
 
     if (customer) {
@@ -46,14 +48,14 @@ export const useCustomer = () => {
       if (customer.image) {
         const url = customer.image.startsWith('http') 
           ? customer.image 
-          : `http://182.71.135.110:82${customer.image}`;
+          : `http://192.168.101.182:81${customer.image}`;
           
         setPreviewUrl(url);
         setPreviewFile(null);
         setValue('docFile', url, { shouldValidate: true });
       }
     }
-  }, [setValue]);
+  }, [setValue, loginUser]);
 
   const removeFile = useCallback(() => {
     setValue('docFile', null, { shouldValidate: true });
