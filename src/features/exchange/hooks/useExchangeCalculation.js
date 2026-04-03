@@ -11,7 +11,7 @@ export const useExchangeCalculation = ({
   const [toCurrency, setToCurrency] = useState(null);
   const [manualRate, setManualRate] = useState('');
   const [useManualRate, setUseManualRate] = useState(false);
-  const [sendAmount, setSendAmount] = useState(externalSendAmount ?? 1000);
+  const [sendAmount, setSendAmount] = useState(externalSendAmount ?? '');
   const [sendAmountError, setSendAmountError] = useState('');
 
   // No auto-select — user must pick a currency from the dropdown

@@ -27,7 +27,7 @@ export const personalInfoFields = [
   {
     name: "purposeOfTransaction",
     label: "Purpose of Transaction",
-    placeholder: "eg: Travel, Education, Medical",
+    placeholder: "eg: Gift, Travel, Education, Medical",
     rules: { minLength: { value: 2, message: 'Too short' } },
   },
    

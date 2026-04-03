@@ -245,7 +245,7 @@
 
 
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Edit2,
   TrendingUp,
@@ -259,8 +259,11 @@ import {
   CheckCircle2,
   Wallet,
   ArrowLeftRight,
+  MapPin,
+  X,
 } from 'lucide-react';
 import { useExchange } from '../context/ExchangeContext';
+import { useSettings } from '../context/SettingsContext';
 
 // ── Red Design Tokens (mirrors ReceiverForm / Summary) ────────────────────────
 const R = {
@@ -302,13 +305,16 @@ export const ReviewStep = ({
   onCancel,
   onConfirm,
 }) => {
-  const {
-    serviceFee,
-    gstAmount,
-    total,
-    serviceRate,
-    gstRate,
-  } = useExchange();
+  const { selectedWarehouse } = useSettings();
+  const [showNoWarehouseModal, setShowNoWarehouseModal] = useState(false);
+
+  const handleConfirm = () => {
+    if (!selectedWarehouse?.warehouse) {
+      setShowNoWarehouseModal(true);
+      return;
+    }
+    onConfirm?.();
+  };
 
   const {
     sendAmount       = 0,
@@ -322,6 +328,7 @@ export const ReviewStep = ({
     accountNumber    = '',
     deliveryMethod   = 'BANK_DEPOSIT',
     country          = '',
+    exchangeType     = 'BUY',
     totalDispensed,
     denominationRows = [],
   } = data;
@@ -497,7 +504,7 @@ export const ReviewStep = ({
           {/* Summary highlight card */}
           <div className="mt-2 flex flex-col gap-2">
             <ReviewRow
-              label="Customer Receives"
+              label={exchangeType === 'BUY' ? 'MH Receives' : 'Customer Receives'}
               value={`${fmt(sendAmount)} ${senderCurrency}`}
               icon={ArrowLeftRight}
               accent
@@ -527,7 +534,7 @@ export const ReviewStep = ({
                     Final Amount
                   </span>
                 </div>
-                <p className="text-red-200 text-xs font-medium">Fijian Dollar · FJD</p>
+                {/* <p className="text-red-200 text-xs font-medium">Fijian Dollar · FJD</p> */}
               </div>
               <div className="text-white font-black text-3xl tracking-tight">
                 {fmt(sendAmount)} <span className="text-xl text-red-200">{senderCurrency}</span>
@@ -557,7 +564,7 @@ export const ReviewStep = ({
               Cancel
             </button>
 
-            <button onClick={onConfirm}
+            <button onClick={handleConfirm}
               className="flex items-center gap-2.5 px-8 py-3 rounded-2xl text-sm font-black text-white transition-all hover:opacity-90 active:scale-95 group"
               style={{ background: gradBtn, boxShadow: `0 8px 24px ${R.primary}44` }}>
               Confirm Transaction
@@ -568,6 +575,38 @@ export const ReviewStep = ({
         </div>
 
       </div>
+
+      {/* ── No Warehouse Modal ── */}
+      {showNoWarehouseModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-7 max-w-sm w-full mx-4">
+            <div className="flex items-start gap-4">
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: `${R.primary}15` }}>
+                <MapPin size={20} style={{ color: R.primary }} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-black text-gray-900 mb-1">Location Not Selected</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  No location is set. Please select the default Location in Settings first, then continue.
+                </p>
+              </div>
+              <button onClick={() => setShowNoWarehouseModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors mt-0.5">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button
+                onClick={() => setShowNoWarehouseModal(false)}
+                className="px-6 py-2.5 rounded-xl text-sm font-black text-white transition-all hover:opacity-90"
+                style={{ background: gradBtn }}>
+                OK, Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

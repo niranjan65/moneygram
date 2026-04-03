@@ -30,6 +30,8 @@ const MoneyExchange = () => {
 
   const [currentStep, setCurrentStep] = useState(Step.DETAILS);
 
+  const loginUser = useUser();
+
 
   const [senderInfo] = useState({
     name: 'Niranjan Singh',
@@ -52,7 +54,7 @@ const MoneyExchange = () => {
   });
 
   const [summary, setSummary] = useState({
-    sendAmount: 1000.00,
+    sendAmount: null,
     currency: 'USD',
     fee: TRANSFER_FEE,
     exchangeRate: 0.02,
@@ -121,7 +123,7 @@ const MoneyExchange = () => {
       receiverCurrency: 'EUR',
     });
     setSummary({
-      sendAmount: 1000.00,
+      sendAmount: 0,
       currency: 'USD',
       fee: TRANSFER_FEE,
       exchangeRate: 0.02,
@@ -372,9 +374,9 @@ const MoneyExchange = () => {
         },
       };
 
-      const loginUser = useUser();
+      
       const response = await fetch(
-        "http://192.168.101.182:81/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
+        "https://mhmoneyexpress.anantdv.com/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
         {
           method: "POST",
           headers: {
@@ -405,7 +407,7 @@ const MoneyExchange = () => {
       console.error("API Error:", error);
       alert("Something went wrong while creating exchange");
     }
-  }, [transferPayload, senderInfo.email, summary, transferPayload?.receiverDenominationRows]);
+  }, [transferPayload, senderInfo.email, summary, transferPayload?.receiverDenominationRows, loginUser]);
 
   
 
@@ -425,7 +427,7 @@ const MoneyExchange = () => {
 
     // Reset summary
     setSummary({
-      sendAmount: 1000.00,
+      sendAmount: 0,
       currency: 'USD',
       fee: TRANSFER_FEE,
       exchangeRate: 0.02,
