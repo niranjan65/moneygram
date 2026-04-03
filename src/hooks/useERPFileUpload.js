@@ -28,7 +28,7 @@ export const useERPFileUpload = () => {
       const loginUser = useUser();
 
       const response = await fetch(
-        "http://192.168.101.182:81/api/method/upload_file",
+        "https://mhmoneyexpress.anantdv.com/api/method/upload_file",
         {
           method: "POST",
            headers: {

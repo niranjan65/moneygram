@@ -9,7 +9,6 @@ import { useExchangeCalculation } from '../hooks/useExchangeCalculation';
 
 import { GovernmentIdSection } from './sections/GovernmentIdSection';
 import { PersonalInfoSection } from './sections/PersonalInfoSection';
-import { LocationSection } from './sections/LocationSection';
 import { ExchangeSection } from './sections/ExchangeSection';
 import { DenominationSection } from './sections/DenominationSection';
 import { SectionDivider } from './ui/FormUtilities';
@@ -294,7 +293,6 @@ export const ReceiverForm = ({
 
           <SectionDivider label="Personal Information" />
           <PersonalInfoSection />
-          <LocationSection />
 
           <SectionDivider label="Exchange Details" />
           <ExchangeSection

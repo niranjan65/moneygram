@@ -363,7 +363,7 @@ export const Summary = () => {
             <div className="text-white font-bold text-2xl tracking-tight">
               {fmt(receiverGets)}
             </div>
-            <p className="text-white/80 text-xs mt-1">Fijian Dollar · FJD</p>
+            {/* <p className="text-white/80 text-xs mt-1">Fijian Dollar · FJD</p> */}
           </div>
 
         </div>

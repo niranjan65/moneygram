@@ -126,11 +126,17 @@ export const ExchangeSection = ({
               <div className="relative mt-2">
                 <input type="number" min="0" step="any" value={sendAmount}
                   onChange={e => {
-                    const val = parseFloat(e.target.value) || 0;
-                    setSendAmount(val);
-                    setSendAmountError(val > 0 ? '' : 'Please enter a valid amount');
+                    const raw = e.target.value;
+                    if (raw === '') {
+                      setSendAmount('');
+                      setSendAmountError('');
+                    } else {
+                      const val = parseFloat(raw);
+                      setSendAmount(isNaN(val) ? '' : val);
+                      setSendAmountError(val > 0 ? '' : 'Please enter a valid amount');
+                    }
                   }}
-                  placeholder="0.00"
+                  placeholder="Enter Forex amount"
                   className={`${inputBase} text-lg font-semibold pr-16 ${sendAmountError ? 'border-[#E00000]/30 bg-[#E00000]/5' : ''}`} />
                 <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-xs font-medium text-gray-400">
                   {toCurrency?.code ?? '---'}

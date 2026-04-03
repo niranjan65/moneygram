@@ -51,7 +51,7 @@ export function SettingsProvider({ children }) {
   const getWarehouseForUser = async () => {
     try {
       const userRes = await fetch(
-        "http://192.168.101.182:81/api/method/frappe.auth.get_logged_user",
+        "https://mhmoneyexpress.anantdv.com/api/method/frappe.auth.get_logged_user",
         {
           headers: {
             Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
@@ -64,7 +64,7 @@ export function SettingsProvider({ children }) {
       console.log("userData", userData)
 
       const warehouseRes = await fetch(
-        "http://192.168.101.182:81/api/method/moneygram.api.get_user_warehouse",
+        "https://mhmoneyexpress.anantdv.com/api/method/moneygram.api.get_user_warehouse",
         {
           method: "POST",
           headers: {
