@@ -357,7 +357,7 @@ export const Summary = () => {
             <div className="flex items-center gap-1.5 mb-1.5">
               <CheckCircle2 size={12} className="text-[#b5f000]" strokeWidth={2.5} />
               <span className="text-[#b5f000] text-[10px] font-semibold uppercase tracking-widest">
-                Final Amount
+                Final Local Amount
               </span>
             </div>
             <div className="text-white font-bold text-2xl tracking-tight">

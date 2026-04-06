@@ -97,10 +97,10 @@ export const SenderCard = () => {
           Teller Information
         </h3>
 
-        <button className="text-xs font-bold text-primary hover:text-primary/80 flex items-center gap-1 uppercase tracking-wider">
+        {/* <button className="text-xs font-bold text-primary hover:text-primary/80 flex items-center gap-1 uppercase tracking-wider">
           <Edit3 size={14} />
           Edit
-        </button>
+        </button> */}
       </div>
 
       <div className="px-6 py-5 flex flex-wrap gap-x-12 gap-y-4">

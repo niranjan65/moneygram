@@ -1,5 +1,9 @@
 import { useMemo, useState, useEffect } from 'react';
 
+// FJD smallest circulating coin is 5 cents — round to nearest 0.05
+export const roundTo5Cents = (amount) =>
+  Math.round(amount / 0.05) * 0.05;
+
 export const useExchangeCalculation = ({
   availableCurrencies,
   externalSendAmount,
@@ -37,23 +41,32 @@ export const useExchangeCalculation = ({
   const exchangePreview = useMemo(() => {
     if (!effectiveRate || effectiveRate <= 0) return null;
     if (!sendAmount || sendAmount <= 0) return null;
-    
+
     let receiverAmount = 0;
     if (exchangeType === 'BUY') {
+      // BUY: customer pays FJD (sendAmount), MH gives foreign currency
+      // Foreign amount — no FJD rounding needed here
       receiverAmount = sendAmount * effectiveRate;
     }
-    if (exchangeType === 'SELL') { 
-      receiverAmount = sendAmount * effectiveRate; 
+    if (exchangeType === 'SELL') {
+      // SELL: customer pays foreign (sendAmount), MH gives FJD
+      // Result IS FJD — round to nearest 5 cents
+      receiverAmount = roundTo5Cents(sendAmount * effectiveRate);
     }
-    
-    // receiverAmount = Math.round((receiverAmount + Number.EPSILON) * 100) / 100;
-    // receiverAmount = Math.round((receiverAmount + Number.EPSILON) * 10000) / 10000;
-    return { 
-      rate: effectiveRate, 
+
+    return {
+      rate: effectiveRate,
       rawAmount: receiverAmount,
-      formatted: receiverAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }) 
+      formatted: receiverAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })
     };
   }, [effectiveRate, sendAmount, exchangeType]);
+
+  // For BUY: the FJD sendAmount is entered by the user — round it to 5 cents
+  // for use as the denomination panel target.
+  const fjdSendAmount = useMemo(() => {
+    if (!sendAmount || sendAmount <= 0) return 0;
+    return exchangeType === 'BUY' ? roundTo5Cents(parseFloat(sendAmount)) : parseFloat(sendAmount);
+  }, [sendAmount, exchangeType]);
 
   // Trigger onSummaryChange whenever inputs change
   useEffect(() => {
@@ -81,5 +94,6 @@ export const useExchangeCalculation = ({
     setSendAmountError,
     effectiveRate,
     exchangePreview,
+    fjdSendAmount,
   };
 };

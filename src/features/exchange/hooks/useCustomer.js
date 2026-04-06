@@ -5,10 +5,23 @@ import { useUser } from '../../../context/UserContext';
 
 export const useCustomer = () => {
   const loginUser = useUser();
-  const { setValue } = useFormContext();
+  const { setValue, getValues } = useFormContext();
   const [loading, setLoading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const [previewFile, setPreviewFile] = useState(null);
+
+  const initialDocFile = getValues ? getValues('docFile') : null;
+  const [previewUrl, setPreviewUrl] = useState(() => {
+    if (!initialDocFile) return null;
+    if (typeof initialDocFile === 'string') return initialDocFile;
+    if (initialDocFile instanceof File || initialDocFile instanceof Blob) {
+      return URL.createObjectURL(initialDocFile);
+    }
+    return null;
+  });
+  const [previewFile, setPreviewFile] = useState(() => {
+    if (!initialDocFile) return null;
+    if (initialDocFile instanceof File || initialDocFile instanceof Blob) return initialDocFile;
+    return null;
+  });
 
   const clearCustomerData = useCallback(() => {
     setValue('firstName', '');

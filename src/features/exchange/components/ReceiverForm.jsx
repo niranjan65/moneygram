@@ -18,29 +18,43 @@ export const ReceiverForm = ({
   initialData,
   sendAmount: externalSendAmount,
   onContinue,
-  onBack,
+  onClear,
   onSummaryChange,
   ratesData,
 }) => {
   const methods = useForm({
     defaultValues: {
-      country: initialData?.country ?? '',
-      firstName: initialData?.firstName ?? '',
-      lastName: initialData?.lastName ?? '',
-      city: initialData?.city ?? '',
-      idType: 'PASSPORT',
-      idNumber: '',
-      docFile: null,
-      ticketFile: null,
-      pastReceiver: 'New Receiver',
-      exchangeType: 'BUY',
-      government_id: 'Passport'
+      rbfNumber: initialData?.rbfNumber || '',
+      rbfDocument: initialData?.rbfDocument || null,
+      country: initialData?.country || '',
+      firstName: initialData?.firstName || '',
+      lastName: initialData?.lastName || '',
+      city: initialData?.city || '',
+      idType: initialData?.idType || 'PASSPORT',
+      idNumber: initialData?.idNumber || '',
+      docFile: initialData?.docFile || null,
+      travelDate: initialData?.travelDate || '',
+      destination: initialData?.destination || '',
+      airwaysName: initialData?.airwaysName || '',
+      flightNumber: initialData?.flightNumber || '',
+      pnrNumber: initialData?.pnrNumber || '',
+      pastReceiver: initialData?.pastReceiver || 'New Receiver',
+      exchangeType: initialData?.exchangeType || 'BUY',
+      government_id: initialData?.government_id || 'Passport',
+      idName: initialData?.idName || '',
+      dateOfBirth: initialData?.dateOfBirth || '',
+      idIssueCountry: initialData?.idIssueCountry || '',
+      idIssueState: initialData?.idIssueState || '',
+      occupation: initialData?.occupation || 'Accountant / Auditor',
+      secondLastName: initialData?.secondLastName || '',
     },
   });
 
   const { handleSubmit, setFocus } = methods;
   const { receiverGets } = useExchange();
   const { uploadFile, loading: uploadLoading } = useERPFileUpload();
+  const [isCreditExceeded, setIsCreditExceeded] = useState(false);
+
 
   const {
     availableCurrencies,
@@ -66,6 +80,7 @@ export const ReceiverForm = ({
     setSendAmountError,
     effectiveRate,
     exchangePreview,
+    fjdSendAmount,
   } = useExchangeCalculation({
     availableCurrencies,
     externalSendAmount,
@@ -84,7 +99,7 @@ export const ReceiverForm = ({
   const senderDenomRowsRef = useRef([]);
   const receiverDenomRowsRef = useRef([]);
   // { total, target } for each panel — updated on every row change
-  const senderDenomStatusRef   = useRef({ total: 0, target: 0 });
+  const senderDenomStatusRef = useRef({ total: 0, target: 0 });
   const receiverDenomStatusRef = useRef({ total: 0, target: 0 });
   const [denomBalanceError, setDenomBalanceError] = useState('');
   const denomErrorRef = useRef(null);
@@ -117,14 +132,14 @@ export const ReceiverForm = ({
 
     // ── Denomination balance check ──────────────────────────────────────────
     const senderTarget = senderDenomStatusRef.current.target;
-    const senderTotal  = senderDenomStatusRef.current.total;
+    const senderTotal = senderDenomStatusRef.current.total;
     const receiverTarget = receiverDenomStatusRef.current.target;
-    const receiverTotal  = receiverDenomStatusRef.current.total;
+    const receiverTotal = receiverDenomStatusRef.current.total;
 
-    const senderDiff   = senderTotal - senderTarget;
+    const senderDiff = senderTotal - senderTarget;
     const receiverDiff = receiverTotal - receiverTarget;
-    const senderOk     = Math.abs(senderDiff) < 0.01;
-    const receiverOk   = Math.abs(receiverDiff) < 0.01;
+    const senderOk = Math.abs(senderDiff) < 0.01;
+    const receiverOk = Math.abs(receiverDiff) < 0.01;
 
     if (!senderOk || !receiverOk) {
       const lines = [];
@@ -148,17 +163,7 @@ export const ReceiverForm = ({
       return denom >= 1 ? 'Note' : 'Coin';
     };
 
-    let ticketUrl = null;
-    if (data.ticketFile) {
-      ticketUrl = await uploadFile(data.ticketFile);
-
-      console.log("ticketUrl", ticketUrl);
-      if (!ticketUrl) {
-        // If upload fails, error is likely handled via hook state, but we should stop submission
-        setSendAmountError('Failed to upload ticket document. Please try again.');
-        return;
-      }
-    }
+    console.log('[RBF DEBUG] 3. onSubmit - data.rbfDocument:', data.rbfDocument, 'instanceof File:', data.rbfDocument instanceof File);
 
     onContinue?.({
       ...data,
@@ -179,7 +184,13 @@ export const ReceiverForm = ({
       totalAmount: exchangePreview?.rawAmount ?? 0,
       rateSource: useManualRate ? 'manual' : 'erpnext',
       rateDate: useManualRate ? null : rateDate,
-      ticket: ticketUrl,
+      travelDate: data.travelDate,
+      destination: data.destination,
+      airwaysName: data.airwaysName,
+      flightNumber: data.flightNumber,
+      pnrNumber: data.pnrNumber,
+      rbfNumber: data.rbfNumber || null,
+      rbfDocument: data.rbfDocument || null,
       senderDenominationRows: senderDenomRowsRef.current.filter(r => r.count > 0).map(r => ({
         denomination_value: r.denom,
         denomination_type: getDenomType(r.denom, senderInfo?.notes, senderInfo?.coins),
@@ -198,10 +209,12 @@ export const ReceiverForm = ({
   // Ordered list of fields: text-focusable ones use setFocus, file ones use element id scroll
   const FIELD_ORDER = [
     'idName', 'dateOfBirth', 'government_id', 'idNumber',
-    'idIssueCountry', 'idIssueState', 'docFile', 'ticketFile',
+    'idIssueCountry', 'idIssueState', 'docFile', 'travelDate', 'destination', 'airwaysName', 'flightNumber', 'pnrNumber',
+    'rbfNumber', 'rbfDocument',
     'firstName', 'lastName', 'city', 'country', 'exchangeType',
   ];
-  const FILE_FIELDS = new Set(['docFile', 'ticketFile']);
+  const FILE_FIELDS = new Set(['docFile', 'rbfDocument']);
+
 
   const onError = (errors) => {
     const firstErrorField = FIELD_ORDER.find(f => errors[f]);
@@ -280,7 +293,7 @@ export const ReceiverForm = ({
               </div>
             </div>
           )}
-{/* 
+          {/* 
           {effectiveRate > 0 && !ratesLoading && !noDataForToday && rateDate && (
             <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3.5 rounded-xl flex items-center gap-3 text-sm font-semibold shadow-sm">
               <CheckCircle2 size={20} className="text-green-600 flex-shrink-0" />
@@ -288,8 +301,8 @@ export const ReceiverForm = ({
             </div>
           )} */}
 
-          <CreditLimit />
-          <GovernmentIdSection exchangeType={exchangeType} />
+          <CreditLimit sendAmount={sendAmount} onLimitCheck={setIsCreditExceeded} />
+          <GovernmentIdSection exchangeType={exchangeType} isCreditExceeded={isCreditExceeded} />
 
           <SectionDivider label="Personal Information" />
           <PersonalInfoSection />
@@ -326,8 +339,8 @@ export const ReceiverForm = ({
             senderInfo={senderInfo}
             receiverInfo={receiverInfo}
             exchangeType={exchangeType}
-            sendAmount={sendAmount}
-            receiverGets={receiverGets}
+            sendAmount={fjdSendAmount}
+            receiverGets={exchangePreview?.rawAmount ?? 0}
             denomLoading={denomLoading}
             denomError={denomLoadError}
             selectedDenomCountry={selectedDenomCountry}
@@ -340,9 +353,9 @@ export const ReceiverForm = ({
 
 
           <div className="flex items-center justify-between pt-2 pb-8">
-            <button type="button" onClick={onBack}
-              className="flex items-center gap-1.5 text-sm font-medium text-gray-400 hover:text-gray-600 transition-colors px-4 py-2.5 rounded-lg hover:bg-gray-100">
-              ← Back
+            <button type="button" onClick={onClear}
+              className="flex items-center gap-1.5 text-sm font-medium text-gray-400 hover:text-red-500 transition-colors px-4 py-2.5 rounded-lg hover:bg-red-50">
+              Clear
             </button>
 
             <button type="submit"

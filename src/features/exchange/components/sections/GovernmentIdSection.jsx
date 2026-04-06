@@ -1,20 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import { ChevronDown, BadgeCheck, Upload, FileText, CheckCircle2, ShieldCheck, X, Calendar, Ticket, Globe } from 'lucide-react';
+import { ChevronDown, BadgeCheck, Upload, FileText, CheckCircle2, ShieldCheck, X, Calendar, Globe, Plane, MapPin, Hash, QrCode, AlertCircle } from 'lucide-react';
 import { FieldLabel, fieldCls, ErrorMsg } from '../ui/FormUtilities';
 import { useCustomer } from '../../hooks/useCustomer';
 import { useCountries } from '../../../../hooks/useCountry';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
-export const GovernmentIdSection = ({ exchangeType }) => {
+export const GovernmentIdSection = ({ exchangeType, isCreditExceeded }) => {
   const { countries, loading: countryLoading, error: countryError } = useCountries();
-  const { register, watch, setValue, formState: { errors } } = useFormContext();
+  const { register, watch, setValue, getValues, formState: { errors } } = useFormContext();
   const [dragOver, setDragOver] = useState(false);
-  const [ticketDragOver, setTicketDragOver] = useState(false);
-  const [ticketFile, setTicketFile] = useState(null);
-  const [ticketPreviewUrl, setTicketPreviewUrl] = useState(null);
-  const ticketInputRef = useRef(null);
+  const [rbfFileName, setRbfFileName] = useState('');  // display name for the selected RBF file
+
   const governmentId = watch('government_id');
   const idName = watch('idName');
   const dateOfBirth = watch('dateOfBirth');
@@ -40,34 +38,9 @@ export const GovernmentIdSection = ({ exchangeType }) => {
   //   clearCustomerData();
   // }, [governmentId, clearCustomerData]);
 
-  register('docFile', { validate: v => !!v || 'Please upload a government document' });
-  register('ticketFile', { validate: v => exchangeType !== 'SELL' || !!v || 'Please attach a ticket document' });
+  // register('docFile', { validate: v => !!v || 'Please upload a government document' });
+  register('docFile');
 
-  const handleTicketFile = (file) => {
-    if (!file) return;
-    setTicketFile(file);
-    setValue('ticketFile', file, { shouldValidate: true });
-    if (file.type === 'application/pdf') {
-      setTicketPreviewUrl('pdf');
-    } else {
-      const reader = new FileReader();
-      reader.onload = (e) => setTicketPreviewUrl(e.target.result);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removeTicketFile = () => {
-    setTicketFile(null);
-    setTicketPreviewUrl(null);
-    setValue('ticketFile', null, { shouldValidate: true });
-    if (ticketInputRef.current) ticketInputRef.current.value = '';
-  };
-
-  const onTicketDrop = (e) => {
-    e.preventDefault();
-    setTicketDragOver(false);
-    handleTicketFile(e.dataTransfer.files[0]);
-  };
 
   const onDrop = (e) => {
     e.preventDefault();
@@ -242,8 +215,8 @@ export const GovernmentIdSection = ({ exchangeType }) => {
           <ErrorMsg message={errors.idIssueCountry?.message} />
         </div>
 
-        <div>
-          <FieldLabel required icon={Upload}>
+        <div id="field-docFile">
+          <FieldLabel icon={Upload}>
             {governmentId === 'Passport' ? 'Passport Photo / Scan' : 'Government ID Photo / Scan'}
           </FieldLabel>
           <div className="mt-1">
@@ -302,64 +275,139 @@ export const GovernmentIdSection = ({ exchangeType }) => {
           <ErrorMsg message={errors.docFile?.message} />
         </div>
 
-        {/* Ticket Attachment Field — only for SELL */}
-        {exchangeType === 'SELL' && <div id="field-ticketFile">
-          <FieldLabel required icon={Ticket}>Ticket</FieldLabel>
-          <div className="mt-1">
-            {ticketPreviewUrl ? (
-              <div className={`rounded-lg border overflow-hidden ${errors.ticketFile ? 'border-[#E00000]/30' : 'border-gray-200'}`}>
-                {ticketPreviewUrl === 'pdf' ? (
-                  <div className="flex items-center gap-3 px-4 py-3 bg-white">
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-[#E00000]/5">
-                      <FileText size={16} className="text-[#E00000]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-800 text-sm truncate">{ticketFile?.name}</p>
-                      <p className="text-xs text-gray-400">{ticketFile ? (ticketFile.size / 1024).toFixed(1) : '0'} KB · PDF</p>
-                    </div>
-                    <button type="button" onClick={removeTicketFile}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-[#E00000] hover:bg-[#E00000]/5 transition-colors">
-                      <X size={14} />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <img src={ticketPreviewUrl} alt="Ticket" className="w-full max-h-48 object-contain p-3 bg-gray-50" />
-                    <button type="button" onClick={removeTicketFile}
-                      className="absolute top-2 right-2 w-7 h-7 bg-white border border-gray-200 rounded-lg shadow-sm flex items-center justify-center text-gray-400 hover:text-[#E00000] transition-colors">
-                      <X size={13} />
-                    </button>
-                    <div className="flex items-center gap-1.5 px-4 py-2 bg-green-50 border-t border-green-100 text-xs font-medium text-green-700">
-                      <CheckCircle2 size={11} strokeWidth={2.5} /> Ticket uploaded
-                    </div>
+        {/* Travel Details — only for SELL */}
+        {exchangeType === 'SELL' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-2 p-4 bg-gray-50 border border-gray-100 rounded-xl">
+            <div className="sm:col-span-2 py-2 flex items-center gap-2">
+              <Plane className="text-[#E00000]" size={18} />
+              <p className="text-sm font-semibold text-gray-800">Travel Details</p>
+            </div>
+            <div id="field-travelDate">
+              <FieldLabel required icon={Calendar}>Travel Date</FieldLabel>
+              <Controller
+                name="travelDate"
+                rules={{ required: 'Travel Date is required' }}
+                render={({ field }) => (
+                  <div className="dob-picker-wrapper mt-1">
+                    <DatePicker
+                      selected={field.value}
+                      onChange={(date) => field.onChange(date)}
+                      onBlur={field.onBlur}
+                      dateFormat="yyyy-MM-dd"
+                      placeholderText="YYYY-MM-DD"
+                      minDate={new Date()}
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                      className={fieldCls(errors.travelDate)}
+                      wrapperClassName="block w-full"
+                      autoComplete="off"
+                    />
                   </div>
                 )}
-              </div>
-            ) : (
-              <label
-                onDragOver={e => { e.preventDefault(); setTicketDragOver(true); }}
-                onDragLeave={() => setTicketDragOver(false)}
-                onDrop={onTicketDrop}
-                className={`flex flex-col items-center justify-center gap-3 py-8 px-5 rounded-lg border-2 border-dashed cursor-pointer transition-all ${ticketDragOver
-                  ? 'border-[#E00000] bg-[#E00000]/5'
-                  : errors.ticketFile
-                    ? 'border-[#E00000]/30 bg-[#E00000]/5/50'
-                    : 'border-gray-200 bg-gray-50/50 hover:border-gray-300 hover:bg-gray-50'
-                  }`}>
-                <input ref={ticketInputRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf"
-                  className="hidden" onChange={e => handleTicketFile(e.target.files[0])} />
-                <Ticket size={20} className={ticketDragOver ? 'text-[#E00000]' : errors.ticketFile ? 'text-[#E00000]' : 'text-gray-300'} strokeWidth={1.5} />
-                <div className="text-center">
-                  <p className="text-sm text-gray-600">
-                    Drop ticket here or <span className="text-[#E00000] underline underline-offset-2">browse</span>
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP or PDF · Max 10 MB</p>
-                </div>
-              </label>
-            )}
+              />
+              <ErrorMsg message={errors.travelDate?.message} />
+            </div>
+            <div id="field-destination">
+              <FieldLabel required icon={MapPin}>Destination</FieldLabel>
+              <input type="text" placeholder="Destination"
+                {...register('destination', { required: 'Destination is required' })}
+                className={`${fieldCls(errors.destination)} mt-1`} />
+              <ErrorMsg message={errors.destination?.message} />
+            </div>
+            <div id="field-airwaysName">
+              <FieldLabel required icon={Plane}>Airways Name</FieldLabel>
+              <input type="text" placeholder="Airways Name"
+                {...register('airwaysName', { required: 'Airways Name is required' })}
+                className={`${fieldCls(errors.airwaysName)} mt-1`} />
+              <ErrorMsg message={errors.airwaysName?.message} />
+            </div>
+            <div id="field-flightNumber">
+              <FieldLabel required icon={Hash}>Flight Number</FieldLabel>
+              <input type="text" placeholder="Flight Number"
+                {...register('flightNumber', { required: 'Flight Number is required' })}
+                className={`${fieldCls(errors.flightNumber)} mt-1`} />
+              <ErrorMsg message={errors.flightNumber?.message} />
+            </div>
+            <div id="field-pnrNumber">
+              <FieldLabel required icon={QrCode}>PNR Number</FieldLabel>
+              <input type="text" placeholder="PNR Number"
+                {...register('pnrNumber', { required: 'PNR Number is required' })}
+                className={`${fieldCls(errors.pnrNumber)} mt-1`} />
+              <ErrorMsg message={errors.pnrNumber?.message} />
+            </div>
           </div>
-          <ErrorMsg message={errors.ticketFile?.message} />
-        </div>}
+        )}
+
+        {/* RBF Fields — only when exchange amount exceeds credit limit */}
+        {isCreditExceeded && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-2 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+            <div className="sm:col-span-2 flex items-center gap-2 py-1">
+              <AlertCircle className="text-orange-500" size={16} />
+              <p className="text-sm font-semibold text-orange-800">
+                RBF Authorization
+              </p>
+            </div>
+
+            {/* RBF Number */}
+            <div id="field-rbfNumber" className="sm:col-span-2">
+              <FieldLabel required icon={Hash}>RBF Number</FieldLabel>
+              <input
+                type="text"
+                placeholder="Enter RBF Number"
+                {...register('rbfNumber', {
+                  required: isCreditExceeded ? 'RBF Number is required' : false,
+                })}
+                className={`${fieldCls(errors.rbfNumber)} mt-1`}
+              />
+              <ErrorMsg message={errors.rbfNumber?.message} />
+            </div>
+
+            {/* Document Upload */}
+            <div id="field-rbfDocument" className="sm:col-span-2">
+              <FieldLabel required icon={Upload}>Supporting Document</FieldLabel>
+
+              {/* Hidden input registered only for validation */}
+              <input
+                type="hidden"
+                {...register('rbfDocument', {
+                  required: isCreditExceeded ? 'Please attach a supporting document' : false,
+                })}
+              />
+
+              {/* Actual file picker — stores File object via setValue */}
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  console.log('[RBF DEBUG] 1. File selected in input:', file?.name, file?.size, file?.type);
+                  // Store the raw File object in form state (not a FileList)
+                  setValue('rbfDocument', file, { shouldValidate: true });
+                  setRbfFileName(file ? file.name : '');
+                  console.log('[RBF DEBUG] 2. setValue called with File object');
+                }}
+                className={`mt-1 w-full border rounded-xl px-4 py-2 text-sm
+                  file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0
+                  file:text-sm file:font-semibold file:bg-orange-100 file:text-orange-700
+                  hover:file:bg-orange-200
+                  ${errors.rbfDocument ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white'}`}
+              />
+
+              {/* Show selected filename */}
+              {rbfFileName && (
+                <p className="text-xs text-orange-700 mt-1 flex items-center gap-1">
+                  <FileText size={12} />
+                  {rbfFileName}
+                </p>
+              )}
+
+              <ErrorMsg message={errors.rbfDocument?.message} />
+            </div>
+
+          </div>
+        )}
+
       </div>
     </div>
   );

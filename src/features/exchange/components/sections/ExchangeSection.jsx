@@ -112,7 +112,7 @@ export const ExchangeSection = ({
                       setToCurrency(found ?? null);
                       if (!useManualRate) setManualRate('');
                     }}>
-                    <option value="" disabled>— Select Rate —</option>
+                    <option value="" disabled>— Select Currency —</option>
                     {availableCurrencies?.map(c => (
                       <option key={c.code} value={c.code}>
                         {c.code} — {exchangeType === 'BUY' ? `Buy: ${c.buyingRate ?? '—'}` : `Sell: ${c.sellingRate ?? '—'}`}
@@ -170,14 +170,14 @@ export const ExchangeSection = ({
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-100 bg-gray-50 mt-2">
                 <span className="text-base">🇫🇯</span>
                 <div>
-                  <p className="text-xs font-medium text-gray-700">Fijian Dollar</p>
+                  {/* <p className="text-xs font-medium text-gray-700">Fijian Dollar</p> */}
                   <p className="text-[10px] text-gray-400">FJD · Local Currency</p>
                 </div>
-                {exchangePreview && (
+                {/* {exchangePreview && (
                   <div className="ml-auto flex items-center gap-1 text-xs font-medium text-green-600">
                     <CheckCircle2 size={11} strokeWidth={2.5} /> Calculated
                   </div>
-                )}
+                )} */}
               </div>
             </div>
           </div>

@@ -384,7 +384,7 @@ export const ReviewStep = ({
               style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
               <Sparkles size={12} className="text-yellow-300" />
               <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">
-                Customer Receives
+                {exchangeType === 'BUY' ? 'MH Receives' : 'Customer Receives'}
               </span>
             </div>
 
@@ -531,7 +531,7 @@ export const ReviewStep = ({
                 <div className="flex items-center gap-1.5 mb-1">
                   <CheckCircle2 size={12} className="text-red-200" strokeWidth={3} />
                   <span className="text-red-100 text-[10px] font-black uppercase tracking-[0.18em]">
-                    Final Amount
+                    Final Forex Amount
                   </span>
                 </div>
                 {/* <p className="text-red-200 text-xs font-medium">Fijian Dollar · FJD</p> */}

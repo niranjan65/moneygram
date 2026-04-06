@@ -473,8 +473,8 @@ import { useExchange } from '../context/ExchangeContext';
 import { InvoiceDocument } from './SalesInvoice';
 import { printThermalReceipt } from './ThermalReceiptPrint';
 
-const socket_server = 'http://182.71.135.110:8079';
-// const socket_server = 'http://192.168.101.172:5000';
+// const socket_server = 'http://182.71.135.110:8079';
+const socket_server = 'http://187.127.109.162:5000';
 const socket = io(socket_server, { transports: ['websocket'] });
 
 // ─── Inline SVG Icons ─────────────────────────────────────────────────────────
@@ -616,8 +616,20 @@ export const TransferSuccess = ({
   onDashboard,
 }) => {
   const exchange = useExchange();
-  const [isLoading, setIsLoading] = useState(true);
-  const [invoiceData, setInvoiceData] = useState(null);
+  const [invoiceData, setInvoiceData] = useState(() => {
+    const saved = sessionStorage.getItem('exchangeInvoiceData');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [isLoading, setIsLoading] = useState(() => {
+    const saved = sessionStorage.getItem('exchangeInvoiceData');
+    return saved ? false : true;
+  });
+
+  useEffect(() => {
+    if (invoiceData) {
+      sessionStorage.setItem('exchangeInvoiceData', JSON.stringify(invoiceData));
+    }
+  }, [invoiceData]);
 
   useEffect(() => {
     socket.on('connect', () => console.log('Socket connected'));
@@ -637,11 +649,17 @@ export const TransferSuccess = ({
   // ── Loading Screen ────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#421010]">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#421010]">
         <div className="flex flex-col items-center gap-4">
           <div className="w-14 h-14 rounded-full border-4 border-[#b5f000] border-t-transparent animate-spin" />
           <p className="text-white/80 font-semibold text-lg tracking-wide">Waiting for confirmation...</p>
         </div>
+        <button
+          onClick={onDashboard}
+          className="mt-8 px-6 py-2.5 rounded-xl border border-white/20 text-white/70 hover:text-white hover:bg-white/10 transition-colors text-sm font-bold"
+        >
+          Cancel & Start Fresh
+        </button>
       </div>
     );
   }
