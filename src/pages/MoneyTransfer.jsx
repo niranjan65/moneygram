@@ -3,13 +3,18 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import { useERPFileUpload } from "../hooks/useERPFileUpload";
 import { useUser } from "../context/UserContext";
-import {getCustomerById} from "../features/exchange/api/customer";
+import { getCustomerById, createCustomer } from "../features/exchange/api/customer";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { ArrowUpRight, ArrowDownLeft, ArrowLeftRight, CheckCircle2 } from "lucide-react";
+import { createMoneyTransfer } from "../features/exchange/api/createMoneyTransfer";
 
 const MoneyTransfer = () => {
   const { uploadFile } = useERPFileUpload();
   const { user } = useUser();
-  const loginUser = { user };
+  const loginUser =  user ;
   const [metaFields, setMetaFields] = useState([]);
+  const [transferType, setTransferType] = useState("Send");
 
   const [form, setForm] = useState({
     full_name: "",
@@ -55,14 +60,25 @@ const MoneyTransfer = () => {
         "http://192.168.101.182:81/api/resource/DocType/Money Transfer for Customer",
         {
           headers: {
-            Authorization: "token ab5bd602e5f2950:b332725b466fc99",
+            "Content-Type": "application/json",
+            Authorization: `token ab5bd602e5f2950:47a1752c33990d9`,
           },
         }
       );
 
-      const data = await res.json();
-      setMetaFields(data.data.fields || []);
+      if (!res.ok) {
+        console.error("Meta fetch failed:", res.status);
+        return;
+      }
 
+      const data = await res.json();
+
+      if (!data?.data?.fields) {
+        console.error("Invalid meta response:", data);
+        return;
+      }
+
+      setMetaFields(data.data.fields);
       console.log("ERP Fields:", data.data.fields);
 
     } catch (err) {
@@ -70,7 +86,9 @@ const MoneyTransfer = () => {
     }
   };
 
-  fetchMeta();
+  
+    fetchMeta();
+
 }, []);
 
 const getOptions = (fieldname) => {
@@ -81,6 +99,14 @@ const getOptions = (fieldname) => {
     label: opt,
     value: opt,
   }));
+};
+
+const cleanPayload = (obj) => {
+  return Object.fromEntries(
+    Object.entries(obj).filter(
+      ([_, v]) => v !== "" && v !== null && v !== undefined
+    )
+  );
 };
 
 const formatDate = (date) => { if (!date) return null; const dObj = new Date(date); if (isNaN(dObj.getTime())) return null; const y = dObj.getFullYear(); const m = String(dObj.getMonth() + 1).padStart(2, "0"); const d = String(dObj.getDate()).padStart(2, "0"); return `${y}-${m}-${d}`; };
@@ -129,112 +155,45 @@ useEffect(() => {
   const delay = setTimeout(fetchCustomer, 500);
   return () => clearTimeout(delay);
 }, [form.full_name, form.date_of_birth]);
-  const handleSubmit = async () => {
-    let customerId = form.customer;
+ 
+const handleSubmit = async () => {
+  try {
+    const fileToUpload =
+      form.id_type === "PASSPORT" ? passportFile : govtFile;
 
-if (!customerId) {
-  const newCustomer = await createCustomer(form, user, uploadFile);
-  customerId = newCustomer.name;
-}
-    try {
-      let passportUrl = "";
-      let govtUrl = "";
-
-      if (passportFile) {
-        passportUrl = await uploadFile(passportFile, { isPrivate: 1 });
-      }
-
-      if (govtFile) {
-        govtUrl = await uploadFile(govtFile, { isPrivate: 1 });
-      }
-
-      const payload = {
-        doc: {
-          ...form,
-          passport_photo_scan: passportUrl,
-          government_id_photo_scan: govtUrl,
-        },
-      };
-
-      const res = await fetch(
-        "http://192.168.101.182:81/api/resource/Money Transfer for Customer",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `token ${user?.api_key}:${user?.api_secret}`,
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      const data = await res.json();
-
-      if (res.ok) {
-        alert(`Created: ${data.data.name}`);
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Error submitting form");
+    // ✅ Upload ONCE
+    let documentUrl = "";
+    if (fileToUpload) {
+      documentUrl = await uploadFile(fileToUpload, { isPrivate: 1 });
     }
-  };
 
-  
+    // ✅ STEP 1: Create Customer
+   const customer = await createCustomer(
+  form,
+  documentUrl // ✅ PASS DIRECTLY
+);
 
-//  useEffect(() => {
-//   const fetchCustomer = async () => {
-//     if (!form.full_name || !form.date_of_birth) return;
+    const customerId = customer.name;
 
-//     try {
-//       const query = encodeURIComponent(
-//         JSON.stringify([
-//           ["full_name", "=", form.full_name],
-//           ["date_of_birth", "=", form.date_of_birth],
-//         ])
-//       );
+    // ✅ STEP 2: Create Money Transfer
+    const transfer = await createMoneyTransfer(
+      form,
+      customerId,
+      transferType,
+      loginUser,
+      documentUrl // ✅ pass file URL
+    );
 
-//       const res = await fetch(
-//   `http://192.168.101.182:81/api/resource/Money Transfer for Customer?filters=${query}&limit_page_length=1&order_by=creation desc`,
-//   {
-//     method: "GET",
-//     headers: {
-//       "Content-Type": "application/json",
-//       "Accept": "application/json",
-//       "Authorization": "token ab5bd602e5f2950:b332725b466fc99",
-//     },
-//     credentials: "include",
-//   }
-// );
+    alert(`✅ Transfer Successful!
+Customer: ${customerId}
+Transaction: ${transfer.name}`);
 
-//       if (!res.ok) {
-//         throw new Error("API failed");
-//       }
-
-//       const data = await res.json();
-//       const record = data.data?.[0];
-
-//       if (record) {
-//         console.log("Auto-filled:", record);
-
-//         setForm((prev) => ({
-//           ...prev,
-//           id_type: record.id_type || "",
-//           government_id: record.government_id || "",
-//           customer: record.customer || "",
-//           passport_number: record.passport_number || "",
-//           id_number: record.id_number || "",
-//           transaction_id: record.transaction_id || "",
-//         }));
-//       }
-//     } catch (err) {
-//       console.error("Auto-fill error:", err);
-//     }
-//   };
-
-//   const delay = setTimeout(fetchCustomer, 500);
-//   return () => clearTimeout(delay);
-// }, [form.full_name, form.date_of_birth]);
-
+    // reset...
+  } catch (err) {
+    console.error(err);
+    alert(err.message || "Error processing transfer");
+  }
+};
 const shouldShowField = (fieldname) => {
   const field = metaFields.find(f => f.fieldname === fieldname);
 
@@ -249,71 +208,28 @@ const shouldShowField = (fieldname) => {
   }
 };
 
-const FileUploadBox = ({ label, onFileSelect }) => {
-  const [isDragging, setIsDragging] = useState(false);
-  const [fileName, setFileName] = useState("");
+const getHeading = () => {
+  if (transferType === "Send") {
+    return {
+      title: "Send Money",
+      subtitle: "Enter sender details to initiate an outward transfer",
+    };
+  }
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
+  if (transferType === "Receive") {
+    return {
+      title: "Receive Money",
+      subtitle: "Enter recipient details to process incoming funds",
+    };
+  }
 
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      setFileName(file.name);
-      onFileSelect(file);
-    }
+  return {
+    title: "Money Transfer",
+    subtitle: "Fill customer details for transfer",
   };
-
-  const handleBrowse = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFileName(file.name);
-      onFileSelect(file);
-    }
-  };
-
-  return (
-    <div>
-      <label className="text-xs uppercase font-bold text-gray-400 mb-2 block">
-        {label}
-      </label>
-
-      <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDragging(true);
-        }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={handleDrop}
-        className={`w-full border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition
-          ${isDragging ? "border-black bg-gray-100" : "border-gray-300"}
-        `}
-      >
-        <input
-          type="file"
-          className="hidden"
-          id={label}
-          onChange={handleBrowse}
-        />
-
-        <label htmlFor={label} className="cursor-pointer block">
-          <p className="text-sm font-semibold text-gray-700">
-            Drag & drop file here
-          </p>
-          <p className="text-xs text-gray-400 mt-1">
-            or <span className="underline">browse</span>
-          </p>
-
-          {fileName && (
-            <p className="mt-3 text-xs text-green-600 font-semibold">
-              {fileName}
-            </p>
-          )}
-        </label>
-      </div>
-    </div>
-  );
 };
+
+const heading = getHeading();
 
  return (
   <div className="min-h-screen flex flex-col bg-gray-50">
@@ -321,21 +237,137 @@ const FileUploadBox = ({ label, onFileSelect }) => {
 
     <main className="flex-grow py-10 px-4 sm:px-6 lg:px-12">
       <div className="max-w-6xl mx-auto flex flex-col gap-10">
+     
 
         {/* HEADER */}
-        <div>
-          <h1 className="text-gray-900 text-3xl sm:text-5xl font-black tracking-tight leading-none">
-            Customer{" "}
-            <span className="text-[#E00000] italic">
-              Money Transfer
-            </span>
-          </h1>
+       <div>
+  <h1 className="text-gray-900 text-3xl sm:text-5xl font-black tracking-tight leading-none">
+    Money{" "}
+    <span className="text-[#E00000] italic">
+      Transfer
+    </span>
+  </h1>
 
-          <p className="text-xs font-semibold text-gray-400 mt-2">
-            Fill customer details for transfer
-          </p>
+  <p className="text-xs font-semibold text-gray-400 mt-2">
+    Enter customer details to securely send or receive funds
+  </p>
+</div>
+
+        {/* TRANSACTION TYPE CARD */}
+<div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+  {/* HEADER */}
+  <div className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-3">
+    <ArrowLeftRight size={15} className="text-[#E00000]" />
+    <div>
+      <p className="text-sm font-semibold text-gray-800">Transfer Type</p>
+      <p className="text-xs text-gray-400">
+        Choose whether you are sending or receiving money
+      </p>
+    </div>
+  </div>
+
+  {/* OPTIONS */}
+  <div className="px-5 py-5">
+    <div className="grid grid-cols-2 gap-3">
+
+      {/* SEND MONEY */}
+      <button
+        type="button"
+        onClick={() => setTransferType("Send")}
+        className={`relative py-4 px-4 rounded-xl border-2 text-sm font-medium transition-all flex flex-col items-center gap-2
+          ${
+            transferType === "Send"
+              ? "border-[#E00000] bg-[#E00000]/5 text-[#B70000]"
+              : "border-gray-200 bg-white text-gray-400 hover:border-gray-300"
+          }`}
+      >
+        {transferType === "Send" && (
+          <CheckCircle2
+            size={13}
+            className="absolute top-2.5 right-2.5 text-[#E00000]"
+            strokeWidth={2.5}
+          />
+        )}
+
+        <div
+          className={`w-9 h-9 rounded-lg flex items-center justify-center
+            ${
+              transferType === "Send"
+                ? "bg-[#E00000] text-white"
+                : "bg-gray-100 text-gray-400"
+            }`}
+        >
+          <ArrowUpRight size={17} strokeWidth={1.75} />
         </div>
 
+        <span
+          className={
+            transferType === "Send"
+              ? "text-[#B70000] font-semibold"
+              : "text-gray-400"
+          }
+        >
+          Send Money
+        </span>
+      </button>
+
+      {/* RECEIVE MONEY */}
+      <button
+        type="button"
+        onClick={() => setTransferType("Receive")}
+        className={`relative py-4 px-4 rounded-xl border-2 text-sm font-medium transition-all flex flex-col items-center gap-2
+          ${
+            transferType === "Receive"
+              ? "border-[#E00000] bg-[#E00000]/5 text-[#B70000]"
+              : "border-gray-200 bg-white text-gray-400 hover:border-gray-300"
+          }`}
+      >
+        {transferType === "Receive" && (
+          <CheckCircle2
+            size={13}
+            className="absolute top-2.5 right-2.5 text-[#E00000]"
+            strokeWidth={2.5}
+          />
+        )}
+
+        <div
+          className={`w-9 h-9 rounded-lg flex items-center justify-center
+            ${
+              transferType === "Receive"
+                ? "bg-[#E00000] text-white"
+                : "bg-gray-100 text-gray-400"
+            }`}
+        >
+          <ArrowDownLeft size={17} strokeWidth={1.75} />
+        </div>
+
+        <span
+          className={
+            transferType === "Receive"
+              ? "text-[#B70000] font-semibold"
+              : "text-gray-400"
+          }
+        >
+          Receive Money
+        </span>
+      </button>
+
+    </div>
+  </div>
+</div>
+
+<div>
+  <h1 className="text-gray-900 text-3xl sm:text-5xl font-black tracking-tight leading-none">
+    {heading.title.split(" ")[0]}{" "}
+    <span className="text-[#E00000] italic">
+      {heading.title.split(" ").slice(1).join(" ")}
+    </span>
+  </h1>
+
+  <p className="text-xs font-semibold text-gray-400 mt-2">
+    {heading.subtitle}
+  </p>
+</div>
         {/* FORM CARD */}
         <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-10">
 
@@ -355,16 +387,55 @@ const FileUploadBox = ({ label, onFileSelect }) => {
               </div>
 
               <div>
-                <label className={labelStyle}>Date of Birth</label>
-                <input
-                  type="date"
-                  className={inputStyle}
-                  value={form.date_of_birth}
-                  onChange={(e) =>
-                    handleChange("date_of_birth", e.target.value)
-                  }
-                />
-              </div>
+  <label className={labelStyle}>Date of Birth</label>
+
+  <DatePicker
+    selected={form.date_of_birth ? new Date(form.date_of_birth) : null}
+    onChange={(date) => {
+      if (!date) return;
+
+      const today = new Date();
+
+      // ❌ Future date check
+      if (date >= today) {
+        alert("Date of birth must be in the past");
+        return;
+      }
+
+      // ❌ Age < 18 check
+      const minAgeDate = new Date(
+        today.getFullYear() - 18,
+        today.getMonth(),
+        today.getDate()
+      );
+
+      if (date > minAgeDate) {
+        alert("You must be at least 18 years old");
+        return;
+      }
+
+      // ✅ Format to YYYY-MM-DD (ERP format)
+      const formatted = date.toISOString().split("T")[0];
+
+      handleChange("date_of_birth", formatted);
+    }}
+    dateFormat="yyyy-MM-dd"
+    placeholderText="YYYY-MM-DD"
+    maxDate={
+      new Date(
+        new Date().getFullYear() - 18,
+        new Date().getMonth(),
+        new Date().getDate()
+      )
+    }
+    showMonthDropdown
+    showYearDropdown
+    dropdownMode="select"
+    yearDropdownItemNumber={100}
+    scrollableYearDropdown
+    className={inputStyle}
+  />
+</div>
 
               <div>
                 <label className={labelStyle}>ID Type</label>
@@ -404,16 +475,7 @@ const FileUploadBox = ({ label, onFileSelect }) => {
                 </div>
               )}
 
-              <div>
-                <label className={labelStyle}>Customer ID</label>
-                <input
-                  className={inputStyle}
-                  value={form.customer}
-                  onChange={(e) =>
-                    handleChange("customer", e.target.value)
-                  }
-                />
-              </div>
+              
             </div>
 
             {/* RIGHT */}
