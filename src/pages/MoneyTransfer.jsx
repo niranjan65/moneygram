@@ -1,817 +1,563 @@
-// pages/MoneyTransfer.jsx
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
-import Select from "react-select";
-import { getNames } from "country-list";
-import { getExchangeRates } from "../services/exchangeRateService";
-import FormInput from "../components/FormInput";
-import { calculateTransfer } from "../utils/transferCalculator";
-import { validateStepOne } from "../utils/validateStepOne";
 import { useERPFileUpload } from "../hooks/useERPFileUpload";
 import { useUser } from "../context/UserContext";
+import { getCustomerById, createCustomer } from "../features/exchange/api/customer";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { ArrowUpRight, ArrowDownLeft, ArrowLeftRight, CheckCircle2 } from "lucide-react";
+import { createMoneyTransfer } from "../features/exchange/api/createMoneyTransfer";
 
 const MoneyTransfer = () => {
-  const Step = {
-    DETAILS: 1,
-    AMOUNT: 2,
-    PREVIEW: 3,
-  };
+  const { uploadFile } = useERPFileUpload();
+  const { user } = useUser();
+  const loginUser =  user ;
+  const [metaFields, setMetaFields] = useState([]);
+  const [transferType, setTransferType] = useState("Send");
 
-  const [currentStep, setCurrentStep] = useState(Step.DETAILS);
+  const [form, setForm] = useState({
+    full_name: "",
+    date_of_birth: "",
+    id_type: "",
+    government_id: "",
+    customer: "",
+    passport_number: "",
+    id_number: "",
+    transaction_id: "",
+  });
 
-  // ======================
-  // SENDER DETAILS
-  // ======================
-  const [senderFullName, setSenderFullName] = useState("");
-  const [senderEmail, setSenderEmail] = useState("");
-  const [senderPhone, setSenderPhone] = useState("");
-  const [senderCountry, setSenderCountry] = useState("");
+  const [passportFile, setPassportFile] = useState(null);
+  const [govtFile, setGovtFile] = useState(null);
 
-  const [payMode, setPayMode] = useState("Cash to Bank");
-  const [transferDate, setTransferDate] = useState("");
+  const inputStyle =
+    "w-full border border-gray-200 rounded-2xl px-5 py-4 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-black transition";
 
-  const [senderBankName, setSenderBankName] = useState("");
-  const [senderAccountNumber, setSenderAccountNumber] = useState("");
-  const [senderSwiftCode, setSenderSwiftCode] = useState("");
+  const labelStyle =
+    "text-xs uppercase font-bold text-gray-400 mb-2 block";
 
-  const [senderDocType, setSenderDocType] = useState("");
-  const [senderDocNumber, setSenderDocNumber] = useState("");
-  const [senderDocFile, setSenderDocFile] = useState(null);
+  const handleChange = (key, value) => {
+  setForm((prev) => {
+    let updated = { ...prev, [key]: value };
 
-  // ======================
-  // RECEIVER DETAILS
-  // ======================
-  const [receiverFullName, setReceiverFullName] = useState("");
-  const [receiverEmail, setReceiverEmail] = useState("");
-  const [receiverPhone, setReceiverPhone] = useState("");
-  const [receiverCountry, setReceiverCountry] = useState("");
+    if (key === "id_type") {
+      if (value === "PASSPORT") {
+        updated.government_id = "";
+      }
+      if (value === "GOVERNMENT_ID") {
+        updated.passport_number = "";
+      }
+    }
 
-  const [receiverBankName, setReceiverBankName] = useState("");
-  const [receiverAccountNumber, setReceiverAccountNumber] = useState("");
-  const [receiverSwiftCode, setReceiverSwiftCode] = useState("");
-
-  // const [receiverDocType, setReceiverDocType] = useState("");
-  // const [receiverDocNumber, setReceiverDocNumber] = useState("");
-  // const [receiverDocFile, setReceiverDocFile] = useState(null);
-
-  const [senderOtherDocType, setSenderOtherDocType] = useState("");
-const [receiverOtherDocType, setReceiverOtherDocType] = useState("");
-
-const [senderFileName, setSenderFileName] = useState("");
-const [receiverFileName, setReceiverFileName] = useState("");
-
-
-  // ======================
-  // AMOUNT
-  // ======================
-  const [sendAmount, setSendAmount] = useState("");
-  // const [fromCurrency, setFromCurrency] = useState("USD");
-  const [fromCurrency] = useState("FJD"); 
-  const [toCurrency, setToCurrency] = useState("EUR");
-  const [gstRate, setGstRate] = useState(0);
-
-  const [erpCurrencies, setErpCurrencies] = useState([]);
-  const [erpRates, setErpRates] = useState([]);
-
-  const countryOptions = getNames().map((country) => ({
-    label: country,
-    value: country,
-  }));
-
-  const { uploadFile, loading: fileUploading, error: fileError } = useERPFileUpload();
- 
-    const documentOptions = [ 
-     { label: "Passport", value: "Passport" },
-    { label: "Government ID", value: "Government ID" },
-    { label: "Driver's License", value: "Driver's License" },
-    { label: "Voter ID Card", value: "Voter ID Card" }, 
-   ];
-
-  const payModeOptions = [
-  { label: "Cash to Bank", value: "Cash to Bank" },
-  { label: "Bank to Bank", value: "Bank to Bank" },
-  { label: "Cash to Cash", value: "Cash to Cash" },
-];
-
-  const getTodayDate = () => new Date().toISOString().split("T")[0];
+    return updated;
+  });
+};
 
   useEffect(() => {
-    setTransferDate(getTodayDate());
-  }, []);
-
-  useEffect(() => {
-  const fetchGST = async () => {
+  const fetchMeta = async () => {
     try {
-      const response = await fetch(
-        "https://mhmoneyexpress.anantdv.com/api/method/moneygram.api.get_tax_template_for_company",
+      const res = await fetch(
+        "http://192.168.101.182:81/api/resource/DocType/Money Transfer for Customer",
         {
-          method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `token ab5bd602e5f2950:47a1752c33990d9`,
           },
-          body: JSON.stringify({
-            company: "MH Money Express",
-          }),
         }
       );
 
-      const result = await response.json();
-      console.log("GST API FULL RESPONSE:", result);
+      if (!res.ok) {
+        console.error("Meta fetch failed:", res.status);
+        return;
+      }
 
-      const taxRate =
-        result?.message?.taxes?.[0]?.tax_rate ?? 0;
+      const data = await res.json();
 
-      setGstRate(Number(taxRate));
+      if (!data?.data?.fields) {
+        console.error("Invalid meta response:", data);
+        return;
+      }
 
-    } catch (error) {
-      console.error("GST fetch error:", error);
-      setGstRate(0);
+      setMetaFields(data.data.fields);
+      console.log("ERP Fields:", data.data.fields);
+
+    } catch (err) {
+      console.error("Meta fetch error", err);
     }
   };
 
-  fetchGST();
+  
+    fetchMeta();
+
 }, []);
+
+const getOptions = (fieldname) => {
+  const field = metaFields.find(f => f.fieldname === fieldname);
+  if (!field || !field.options) return [];
+
+  return field.options.split("\n").map(opt => ({
+    label: opt,
+    value: opt,
+  }));
+};
+
+const cleanPayload = (obj) => {
+  return Object.fromEntries(
+    Object.entries(obj).filter(
+      ([_, v]) => v !== "" && v !== null && v !== undefined
+    )
+  );
+};
+
+const formatDate = (date) => { if (!date) return null; const dObj = new Date(date); if (isNaN(dObj.getTime())) return null; const y = dObj.getFullYear(); const m = String(dObj.getMonth() + 1).padStart(2, "0"); const d = String(dObj.getDate()).padStart(2, "0"); return `${y}-${m}-${d}`; };
 
 useEffect(() => {
-  const fetchCurrencies = async () => {
+  const fetchCustomer = async () => {
+    if (!form.full_name || !form.date_of_birth) return;
+
+    const formattedDate = formatDate(form.date_of_birth);
+    if (!formattedDate) return;
+
+    const cleanName = form.full_name.trim().replace(/\s+/g, " ");
+    const customerId = `${cleanName}_${formattedDate}`;
+
+    console.log("Searching customer:", customerId);
+
     try {
-      const data = await getExchangeRates();
+      const customer = await getCustomerById(customerId, loginUser);
 
-      setErpRates(data); 
+      if (customer) {
+        console.log("Customer Auto-filled:", customer);
 
-      const currencyList = data.map(item => item.currency_name);
-      setErpCurrencies(currencyList);
-
-    } catch (error) {
-      console.error("Failed to load ERP currencies", error);
-    }
-  };
-
-  fetchCurrencies();
-}, []);
-
- const {
-  serviceFee,
-  subTotal,
-  gst,
-  totalToPay,
-  receiveAmount,
-} = calculateTransfer({
-  sendAmount,
-  toCurrency,
-  erpRates,
-  gstPercent: gstRate,
-});
-
-const stepLabels = {
-  [Step.DETAILS]: "Sender and Receiver Details",
-  [Step.AMOUNT]: "Transfer Amount",
-  [Step.PREVIEW]: "Preview",
-};
-
-
-  const inputStyle =
-    "w-full border border-gray-200 rounded-2xl px-5 py-4 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary transition-all";
-
-  const customSelectStyles = {
-    control: (base, state) => ({
-      ...base,
-      borderRadius: "1rem",
-      padding: "6px 10px",
-      borderColor: state.isFocused ? "#000" : "#e5e7eb",
-      boxShadow: "none",
-      fontSize: "14px",
-      fontWeight: 600,
-    }),
-    singleValue: (base) => ({
-      ...base,
-      color: "#000",
-      fontWeight: 600,
-    }),
-    option: (base, state) => ({
-      ...base,
-      backgroundColor: state.isFocused ? "#f3f4f6" : "white",
-      color: "#000",
-      fontWeight: 600,
-    }),
-  };
-
-  const handleNextToAmount = () => {
-  const error = validateStepOne({
-    payMode,
-
-    senderFullName,
-    senderEmail,
-    senderPhone,
-    senderCountry,
-    senderBankName,
-    senderAccountNumber,
-    senderSwiftCode,
-    senderDocType,
-    senderOtherDocType,
-    senderDocNumber,
-    senderDocFile,
-
-    receiverFullName,
-    receiverEmail,
-    receiverPhone,
-    receiverCountry,
-    receiverBankName,
-    receiverAccountNumber,
-    receiverSwiftCode,
-    // receiverDocType,
-    // receiverOtherDocType,
-    // receiverDocNumber,
-    // receiverDocFile,
-  });
-
-  if (error) {
-    return alert(error);
-  }
-
-  setCurrentStep(Step.AMOUNT);
-};
-
-
-  const handlePreview = () => {
-    if (!sendAmount) return alert("Enter transfer amount");
-    setCurrentStep(Step.PREVIEW);
-  };
-
-  
- 
- const handleConfirm = async () => {
-  try {
-    let senderFileUrl = null;
-    // let receiverFileUrl = null;
-
-    // ======================
-    // Upload Sender File
-    // ======================
-    if (senderDocFile) {
-      senderFileUrl = await uploadFile(senderDocFile, {
-        isPrivate: 1,
-      });
-    }
-
-    // ======================
-    // Upload Receiver File
-    // ======================
-    // if (receiverDocFile) {
-    //   receiverFileUrl = await uploadFile(receiverDocFile, {
-    //     isPrivate: 1,
-    //   });
-    // }
-
-    const payload = {
-      data: {
-        // ======================
-        // SENDER
-        // ======================
-        sender_full_name: senderFullName,
-        sender_phone_number: senderPhone,
-        sender_payment_mode: payMode,
-        sender_document_type: senderDocType,
-        sender_government_id_type: senderOtherDocType,
-        sender_document_number: senderDocNumber,
-        sender_email_address: senderEmail,
-        sender_country: senderCountry,
-        sender_transfer_date: transferDate,
-        sender_bank_name: senderBankName || "",
-        sender_account_number: senderAccountNumber || "",
-        sender_swift_code: senderSwiftCode || "",
-        sender_identity_doc_file: senderFileUrl,
-
-        // ======================
-        // RECEIVER
-        // ======================
-        receiver_full_name: receiverFullName,
-        receiver_phone_number: receiverPhone,
-        // receiver_doc_type: receiverDocType,
-        // receiver_government_id_type: receiverOtherDocType,
-        // receiver_document_number: receiverDocNumber,
-        receiver_email_address: receiverEmail,
-        receiver_country: receiverCountry,
-        receiver_bank_name: receiverBankName || "",
-        receiver_account_number: receiverAccountNumber || "",
-        receiver_swift_code: receiverSwiftCode || "",
-        // receiver_identity_doc_file: receiverFileUrl,
-
-        // ======================
-        // AMOUNTS
-        // ======================
-        sending_amount: Number(sendAmount),
-        receiving_amount: Number(receiveAmount),
-        sending_currency: fromCurrency,
-        receiving_currency: toCurrency,
-        sending_amount_summary: Number(sendAmount),
-        service_fee: Number(serviceFee),
-        sub_total: Number(subTotal),
-        taxes: Number(gst),
-        total_to_pay: Number(totalToPay),
-      },
-    };
-
-    // 🔥 PRINT FULL PAYLOAD
-    console.log("========== FINAL PAYLOAD ==========");
-    console.log(JSON.stringify(payload, null, 2));
-    console.log("===================================");
-    const loginUser = useUser();
-    const response = await fetch(
-      "https://mhmoneyexpress.anantdv.com/api/method/moneygram.moneygram.api.money_exchange.create_money_transfer",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
-        },
-        body: JSON.stringify(payload),
+        setForm((prev) => ({
+          ...prev,
+          full_name: customer.custom_full_name || prev.full_name,
+          date_of_birth: customer.custom_date_of_birth || prev.date_of_birth,
+          government_id: customer.custom_government_id || "",
+          passport_number: customer.custom_passport_number || "",
+          id_type: customer.custom_passport_number ? "PASSPORT" : "GOVERNMENT_ID",
+          id_number:
+            customer.custom_drivers_license_number ||
+            customer.custom_tin_number ||
+            customer.custom_voter_id_number ||
+            customer.custom_passport_number ||
+            "",
+          customer: customer.name || "",
+        }));
+      } else {
+        console.log("Customer not found");
       }
+    } catch (err) {
+      console.error("Customer fetch error:", err);
+    }
+  };
+
+  const delay = setTimeout(fetchCustomer, 500);
+  return () => clearTimeout(delay);
+}, [form.full_name, form.date_of_birth]);
+ 
+const handleSubmit = async () => {
+  try {
+    const fileToUpload =
+      form.id_type === "PASSPORT" ? passportFile : govtFile;
+
+    // ✅ Upload ONCE
+    let documentUrl = "";
+    if (fileToUpload) {
+      documentUrl = await uploadFile(fileToUpload, { isPrivate: 1 });
+    }
+
+    // ✅ STEP 1: Create Customer
+   const customer = await createCustomer(
+  form,
+  documentUrl // ✅ PASS DIRECTLY
+);
+
+    const customerId = customer.name;
+
+    // ✅ STEP 2: Create Money Transfer
+    const transfer = await createMoneyTransfer(
+      form,
+      customerId,
+      transferType,
+      loginUser,
+      documentUrl // ✅ pass file URL
     );
 
-    const result = await response.json();
+    alert(`✅ Transfer Successful!
+Customer: ${customerId}
+Transaction: ${transfer.name}`);
 
-    if (response.ok) {
-  const docName = result?.message?.name || "";
+    // reset...
+  } catch (err) {
+    console.error(err);
+    alert(err.message || "Error processing transfer");
+  }
+};
+const shouldShowField = (fieldname) => {
+  const field = metaFields.find(f => f.fieldname === fieldname);
 
-  // Remove "Money Transfer-" prefix
-  const cleanName = docName.replace("Money Transfer-", "");
+  if (!field || !field.depends_on) return true;
 
-  alert(`Money Transfer Created: ${cleanName}`);
-
-  console.log("Server Response:", result);
-
-  resetForm();  // 🔥 Clears everything and returns to Step 1
-}
-  } catch (error) {
-    console.error("API Error:", error);
-    alert("Something went wrong while creating transfer.");
+  try {
+    const condition = field.depends_on.replace("eval:", "");
+    const jsCondition = condition.replace(/doc\./g, "form.");
+    return eval(jsCondition);
+  } catch {
+    return true;
   }
 };
 
-const resetForm = () => {
-  // Sender
-  setSenderFullName("");
-  setSenderEmail("");
-  setSenderPhone("");
-  setSenderCountry("");
-  setPayMode("Cash to Bank");
-  setSenderBankName("");
-  setSenderAccountNumber("");
-  setSenderSwiftCode("");
-  setSenderDocType("");
-  setSenderDocNumber("");
-  setSenderDocFile(null);
-  setSenderOtherDocType("");
-  setSenderFileName("");
+const getHeading = () => {
+  if (transferType === "Send") {
+    return {
+      title: "Send Money",
+      subtitle: "Enter sender details to initiate an outward transfer",
+    };
+  }
 
-  // Receiver
-  setReceiverFullName("");
-  setReceiverEmail("");
-  setReceiverPhone("");
-  setReceiverCountry("");
-  setReceiverBankName("");
-  setReceiverAccountNumber("");
-  setReceiverSwiftCode("");
-  // setReceiverDocType("");
-  // setReceiverDocNumber("");
-  // setReceiverDocFile(null);
-  // setReceiverOtherDocType("");
-  setReceiverFileName("");
+  if (transferType === "Receive") {
+    return {
+      title: "Receive Money",
+      subtitle: "Enter recipient details to process incoming funds",
+    };
+  }
 
-  // Amount
-  setSendAmount("");
-  // setFromCurrency("USD");
-  setToCurrency("EUR");
-
-  // Return to Step 1
-  setCurrentStep(Step.DETAILS);
+  return {
+    title: "Money Transfer",
+    subtitle: "Fill customer details for transfer",
+  };
 };
 
-  return (
-  <div className="min-h-screen flex flex-col">
+const heading = getHeading();
+
+ return (
+  <div className="min-h-screen flex flex-col bg-gray-50">
     <Navbar />
 
-    <main className="flex-grow py-8 px-4 sm:px-6 lg:px-8 xl:px-12">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10">
+    <main className="flex-grow py-10 px-4 sm:px-6 lg:px-12">
+      <div className="max-w-6xl mx-auto flex flex-col gap-10">
+     
 
-        {/* LEFT COLUMN */}
-        <div className="lg:col-span-8 flex flex-col gap-10">
+        {/* HEADER */}
+       <div>
+  <h1 className="text-gray-900 text-3xl sm:text-5xl font-black tracking-tight leading-none">
+    Money{" "}
+    <span className="text-[#E00000] italic">
+      Transfer
+    </span>
+  </h1>
 
-          {/* HEADER */}
-          <div>
-            <h1 className="text-3xl sm:text-5xl font-black">
-              Who are you sending{" "}
-              <span className="text-primary italic">money</span> to?
-            </h1>
+  <p className="text-xs font-semibold text-gray-400 mt-2">
+    Enter customer details to securely send or receive funds
+  </p>
+</div>
 
-            <div className="mt-4">
-              <p className="text-xs text-gray-500 font-semibold">
-                Step {currentStep} of 3
-              </p>
-              <p className="text-primary font-black text-lg">
-                {stepLabels[currentStep]}
-              </p>
-            </div>
-          </div>
-
-          {/* ================= STEP 1 ================= */}
-         {currentStep === Step.DETAILS && (
-  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-10 space-y-12">
-
-    {/* ================= SENDER ================= */}
-    <div className="space-y-8">
-      <h3 className="text-xl font-black">Sender Details</h3>
-
-      {/* Pay Mode + Date */}
-      
-
-      <FormInput
-  placeholder="Full Name"
-  value={senderFullName}
-  onChange={(e) => setSenderFullName(e.target.value)}
-/>
-
-      <div className="grid md:grid-cols-2 gap-6">
-        <FormInput
-          placeholder="Email Address"
-          value={senderEmail}
-          onChange={(e) => setSenderEmail(e.target.value)}
-          
-        />
-        <FormInput
-          placeholder="Phone Number"
-          value={senderPhone}
-          onChange={(e) => setSenderPhone(e.target.value)}
-          
-        />
-      </div>
-
-      <Select
-        options={countryOptions}
-        styles={customSelectStyles}
-        value={countryOptions.find(o => o.value === senderCountry)}
-        onChange={(selected) => setSenderCountry(selected.value)}
-        placeholder="Country"
-      />
-
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <label className="text-xs uppercase font-bold text-gray-400 mb-2 block">
-            Payment Mode
-          </label>
-          <Select
-            options={payModeOptions}
-            value={payModeOptions.find(opt => opt.value === payMode)}
-            onChange={(selected) => setPayMode(selected.value)}
-            styles={customSelectStyles}
-            placeholder="Select Payment Mode"
-          />
-        </div>
-
-        <div>
-          <label className="text-xs uppercase font-bold text-gray-400 mb-2 block">
-            Transfer Date
-          </label>
-          <input
-            type="date"
-            value={transferDate}
-            readOnly
-            className={`${inputStyle} bg-gray-50 cursor-not-allowed`}
-          />
-        </div>
-      </div>
-
-      {/* ================= SENDER BANK DETAILS ================= */}
-{(payMode === "Bank to Bank") && (
-  <div className="space-y-6 border-t pt-8">
-    <h4 className="text-xl font-black">Sender Bank Details</h4>
-
-    <FormInput
-      placeholder="Bank Name"
-      value={senderBankName}
-      onChange={(e) => setSenderBankName(e.target.value)}
-      
-    />
-
-    <FormInput
-      placeholder="Account Number"
-      value={senderAccountNumber}
-      onChange={(e) => setSenderAccountNumber(e.target.value)}
-      
-    />
-
-    <FormInput
-      placeholder="SWIFT Code"
-      value={senderSwiftCode}
-      onChange={(e) => setSenderSwiftCode(e.target.value)}
-      
-    />
+        {/* TRANSACTION TYPE CARD */}
+<div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+  {/* HEADER */}
+  <div className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-3">
+    <ArrowLeftRight size={15} className="text-[#E00000]" />
+    <div>
+      <p className="text-sm font-semibold text-gray-800">Transfer Type</p>
+      <p className="text-xs text-gray-400">
+        Choose whether you are sending or receiving money
+      </p>
+    </div>
   </div>
-)}
 
+  {/* OPTIONS */}
+  <div className="px-5 py-5">
+    <div className="grid grid-cols-2 gap-3">
 
-      {/* Identity */}
-      <div className="space-y-6">
-        <h4 className="text-xl font-semibold">Identity Document</h4>
+      {/* SEND MONEY */}
+      <button
+        type="button"
+        onClick={() => setTransferType("Send")}
+        className={`relative py-4 px-4 rounded-xl border-2 text-sm font-medium transition-all flex flex-col items-center gap-2
+          ${
+            transferType === "Send"
+              ? "border-[#E00000] bg-[#E00000]/5 text-[#B70000]"
+              : "border-gray-200 bg-white text-gray-400 hover:border-gray-300"
+          }`}
+      >
+        {transferType === "Send" && (
+          <CheckCircle2
+            size={13}
+            className="absolute top-2.5 right-2.5 text-[#E00000]"
+            strokeWidth={2.5}
+          />
+        )}
 
-        <Select
-          options={documentOptions}
-          value={documentOptions.find(opt => opt.value === senderDocType)}
-          onChange={(selected) => {
-            setSenderDocType(selected.value);
-            if (selected.value !== "Other") {
-              setSenderOtherDocType("");
-            }
-          }}
-          placeholder="Document Type"
-          styles={customSelectStyles}
-        />
+        <div
+          className={`w-9 h-9 rounded-lg flex items-center justify-center
+            ${
+              transferType === "Send"
+                ? "bg-[#E00000] text-white"
+                : "bg-gray-100 text-gray-400"
+            }`}
+        >
+          <ArrowUpRight size={17} strokeWidth={1.75} />
+        </div>
 
-        {senderDocType === "Government ID" && (
-  <input
-    placeholder="Enter Government ID Type"
-    value={senderOtherDocType}
-    onChange={(e) => setSenderOtherDocType(e.target.value)}
+        <span
+          className={
+            transferType === "Send"
+              ? "text-[#B70000] font-semibold"
+              : "text-gray-400"
+          }
+        >
+          Send Money
+        </span>
+      </button>
+
+      {/* RECEIVE MONEY */}
+      <button
+        type="button"
+        onClick={() => setTransferType("Receive")}
+        className={`relative py-4 px-4 rounded-xl border-2 text-sm font-medium transition-all flex flex-col items-center gap-2
+          ${
+            transferType === "Receive"
+              ? "border-[#E00000] bg-[#E00000]/5 text-[#B70000]"
+              : "border-gray-200 bg-white text-gray-400 hover:border-gray-300"
+          }`}
+      >
+        {transferType === "Receive" && (
+          <CheckCircle2
+            size={13}
+            className="absolute top-2.5 right-2.5 text-[#E00000]"
+            strokeWidth={2.5}
+          />
+        )}
+
+        <div
+          className={`w-9 h-9 rounded-lg flex items-center justify-center
+            ${
+              transferType === "Receive"
+                ? "bg-[#E00000] text-white"
+                : "bg-gray-100 text-gray-400"
+            }`}
+        >
+          <ArrowDownLeft size={17} strokeWidth={1.75} />
+        </div>
+
+        <span
+          className={
+            transferType === "Receive"
+              ? "text-[#B70000] font-semibold"
+              : "text-gray-400"
+          }
+        >
+          Receive Money
+        </span>
+      </button>
+
+    </div>
+  </div>
+</div>
+
+<div>
+  <h1 className="text-gray-900 text-3xl sm:text-5xl font-black tracking-tight leading-none">
+    {heading.title.split(" ")[0]}{" "}
+    <span className="text-[#E00000] italic">
+      {heading.title.split(" ").slice(1).join(" ")}
+    </span>
+  </h1>
+
+  <p className="text-xs font-semibold text-gray-400 mt-2">
+    {heading.subtitle}
+  </p>
+</div>
+        {/* FORM CARD */}
+        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-10">
+
+          <div className="grid md:grid-cols-2 gap-10">
+
+            {/* LEFT */}
+            <div className="space-y-6">
+              <div>
+                <label className={labelStyle}>Full Name</label>
+                <input
+                  className={inputStyle}
+                  value={form.full_name}
+                  onChange={(e) =>
+                    handleChange("full_name", e.target.value)
+                  }
+                />
+              </div>
+
+              <div>
+  <label className={labelStyle}>Date of Birth</label>
+
+  <DatePicker
+    selected={form.date_of_birth ? new Date(form.date_of_birth) : null}
+    onChange={(date) => {
+      if (!date) return;
+
+      const today = new Date();
+
+      // ❌ Future date check
+      if (date >= today) {
+        alert("Date of birth must be in the past");
+        return;
+      }
+
+      // ❌ Age < 18 check
+      const minAgeDate = new Date(
+        today.getFullYear() - 18,
+        today.getMonth(),
+        today.getDate()
+      );
+
+      if (date > minAgeDate) {
+        alert("You must be at least 18 years old");
+        return;
+      }
+
+      // ✅ Format to YYYY-MM-DD (ERP format)
+      const formatted = date.toISOString().split("T")[0];
+
+      handleChange("date_of_birth", formatted);
+    }}
+    dateFormat="yyyy-MM-dd"
+    placeholderText="YYYY-MM-DD"
+    maxDate={
+      new Date(
+        new Date().getFullYear() - 18,
+        new Date().getMonth(),
+        new Date().getDate()
+      )
+    }
+    showMonthDropdown
+    showYearDropdown
+    dropdownMode="select"
+    yearDropdownItemNumber={100}
+    scrollableYearDropdown
     className={inputStyle}
   />
-)}
-
-        <input
-          placeholder="Document Number"
-          value={senderDocNumber}
-          onChange={(e) => setSenderDocNumber(e.target.value)}
-          className={inputStyle}
-        />
-
-        <div className="flex items-center gap-4">
-          <label className="bg-primary text-white px-6 py-3 rounded-2xl cursor-pointer font-semibold text-sm hover:opacity-90 transition">
-            Choose File
-            <input
-              type="file"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files[0];
-                setSenderDocFile(file);
-                setSenderFileName(file ? file.name : "");
-              }}
-            />
-          </label>
-
-          <span className="text-sm font-semibold text-gray-600">
-            {senderFileName || "No file chosen"}
-          </span>
-        </div>
-      </div>
-    </div>
-
-    
-
-    {/* ================= RECEIVER ================= */}
-    <div className="space-y-8 border-t pt-10">
-      <h3 className="text-xl font-black">Receiver Details</h3>
-
-      <input
-        placeholder="Full Name"
-        value={receiverFullName}
-        onChange={(e) => setReceiverFullName(e.target.value)}
-        className={inputStyle}
-      />
-
-      <div className="grid md:grid-cols-2 gap-6">
-        <input
-          placeholder="Email Address"
-          value={receiverEmail}
-          onChange={(e) => setReceiverEmail(e.target.value)}
-          className={inputStyle}
-        />
-        <input
-          placeholder="Phone Number"
-          value={receiverPhone}
-          onChange={(e) => setReceiverPhone(e.target.value)}
-          className={inputStyle}
-        />
-      </div>
-
-      <Select
-        options={countryOptions}
-        styles={customSelectStyles}
-        value={countryOptions.find(o => o.value === receiverCountry)}
-        onChange={(selected) => setReceiverCountry(selected.value)}
-        placeholder="Country"
-      />
-      {/* ================= RECEIVER BANK DETAILS ================= */}
-{(payMode === "Cash to Bank" || payMode === "Bank to Bank") && (
-  <div className="space-y-6 border-t pt-8">
-    <h4 className="text-xl font-black">Receiver Bank Details</h4>
-
-    <input
-      placeholder="Bank Name"
-      value={receiverBankName}
-      onChange={(e) => setReceiverBankName(e.target.value)}
-      className={inputStyle}
-    />
-
-    <input
-      placeholder="Account Number"
-      value={receiverAccountNumber}
-      onChange={(e) => setReceiverAccountNumber(e.target.value)}
-      className={inputStyle}
-    />
-
-    <input
-      placeholder="SWIFT Code"
-      value={receiverSwiftCode}
-      onChange={(e) => setReceiverSwiftCode(e.target.value)}
-      className={inputStyle}
-    />
-  </div>
-)}
-    </div>
-
-    <button
-      onClick={handleNextToAmount}
-      className="w-full bg-[var(--color-primary)] text-black rounded-2xl py-4 font-black hover:opacity-90 transition"
-
-    >
-      Next: Transfer Amount
-    </button>
-
-  </div>
-)}
-
-
-          {/* ================= STEP 2 ================= */}
-          {currentStep === Step.AMOUNT && (
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-10 space-y-8">
-
-              <h3 className="text-xl font-black">Transfer Amount</h3>
-
-              <div className="grid md:grid-cols-2 gap-6">
-
-                {/* You Send */}
-                <div>
-                  <label className="text-xs uppercase font-bold text-gray-400">
-                    You Send
-                  </label>
-
-                  <div className="flex border border-gray-200 rounded-2xl overflow-hidden">
-                    <input
-                      type="number"
-                      value={sendAmount}
-                      onChange={(e) => setSendAmount(e.target.value)}
-                      className="flex-1 px-5 py-4 font-semibold outline-none"
-                    />
-                    <select
-  value="FJD"
-  disabled
-  className="px-4 border-l border-gray-200 font-semibold bg-gray-100 text-black cursor-not-allowed"
->
-  <option value="FJD">FJD</option>
-</select>
-                  </div>
-                </div>
-
-                {/* Receiver Gets */}
-                <div>
-                  <label className="text-xs uppercase font-bold text-gray-400">
-                    Receiver Gets
-                  </label>
-
-                  <div className="flex border border-gray-200 rounded-2xl overflow-hidden bg-gray-50">
-                    <input
-                      type="number"
-                      value={receiveAmount}
-                      readOnly
-                      className="flex-1 px-5 py-4 font-semibold bg-gray-50"
-                    />
-                    <select
-  value={toCurrency}
-  onChange={(e) => setToCurrency(e.target.value)}
-  className="px-4 border-l border-gray-200 font-semibold bg-white text-black"
->
-  {erpCurrencies.map((currency) => (
-    <option key={currency} value={currency}>
-      {currency}
-    </option>
-  ))}
-</select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-  <button
-    onClick={() => setCurrentStep(Step.DETAILS)}
-    className="w-1/3 border border-gray-300 rounded-2xl py-4 font-black hover:bg-gray-50 transition"
-  >
-    ← Back
-  </button>
-
-  <button
-    onClick={handlePreview}
-    className="w-full bg-[var(--color-primary)] hover:brightness-95 text-black rounded-2xl py-4 font-black transition"
-
-  >
-    Preview Details
-  </button>
 </div>
 
-            </div>
-          )}
+              <div>
+                <label className={labelStyle}>ID Type</label>
+                <select
+                  className={inputStyle}
+                  value={form.id_type}
+                  onChange={(e) =>
+                    handleChange("id_type", e.target.value)
+                  }
+                >
+                  <option value="">Select ID Type</option>
+                  {getOptions("id_type").map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          {/* ================= STEP 3 ================= */}
-          {currentStep === Step.PREVIEW && (
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-10 space-y-6">
-
-              <div className="flex justify-between items-center">
-  <h3 className="text-xl font-black">Review & Confirm</h3>
-
-  <button
-    onClick={() => setCurrentStep(Step.DETAILS)}
-    className="flex items-center gap-2 text-sm font-bold text-primary hover:opacity-80 transition"
-  >
-    ✏️ Edit
-  </button>
-  
-
-</div>
-
-
-              <div className="space-y-3 text-sm font-semibold">
-                <div><strong>Sender:</strong> {senderFullName}</div>
-                <div><strong>Receiver:</strong> {receiverFullName}</div>
+              {shouldShowField("government_id") && (
                 <div>
-                  <strong>Transfer:</strong> {sendAmount} {fromCurrency} → {receiveAmount} {toCurrency}
+                  <label className={labelStyle}>Government ID</label>
+                  <select
+                    className={inputStyle}
+                    value={form.government_id}
+                    onChange={(e) =>
+                      handleChange("government_id", e.target.value)
+                    }
+                  >
+                    <option value="">Select Government ID</option>
+                    {getOptions("government_id").map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+              )}
+
+              
+            </div>
+
+            {/* RIGHT */}
+            <div className="space-y-6">
+
+              {shouldShowField("passport_number") && (
                 <div>
-                  <strong>Total:</strong> {totalToPay} {fromCurrency}
+                  <label className={labelStyle}>Passport Number</label>
+                  <input
+                    className={inputStyle}
+                    value={form.passport_number}
+                    onChange={(e) =>
+                      handleChange("passport_number", e.target.value)
+                    }
+                  />
                 </div>
+              )}
+
+              <div>
+                <label className={labelStyle}>ID Number</label>
+                <input
+                  className={inputStyle}
+                  value={form.id_number}
+                  onChange={(e) =>
+                    handleChange("id_number", e.target.value)
+                  }
+                />
               </div>
 
-              <button
-                onClick={handleConfirm}
-                className="w-full bg-[var(--color-primary)] hover:brightness-95 text-black rounded-2xl py-4 font-black transition"
+              {shouldShowField("passport_photo_scan") && (
+                <div>
+                  <label className={labelStyle}>Passport Upload</label>
+                  <input
+                    type="file"
+                    onChange={(e) =>
+                      setPassportFile(e.target.files[0])
+                    }
+                  />
+                </div>
+              )}
 
-              >
-                Confirm & Proceed
-              </button>
-             
+              {shouldShowField("government_id_photo_scan") && (
+                <div>
+                  <label className={labelStyle}>
+                    Government ID Upload
+                  </label>
+                  <input
+                    type="file"
+                    onChange={(e) =>
+                      setGovtFile(e.target.files[0])
+                    }
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className={labelStyle}>Transaction ID</label>
+                <input
+                  className={inputStyle}
+                  value={form.transaction_id}
+                  onChange={(e) =>
+                    handleChange("transaction_id", e.target.value)
+                  }
+                />
+              </div>
             </div>
-            
-          )}
-
-        </div>
-
-        {/* ================= RIGHT SUMMARY ================= */}
-        <div className="lg:col-span-4">
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-10 space-y-6 lg:sticky lg:top-24">
-
-            <h3 className="text-xl font-black">Summary</h3>
-
-            <div className="space-y-4 text-sm font-semibold">
-
-              <div className="flex justify-between">
-                <span>Sending Amount</span>
-                <span>{sendAmount || "0.00"} {fromCurrency}</span>
-              </div>
-
-              <div className="flex justify-between">
-                <span>Service Fee (2%)</span>
-                <span>{serviceFee} {fromCurrency}</span>
-              </div>
-
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span>{subTotal} {fromCurrency}</span>
-              </div>
-
-              <div className="flex justify-between">
-                <span>GST ({gstRate}%)</span>
-                <span>{gst} {fromCurrency}</span>
-              </div>
-
-              <div className="border-t pt-4 flex justify-between font-black text-lg">
-                <span>Total To Pay</span>
-                <span>{totalToPay} {fromCurrency}</span>
-              </div>
-
-              <div className="border-t pt-4 flex justify-between text-green-600 font-black">
-                <span>Receiver Gets</span>
-                <span>{receiveAmount} {toCurrency}</span>
-              </div>
-
-            </div>
-
           </div>
-        </div>
 
+          {/* BUTTON */}
+          <button
+            onClick={handleSubmit}
+            className="mt-10 w-full bg-[#E00000] hover:opacity-90 text-white rounded-2xl py-4 font-black transition"
+          >
+            Submit Transfer
+          </button>
+        </div>
       </div>
     </main>
 
     <Footer />
   </div>
 );
-}
+};
+
 export default MoneyTransfer;
