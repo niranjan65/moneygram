@@ -15,7 +15,7 @@ export const createMoneyTransfer = async (
     const baseURL = getBaseURL(MONEY_TRANSFER_ENV);
     const headers = getHeaders(loginUser, MONEY_TRANSFER_ENV);
 
-   const payload = {
+  const payload = {
   doctype: "Money Transfer for Customer",
 
   customer: customerId,
@@ -30,6 +30,13 @@ export const createMoneyTransfer = async (
   id_number: form.id_number,
   transaction_id: form.transaction_id,
   transaction_type: transferType,
+
+  // ✅ NEW FIELDS (IMPORTANT)
+  sending_amount: form.sending_amount,
+  sending_currency: form.sending_currency || "FJD",
+  receiving_amount: form.receiving_amount,
+  receiving_currency: form.receiving_currency,
+  total_amount: form.total_amount,
 };
 
 // ✅ Attach correct file field
@@ -42,6 +49,7 @@ if (form.id_type === "GOVERNMENT_ID") {
 }
 
     console.log("Creating Money Transfer:", payload);
+    
 
     const res = await fetch(`${baseURL}/api/resource/Money Transfer for Customer`, {
       method: "POST",

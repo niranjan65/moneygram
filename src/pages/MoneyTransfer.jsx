@@ -4,10 +4,12 @@ import Footer from "../components/layout/Footer";
 import { useERPFileUpload } from "../hooks/useERPFileUpload";
 import { useUser } from "../context/UserContext";
 import { getCustomerById, createCustomer } from "../features/exchange/api/customer";
+import FileUploadBox from "../features/exchange/config/FileUploadBox";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { ArrowUpRight, ArrowDownLeft, ArrowLeftRight, CheckCircle2 } from "lucide-react";
 import { createMoneyTransfer } from "../features/exchange/api/createMoneyTransfer";
+import TransferAmountSection from "../features/exchange/components/TransferAmountSection";
 
 const MoneyTransfer = () => {
   const { uploadFile } = useERPFileUpload();
@@ -15,24 +17,35 @@ const MoneyTransfer = () => {
   const loginUser =  user ;
   const [metaFields, setMetaFields] = useState([]);
   const [transferType, setTransferType] = useState("Send");
-
-  const [form, setForm] = useState({
-    full_name: "",
-    date_of_birth: "",
-    id_type: "",
-    government_id: "",
-    customer: "",
-    passport_number: "",
-    id_number: "",
-    transaction_id: "",
-  });
-
   const [passportFile, setPassportFile] = useState(null);
   const [govtFile, setGovtFile] = useState(null);
 
-  const inputStyle =
-    "w-full border border-gray-200 rounded-2xl px-5 py-4 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-black transition";
 
+  const [form, setForm] = useState({
+  full_name: "",
+  date_of_birth: "",
+  id_type: "",
+  government_id: "",
+  customer: "",
+  passport_number: "",
+  id_number: "",
+  transaction_id: "",
+  sending_amount: "",
+  sending_currency: "FJD",
+  receiving_amount: "",
+  receiving_currency: "",
+  exchange_rate: "",
+  transfer_fee: "",
+  total_amount: "",
+});
+
+
+const isPassport = form.id_type === "PASSPORT";
+const isGovtId = form.id_type === "GOVERNMENT_ID";
+
+  const inputStyle =
+  "w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#E00000] focus:bg-white transition-all duration-200";
+  
   const labelStyle =
     "text-xs uppercase font-bold text-gray-400 mb-2 block";
 
@@ -91,6 +104,16 @@ const MoneyTransfer = () => {
 
 }, []);
 
+useEffect(() => {
+  const amount = parseFloat(form.sending_amount || 0);
+  const fee = parseFloat(form.transfer_fee || 0);
+
+  setForm(prev => ({
+    ...prev,
+    total_amount: amount + fee
+  }));
+}, [form.sending_amount, form.transfer_fee]);
+
 const getOptions = (fieldname) => {
   const field = metaFields.find(f => f.fieldname === fieldname);
   if (!field || !field.options) return [];
@@ -101,12 +124,16 @@ const getOptions = (fieldname) => {
   }));
 };
 
-const cleanPayload = (obj) => {
-  return Object.fromEntries(
-    Object.entries(obj).filter(
-      ([_, v]) => v !== "" && v !== null && v !== undefined
-    )
-  );
+
+
+const formatLocalDate = (date) => {
+  if (!date) return "";
+
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+
+  return `${y}-${m}-${d}`;
 };
 
 const formatDate = (date) => { if (!date) return null; const dObj = new Date(date); if (isNaN(dObj.getTime())) return null; const y = dObj.getFullYear(); const m = String(dObj.getMonth() + 1).padStart(2, "0"); const d = String(dObj.getDate()).padStart(2, "0"); return `${y}-${m}-${d}`; };
@@ -368,13 +395,18 @@ const heading = getHeading();
     {heading.subtitle}
   </p>
 </div>
+
+<TransferAmountSection
+  form={form}
+  handleChange={handleChange}
+/>
         {/* FORM CARD */}
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-10">
+        <div className="rounded-3xl border border-gray-100 bg-white shadow-[0_10px_40px_rgba(0,0,0,0.06)] p-8 sm:p-10">
 
           <div className="grid md:grid-cols-2 gap-10">
 
             {/* LEFT */}
-            <div className="space-y-6">
+            <div className="space-y-6 bg-gray-50/60 p-6 rounded-2xl border border-gray-100">
               <div>
                 <label className={labelStyle}>Full Name</label>
                 <input
@@ -390,7 +422,11 @@ const heading = getHeading();
   <label className={labelStyle}>Date of Birth</label>
 
   <DatePicker
-    selected={form.date_of_birth ? new Date(form.date_of_birth) : null}
+    selected={
+  form.date_of_birth
+    ? new Date(form.date_of_birth + "T00:00:00")
+    : null
+}
     onChange={(date) => {
       if (!date) return;
 
@@ -415,7 +451,7 @@ const heading = getHeading();
       }
 
       // ✅ Format to YYYY-MM-DD (ERP format)
-      const formatted = date.toISOString().split("T")[0];
+      const formatted = formatLocalDate(date);
 
       handleChange("date_of_birth", formatted);
     }}
@@ -455,81 +491,73 @@ const heading = getHeading();
                 </select>
               </div>
 
-              {shouldShowField("government_id") && (
-                <div>
-                  <label className={labelStyle}>Government ID</label>
-                  <select
-                    className={inputStyle}
-                    value={form.government_id}
-                    onChange={(e) =>
-                      handleChange("government_id", e.target.value)
-                    }
-                  >
-                    <option value="">Select Government ID</option>
-                    {getOptions("government_id").map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+             {isGovtId && (
+  <div>
+    <label className={labelStyle}>Government ID</label>
+    <select
+      className={inputStyle}
+      value={form.government_id}
+      onChange={(e) =>
+        handleChange("government_id", e.target.value)
+      }
+    >
+      <option value="">Select Government ID</option>
+      {getOptions("government_id").map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
 
               
             </div>
 
             {/* RIGHT */}
-            <div className="space-y-6">
+           <div className="space-y-6 bg-gray-50/60 p-6 rounded-2xl border border-gray-100">
 
-              {shouldShowField("passport_number") && (
-                <div>
-                  <label className={labelStyle}>Passport Number</label>
-                  <input
-                    className={inputStyle}
-                    value={form.passport_number}
-                    onChange={(e) =>
-                      handleChange("passport_number", e.target.value)
-                    }
-                  />
-                </div>
-              )}
+              {isPassport && (
+  <div>
+    <label className={labelStyle}>Passport Number</label>
+    <input
+      className={inputStyle}
+      value={form.passport_number}
+      onChange={(e) =>
+        handleChange("passport_number", e.target.value)
+      }
+    />
+  </div>
+)}
 
-              <div>
-                <label className={labelStyle}>ID Number</label>
-                <input
-                  className={inputStyle}
-                  value={form.id_number}
-                  onChange={(e) =>
-                    handleChange("id_number", e.target.value)
-                  }
-                />
-              </div>
+            {isGovtId && (
+  <div>
+    <label className={labelStyle}>ID Number</label>
+    <input
+      className={inputStyle}
+      value={form.id_number}
+      onChange={(e) =>
+        handleChange("id_number", e.target.value)
+      }
+    />
+  </div>
+)}
 
-              {shouldShowField("passport_photo_scan") && (
-                <div>
-                  <label className={labelStyle}>Passport Upload</label>
-                  <input
-                    type="file"
-                    onChange={(e) =>
-                      setPassportFile(e.target.files[0])
-                    }
-                  />
-                </div>
-              )}
+             {isPassport && (
+  <FileUploadBox
+    label="Upload Passport"
+    file={passportFile}
+    setFile={setPassportFile}
+  />
+)}
 
-              {shouldShowField("government_id_photo_scan") && (
-                <div>
-                  <label className={labelStyle}>
-                    Government ID Upload
-                  </label>
-                  <input
-                    type="file"
-                    onChange={(e) =>
-                      setGovtFile(e.target.files[0])
-                    }
-                  />
-                </div>
-              )}
+{isGovtId && (
+  <FileUploadBox
+    label="Upload Government ID"
+    file={govtFile}
+    setFile={setGovtFile}
+  />
+)}
 
               <div>
                 <label className={labelStyle}>Transaction ID</label>
