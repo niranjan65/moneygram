@@ -1,3 +1,4 @@
+//MOneyTransfer.jsx
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
@@ -19,7 +20,7 @@ const MoneyTransfer = () => {
   const [transferType, setTransferType] = useState("Send");
   const [passportFile, setPassportFile] = useState(null);
   const [govtFile, setGovtFile] = useState(null);
-
+  const [rbfFile, setRbfFile] = useState(null);
 
   const [form, setForm] = useState({
   full_name: "",
@@ -37,6 +38,8 @@ const MoneyTransfer = () => {
   exchange_rate: "",
   transfer_fee: "",
   total_amount: "",
+  rbf_number: "",
+  rbf_document: "", 
 });
 
 
@@ -185,20 +188,27 @@ useEffect(() => {
  
 const handleSubmit = async () => {
   try {
-    const fileToUpload =
+    let documentUrl = "";
+    let rbfDocumentUrl = "";
+
+    // ✅ Upload ID file
+    const idFile =
       form.id_type === "PASSPORT" ? passportFile : govtFile;
 
-    // ✅ Upload ONCE
-    let documentUrl = "";
-    if (fileToUpload) {
-      documentUrl = await uploadFile(fileToUpload, { isPrivate: 1 });
+    if (idFile) {
+      documentUrl = await uploadFile(idFile, { isPrivate: 1 });
     }
 
+    // ✅ Upload RBF document (optional)
+    if (rbfFile) {
+      rbfDocumentUrl = await uploadFile(rbfFile, { isPrivate: 1 });
+    }
+
+    // attach to form
+    form.rbf_document = rbfDocumentUrl;
+
     // ✅ STEP 1: Create Customer
-   const customer = await createCustomer(
-  form,
-  documentUrl // ✅ PASS DIRECTLY
-);
+    const customer = await createCustomer(form, documentUrl);
 
     const customerId = customer.name;
 
@@ -208,14 +218,13 @@ const handleSubmit = async () => {
       customerId,
       transferType,
       loginUser,
-      documentUrl // ✅ pass file URL
+      documentUrl
     );
 
     alert(`✅ Transfer Successful!
 Customer: ${customerId}
 Transaction: ${transfer.name}`);
 
-    // reset...
   } catch (err) {
     console.error(err);
     alert(err.message || "Error processing transfer");
@@ -569,6 +578,44 @@ const heading = getHeading();
                   }
                 />
               </div>
+              {/* RBF SECTION */}
+<div className="rounded-3xl border border-gray-100 bg-white shadow-[0_10px_40px_rgba(0,0,0,0.06)] p-6 sm:p-8">
+
+  <div className="mb-6">
+    <h3 className="text-lg font-bold text-gray-800">
+      RBF Details
+    </h3>
+    <p className="text-xs text-gray-400">
+      Regulatory compliance information (mandatory)
+    </p>
+  </div>
+
+  <div className="grid md:grid-cols-2 gap-6">
+
+    {/* RBF NUMBER */}
+    <div>
+      <label className={labelStyle}>RBF Number *</label>
+      <input
+        className={inputStyle}
+        value={form.rbf_number || ""}
+        onChange={(e) =>
+          handleChange("rbf_number", e.target.value)
+        }
+        placeholder="Enter RBF number"
+      />
+    </div>
+
+    {/* RBF DOCUMENT */}
+    <div>
+      <FileUploadBox
+        label="Upload RBF Document (Optional)"
+        file={rbfFile}
+        setFile={setRbfFile}
+      />
+    </div>
+
+  </div>
+</div>
             </div>
           </div>
 

@@ -37,6 +37,9 @@ export const createMoneyTransfer = async (
   receiving_amount: form.receiving_amount,
   receiving_currency: form.receiving_currency,
   total_amount: form.total_amount,
+
+   rbf_number: form.rbf_number,
+  rbf_document: form.rbf_document,
 };
 
 // ✅ Attach correct file field
