@@ -337,15 +337,12 @@ export const ReviewStep = ({
 
   // Support both old field names (senderCurrency/receiverCurrency) and
   // the current payload field names (foreignCurrency/localCurrency).
-  // For BUY: the "send" side is the foreign currency; for SELL it is the local.
+  // sendAmount always represents the forex (foreign currency) amount regardless
+  // of exchange type, so senderCurrency is always foreignCurrency.
   const senderCurrency =
-    _senderCurrency ??
-    (exchangeType === 'BUY' ? foreignCurrency : localCurrency) ??
-    'USD';
+    _senderCurrency ?? foreignCurrency ?? 'USD';
   const receiverCurrency =
-    _receiverCurrency ??
-    (exchangeType === 'BUY' ? localCurrency : foreignCurrency) ??
-    'EUR';
+    _receiverCurrency ?? localCurrency ?? 'EUR';
 
   const isCash = deliveryMethod === 'CASH_PICKUP';
 
