@@ -78,7 +78,7 @@ export function SettingsProvider({ children }) {
 
       const warehouseData = await warehouseRes.json();
 
-      return warehouseData?.message; // ✅ NOW this works
+      return warehouseData?.message; 
     } catch (error) {
       console.error("Error fetching warehouse:", error);
       return null;

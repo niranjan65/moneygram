@@ -318,8 +318,10 @@ export const ReviewStep = ({
 
   const {
     sendAmount       = 0,
-    senderCurrency   = 'USD',
-    receiverCurrency = 'EUR',
+    senderCurrency   : _senderCurrency,
+    receiverCurrency : _receiverCurrency,
+    foreignCurrency,
+    localCurrency,
     exchangeRate     = 0,
     receiverGets     = 0,
     firstName        = '',
@@ -332,6 +334,18 @@ export const ReviewStep = ({
     totalDispensed,
     denominationRows = [],
   } = data;
+
+  // Support both old field names (senderCurrency/receiverCurrency) and
+  // the current payload field names (foreignCurrency/localCurrency).
+  // For BUY: the "send" side is the foreign currency; for SELL it is the local.
+  const senderCurrency =
+    _senderCurrency ??
+    (exchangeType === 'BUY' ? foreignCurrency : localCurrency) ??
+    'USD';
+  const receiverCurrency =
+    _receiverCurrency ??
+    (exchangeType === 'BUY' ? localCurrency : foreignCurrency) ??
+    'EUR';
 
   const isCash = deliveryMethod === 'CASH_PICKUP';
 
@@ -384,7 +398,7 @@ export const ReviewStep = ({
               style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
               <Sparkles size={12} className="text-yellow-300" />
               <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">
-                Customer Receives
+                {exchangeType === 'BUY' ? 'MH Receives' : 'Customer Receives'}
               </span>
             </div>
 
@@ -531,7 +545,7 @@ export const ReviewStep = ({
                 <div className="flex items-center gap-1.5 mb-1">
                   <CheckCircle2 size={12} className="text-red-200" strokeWidth={3} />
                   <span className="text-red-100 text-[10px] font-black uppercase tracking-[0.18em]">
-                    Final Amount
+                    Final Forex Amount
                   </span>
                 </div>
                 {/* <p className="text-red-200 text-xs font-medium">Fijian Dollar · FJD</p> */}

@@ -3,22 +3,27 @@ import { useFormContext } from 'react-hook-form';
 import { getCustomerById } from '../../api/customer';
 import { useUser } from '../../../../context/UserContext';
 
-const CreditLimit = () => {
+const CreditLimit = ({ sendAmount, onLimitCheck }) => {
     const { register, watch, formState: { errors } } = useFormContext();
     const loginUser = useUser();
 
-    const [availableCurrency, setAvailableCurrency] = useState();
+    const [availableCurrency, setAvailableCurrency] = useState(2000);
     const [showUploadModal, setShowUploadModal] = useState(true)
+
+    useEffect(() => {
+        const isExceeded = sendAmount > 0 && sendAmount > availableCurrency;
+        onLimitCheck?.(isExceeded);
+    }, [sendAmount, availableCurrency]);
 
     const idName = watch('idName');
     const dateOfBirth = watch('dateOfBirth');
 
-    const getCustomerDetails = async(idNumber) => {
+    const getCustomerDetails = async (idNumber) => {
         const customer = await getCustomerById(idNumber, loginUser);
         if (customer && customer.custom_available_currency_transfer_balance !== undefined && customer.custom_available_currency_transfer_balance !== null) {
             setAvailableCurrency(customer.custom_available_currency_transfer_balance);
         } else {
-            setAvailableCurrency(null);
+            setAvailableCurrency(2000);
         }
     }
 
@@ -33,16 +38,16 @@ const CreditLimit = () => {
     };
 
     useEffect(() => {
-      if(idName && dateOfBirth) {
-        const formattedDate = formatDate(dateOfBirth);
-        if (formattedDate) {
-          getCustomerDetails(`${idName}_${formattedDate}`);
+        if (idName && dateOfBirth) {
+            const formattedDate = formatDate(dateOfBirth);
+            if (formattedDate) {
+                getCustomerDetails(`${idName}_${formattedDate}`);
+            }
+        } else {
+            setAvailableCurrency(2000);
         }
-      } else {
-        setAvailableCurrency(null);
-      }
     }, [idName, dateOfBirth])
-    
+
 
     if (availableCurrency === null || availableCurrency === undefined) {
         return null;
@@ -62,8 +67,8 @@ const CreditLimit = () => {
                     </div>
                 </div>
                 <div className="text-right">
-                    <span className="block text-[10px] uppercase font-bold text-red-400 tracking-widest">Current Balance</span>
-                    <span className="text-2xl font-black text-red-900">FJ$ {Number(availableCurrency).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:4})}</span>
+                    <span className="block text-[10px] uppercase font-bold text-red-400 tracking-widest">RBF Transaction Limit</span>
+                    <span className="text-2xl font-black text-red-900">FJ$ {Number(availableCurrency).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span>
                 </div>
             </div>
         </div>
