@@ -318,8 +318,10 @@ export const ReviewStep = ({
 
   const {
     sendAmount       = 0,
-    senderCurrency   = 'USD',
-    receiverCurrency = 'EUR',
+    senderCurrency   : _senderCurrency,
+    receiverCurrency : _receiverCurrency,
+    foreignCurrency,
+    localCurrency,
     exchangeRate     = 0,
     receiverGets     = 0,
     firstName        = '',
@@ -332,6 +334,18 @@ export const ReviewStep = ({
     totalDispensed,
     denominationRows = [],
   } = data;
+
+  // Support both old field names (senderCurrency/receiverCurrency) and
+  // the current payload field names (foreignCurrency/localCurrency).
+  // For BUY: the "send" side is the foreign currency; for SELL it is the local.
+  const senderCurrency =
+    _senderCurrency ??
+    (exchangeType === 'BUY' ? foreignCurrency : localCurrency) ??
+    'USD';
+  const receiverCurrency =
+    _receiverCurrency ??
+    (exchangeType === 'BUY' ? localCurrency : foreignCurrency) ??
+    'EUR';
 
   const isCash = deliveryMethod === 'CASH_PICKUP';
 

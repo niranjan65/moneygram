@@ -340,7 +340,7 @@ export const GovernmentIdSection = ({ exchangeType, isCreditExceeded }) => {
         )}
 
         {/* RBF Fields — only when exchange amount exceeds credit limit */}
-        {isCreditExceeded && (
+        {/* {isCreditExceeded && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-2 p-4 bg-orange-50 border border-orange-200 rounded-xl">
             <div className="sm:col-span-2 flex items-center gap-2 py-1">
               <AlertCircle className="text-orange-500" size={16} />
@@ -349,7 +349,7 @@ export const GovernmentIdSection = ({ exchangeType, isCreditExceeded }) => {
               </p>
             </div>
 
-            {/* RBF Number */}
+           
             <div id="field-rbfNumber" className="sm:col-span-2">
               <FieldLabel required icon={Hash}>RBF Number</FieldLabel>
               <input
@@ -363,11 +363,11 @@ export const GovernmentIdSection = ({ exchangeType, isCreditExceeded }) => {
               <ErrorMsg message={errors.rbfNumber?.message} />
             </div>
 
-            {/* Document Upload */}
+            
             <div id="field-rbfDocument" className="sm:col-span-2">
               <FieldLabel required icon={Upload}>Supporting Document</FieldLabel>
 
-              {/* Hidden input registered only for validation */}
+              
               <input
                 type="hidden"
                 {...register('rbfDocument', {
@@ -375,7 +375,7 @@ export const GovernmentIdSection = ({ exchangeType, isCreditExceeded }) => {
                 })}
               />
 
-              {/* Actual file picker — stores File object via setValue */}
+             
               <input
                 type="file"
                 accept=".pdf,.jpg,.jpeg,.png"
@@ -394,7 +394,7 @@ export const GovernmentIdSection = ({ exchangeType, isCreditExceeded }) => {
                   ${errors.rbfDocument ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white'}`}
               />
 
-              {/* Show selected filename */}
+             
               {rbfFileName && (
                 <p className="text-xs text-orange-700 mt-1 flex items-center gap-1">
                   <FileText size={12} />
@@ -406,7 +406,7 @@ export const GovernmentIdSection = ({ exchangeType, isCreditExceeded }) => {
             </div>
 
           </div>
-        )}
+        )} */}
 
       </div>
     </div>

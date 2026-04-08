@@ -2,16 +2,15 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Stepper } from '../components/Stepper';
 import { Summary } from '../components/Summary';
 import { SenderCard } from '../components/SenderCard';
-import { ReceiverForm } from '../features/exchange/components/ReceiverForm';
+import { DealerForm } from '../features/exchange/components/DealerForm';
 import { ReviewStep } from '../components/ReviewStep';
 import Navbar from '../components/layout/Navbar';
 import { TransferSuccess } from '../components/TransferSuccess';
-import { useERPFileUpload } from '../hooks/useERPFileUpload';
 import { ExchangeProvider } from '../context/ExchangeContext';
-import { useSettings } from '../context/SettingsContext';
 import { useERPNextRates } from '../hooks/useERPNextRates';
-import { CheckCircle2 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
+import { useSettings } from '../context/SettingsContext';
+import { useERPFileUpload } from '../hooks/useERPFileUpload';
 
 const Step = {
   ESTIMATE: 1,
@@ -22,94 +21,88 @@ const Step = {
 
 const TRANSFER_FEE = 4.99;
 
-
-
-const MoneyExchange = () => {
+const DealerExchange = () => {
   const { uploadFile } = useERPFileUpload();
   const ratesData = useERPNextRates();
-
-  // Holds the raw rbfDocument File between DETAILS → REVIEW steps.
-  // Can't use sessionStorage because File objects are not serialisable.
-  const rbfDocumentFileRef = React.useRef(null);
+  const loginUser = useUser();
+  const { selectedWarehouse } = useSettings();
 
   const [currentStep, setCurrentStep] = useState(() => {
-    const saved = sessionStorage.getItem('exchangeCurrentStep');
+    const saved = sessionStorage.getItem('dealerCurrentStep');
     return saved ? JSON.parse(saved) : Step.DETAILS;
   });
 
   const [formKey, setFormKey] = useState(0);
 
-  const loginUser = useUser();
-
   const [senderInfo] = useState({
-    name: 'Niranjan Singh',
-    email: 'niranjan.ks@anantdv.com',
+    name: 'Dealer Agent',
+    email: 'dealer@anantdv.com',
     phone: '+91 1234567890',
   });
 
-  const { selectedWarehouse } = useSettings();
-
   const [receiverInfo, setReceiverInfo] = useState(() => {
-    const saved = sessionStorage.getItem('exchangeReceiverInfo');
+    const saved = sessionStorage.getItem('dealerReceiverInfo');
     return saved ? JSON.parse(saved) : {
       firstName: '',
       lastName: '',
-      country: '',
-      city: '',
-      deliveryMethod: 'BANK_DEPOSIT',
-      bankName: '',
-      accountNumber: '',
+      middleName: '',
+      fullName: '',
+      dateOfBirth: '',
       senderCurrency: 'USD',
       receiverCurrency: 'EUR',
     };
   });
 
   const [summary, setSummary] = useState(() => {
-    const saved = sessionStorage.getItem('exchangeSummary');
+    const saved = sessionStorage.getItem('dealerSummary');
     return saved ? JSON.parse(saved) : {
       sendAmount: null,
       currency: 'USD',
       fee: TRANSFER_FEE,
-      exchangeRate: 0.02,
-      receiverGets: 920.00,
+      exchangeRate: 1.0,
+      receiverGets: 0,
       receiverCurrency: 'EUR',
       exchangeType: 'BUY',
     };
   });
 
-  // Full transfer payload saved when ReceiverForm submits — used by ReviewStep
   const [transferPayload, setTransferPayload] = useState(() => {
-    const saved = sessionStorage.getItem('exchangeTransferPayload');
+    const saved = sessionStorage.getItem('dealerTransferPayload');
     return saved ? JSON.parse(saved) : null;
   });
-
-  useEffect(() => { sessionStorage.setItem('exchangeCurrentStep', JSON.stringify(currentStep)); }, [currentStep]);
-  useEffect(() => { sessionStorage.setItem('exchangeReceiverInfo', JSON.stringify(receiverInfo)); }, [receiverInfo]);
-  useEffect(() => { sessionStorage.setItem('exchangeSummary', JSON.stringify(summary)); }, [summary]);
-  useEffect(() => { sessionStorage.setItem('exchangeTransferPayload', JSON.stringify(transferPayload)); }, [transferPayload]);
 
   const [transactionId, setTransactionId] = useState(() => {
-    const saved = sessionStorage.getItem('exchangeTransactionId');
+    const saved = sessionStorage.getItem('dealerTransactionId');
     return saved ? JSON.parse(saved) : null;
   });
 
-  // Stores the created Currency Exchange For Customer doc from ERPNext API
   const [apiResponseDoc, setApiResponseDoc] = useState(() => {
-    const saved = sessionStorage.getItem('exchangeApiResponseDoc');
+    const saved = sessionStorage.getItem('dealerApiResponseDoc');
     return saved ? JSON.parse(saved) : null;
   });
 
-  useEffect(() => {
-    if (transactionId) sessionStorage.setItem('exchangeTransactionId', JSON.stringify(transactionId));
-  }, [transactionId]);
+  const saveToSession = useCallback((key, value) => {
+  const timeout = setTimeout(() => {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  }, 300);
 
-  useEffect(() => {
-    if (apiResponseDoc) sessionStorage.setItem('exchangeApiResponseDoc', JSON.stringify(apiResponseDoc));
-  }, [apiResponseDoc]);
+  return () => clearTimeout(timeout);
+}, []);
+
+useEffect(() => {
+  console.log("transfer payload", transferPayload)
+}, [transferPayload])
+
+
+  useEffect(() => { sessionStorage.setItem('dealerCurrentStep', JSON.stringify(currentStep)); }, [currentStep]);
+  useEffect(() => { sessionStorage.setItem('dealerReceiverInfo', JSON.stringify(receiverInfo)); }, [receiverInfo]);
+//   useEffect(() => { sessionStorage.setItem('dealerSummary', JSON.stringify(summary)); }, [summary]);
+useEffect(() => saveToSession('dealerSummary', summary), [summary]);
+  useEffect(() => { sessionStorage.setItem('dealerTransferPayload', JSON.stringify(transferPayload)); }, [transferPayload]);
+  useEffect(() => { if (transactionId) sessionStorage.setItem('dealerTransactionId', JSON.stringify(transactionId)); }, [transactionId]);
+  useEffect(() => { if (apiResponseDoc) sessionStorage.setItem('dealerApiResponseDoc', JSON.stringify(apiResponseDoc)); }, [apiResponseDoc]);
 
   const handleSummaryChange = useCallback((incoming) => {
-
-    console.log("handle summary change called.........", incoming)
     setSummary(prev => ({
       ...prev,
       sendAmount: incoming.sendAmount,
@@ -122,21 +115,9 @@ const MoneyExchange = () => {
     }));
   }, []);
 
-  // Called when ReceiverForm hits Continue — save full payload and go to REVIEW
   const handleContinue = useCallback((data) => {
-    // Keep the raw File object in a ref — sessionStorage can't hold Files.
-    // GovernmentIdSection stores a File directly via setValue (not a FileList).
-    if (data.rbfDocument instanceof File) {
-      rbfDocumentFileRef.current = data.rbfDocument;
-      console.log('[RBF DEBUG] 4. handleContinue - File captured in ref ✅', data.rbfDocument.name);
-    } else {
-      rbfDocumentFileRef.current = null;
-      console.log('[RBF DEBUG] 4. handleContinue - data.rbfDocument is NOT a File ❌', typeof data.rbfDocument, data.rbfDocument);
-    }
-
     setReceiverInfo(data);
     setTransferPayload(data);
-    console.log('Transfer payload:', data);
 
     setSummary(prev => ({
       ...prev,
@@ -147,25 +128,16 @@ const MoneyExchange = () => {
       receiverCurrency: data.exchangeType === 'BUY' ? data.localCurrency : data.foreignCurrency,
     }));
 
-    // Go to REVIEW (step 4) instead of PAYMENT
     setCurrentStep(Step.REVIEW);
   }, []);
 
-  const handleBack = useCallback(() => {
-    setCurrentStep(prev => Math.max(Step.ESTIMATE, prev - 1));
-  }, []);
-
-  // Called from ReviewStep → Cancel → reset everything and go back to DETAILS
   const handleCancel = useCallback(() => {
-    rbfDocumentFileRef.current = null;
     setReceiverInfo({
       firstName: '',
       lastName: '',
-      country: '',
-      city: '',
-      deliveryMethod: 'BANK_DEPOSIT',
-      bankName: '',
-      accountNumber: '',
+      middleName: '',
+      fullName: '',
+      dateOfBirth: '',
       localCurrency: 'FJD',
       foreignCurrency: 'USD',
     });
@@ -183,77 +155,23 @@ const MoneyExchange = () => {
     setApiResponseDoc(null);
     setCurrentStep(Step.DETAILS);
 
-    sessionStorage.removeItem('exchangeCurrentStep');
-    sessionStorage.removeItem('exchangeReceiverInfo');
-    sessionStorage.removeItem('exchangeSummary');
-    sessionStorage.removeItem('exchangeTransferPayload');
-    sessionStorage.removeItem('exchangeTransactionId');
-    sessionStorage.removeItem('exchangeApiResponseDoc');
-    sessionStorage.removeItem('exchangeInvoiceData');
+    sessionStorage.removeItem('dealerCurrentStep');
+    sessionStorage.removeItem('dealerReceiverInfo');
+    sessionStorage.removeItem('dealerSummary');
+    sessionStorage.removeItem('dealerTransferPayload');
+    sessionStorage.removeItem('dealerTransactionId');
+    sessionStorage.removeItem('dealerApiResponseDoc');
     setFormKey(prev => prev + 1);
   }, []);
 
-  // Called from ReviewStep → Edit buttons → go back to DETAILS
   const handleEditFromReview = useCallback(() => {
     setCurrentStep(Step.DETAILS);
   }, []);
 
-  // Called from ReviewStep → Confirm & Send → go to PAYMENT
-  // const handleConfirm = useCallback(() => {
-  //   const txId = `#TRX-${Math.floor(100000 + Math.random() * 900000)}`;
-  //   setTransactionId(txId);
-  //   setCurrentStep(Step.PAYMENT);
-  //   // TODO: trigger your actual payment / API call here
-  //   console.log('Confirmed! Proceeding to payment with:', transferPayload);
-  // }, [transferPayload]);
-
-
-
-
   const handleConfirm = useCallback(async () => {
     if (!transferPayload) return;
 
-    let uploadedFileUrl = null;
-
-    if (transferPayload.docFile) {
-      uploadedFileUrl = await uploadFile(transferPayload.docFile, {
-        isPrivate: 0,
-        doctype: "Currency Exchange For Customer",
-      });
-    }
-
-    // Upload the RBF document (PDF) and capture the returned URL.
-    // let rbfDocumentUrl = null;
-    // const rbfFile = rbfDocumentFileRef.current;
-    // console.log('[RBF DEBUG] 5. handleConfirm - rbfDocumentFileRef.current:', rbfFile?.name ?? 'null/undefined ❌');
-    // if (rbfFile) {
-    //   console.log('[RBF DEBUG] 5a. Calling uploadFile for RBF doc...');
-    //   rbfDocumentUrl = await uploadFile(rbfFile, {
-    //     isPrivate: 0,
-    //     doctype: "Currency Exchange For Customer",
-    //   });
-    //   console.log('[RBF DEBUG] 6. RBF document upload result URL:', rbfDocumentUrl ?? 'null — upload may have failed ❌');
-    // } else {
-    //   console.log('[RBF DEBUG] 5b. Skipping RBF upload — no file in ref ❌');
-    // }
-
-    // console.log("transfer payload", transferPayload)
-
-    try {
-      // Decide which field to use
-      let idDocumentField = {};
-
-      if (uploadedFileUrl) {
-        if (transferPayload.idType === "PASSPORT") {
-          idDocumentField.passport_photo__scan = uploadedFileUrl;
-        }
-
-        if (transferPayload.idType === "GOVERNMENT_ID") {
-          idDocumentField.government_id_photo__scan = uploadedFileUrl;
-        }
-      }
-
-      let denominationData = [];
+    let denominationData = [];
 
       let receiverData = []
 
@@ -397,33 +315,17 @@ const MoneyExchange = () => {
             };
           }) || [];
       }
-
-
+    try {
       const localAmount = transferPayload.exchangeType === 'BUY' ? transferPayload.sendAmount : transferPayload.receiverGets;
       const foreignAmount = transferPayload.exchangeType === 'BUY' ? transferPayload.receiverGets : transferPayload.sendAmount;
 
       const apiPayload = {
         data: {
-          custom_available_currency_transfer_balance: 2000,
-          verification_id_type: transferPayload.idType,
-          passport_number: transferPayload.idNumber,
           first_name: transferPayload.firstName,
           last_name: transferPayload.lastName,
-          receiver_mailid: senderInfo.email,
-          destination_country: transferPayload.country,
-          city__province: transferPayload.city,
-          id_number: transferPayload.idNumber,
-          government_id: transferPayload.government_id,
-          customer_name_and_dob: `${transferPayload.idName}_${transferPayload.dateOfBirth}`,
-          full_name: transferPayload.idName,
+          full_name: transferPayload.fullName,
           date_of_birth: transferPayload.dateOfBirth,
-          occupation: transferPayload.occupation,
-          second_last_name_family_name: transferPayload.secondLastName,
-          id_issue_stateprovince: transferPayload.idIssueState,
-          id_issue_country: transferPayload.idIssueCountry,
-          ticket: transferPayload.ticket,
-          ...idDocumentField,
-
+          customer_name_and_dob: `${transferPayload.fullName.toLowerCase()}_${transferPayload.dateOfBirth}`,
 
           local_amount: localAmount,
           local_currency_type: transferPayload.localCurrency,
@@ -439,31 +341,25 @@ const MoneyExchange = () => {
           exchangeType: transferPayload.exchangeType,
           transfer_fee: summary.fee,
           send_amount: transferPayload.sendAmount,
-          total_amount: transferPayload.sendAmount + summary.fee,
+          total_amount: transferPayload.sendAmount ,
 
-          // rbf_number: transferPayload.rbfNumber || null,
-          // Use the uploaded file URL, not the raw File object.
-          // rbf_document: rbfDocumentUrl || null,
-
-          purposeOfTransaction: transferPayload.purposeOfTransaction,
-          travelDate: transferPayload.travelDate,
-          destination: transferPayload.destination,
-          pnrNumber: transferPayload.pnrNumber,
-          airwaysName: transferPayload.airwaysName,
-          flightNumber: transferPayload.flightNumber,
+          warehouse: selectedWarehouse?.warehouse,
 
           denomination: denominationData,
 
-          receiver__gets: receiverData,
-
-          warehouse: selectedWarehouse?.warehouse
-
+          receiver_gets: receiverData,
         },
       };
 
 
+      console.log("api payload", apiPayload)
+
+      // Just navigating to SUCCESS directly to avoid blocking if API fails or is not implemented for Dealer yet
+      const txId = `#DLR-${Math.floor(100000 + Math.random() * 900000)}`;
+      setTransactionId(txId);
+
       const response = await fetch(
-        "https://mhmoneyexpress.anantdv.com/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
+        "https://mhmoneyexpress.anantdv.com/api/method/moneygram.moneygram.api.create_dealer_exchange.create_dealer_exchange",
         {
           method: "POST",
           headers: {
@@ -481,81 +377,30 @@ const MoneyExchange = () => {
 
 
       const createdDoc = result?.message || result?.data || result;
-      setApiResponseDoc(createdDoc);
-
-
-      const txId = createdDoc?.name || `#TRX-${Math.floor(100000 + Math.random() * 900000)}`;
-      setTransactionId(txId);
-
-
+      setApiResponseDoc(createdDoc); 
       setCurrentStep(Step.PAYMENT);
 
     } catch (error) {
       console.error("API Error:", error);
-      alert("Something went wrong while creating exchange");
+      alert("Something went wrong while creating dealer exchange");
     }
-  }, [transferPayload, senderInfo.email, summary, transferPayload?.receiverDenominationRows, loginUser]);
-
-
+  }, [transferPayload, summary, selectedWarehouse]);
 
   const handleDashboard = useCallback(() => {
-    rbfDocumentFileRef.current = null;
-    // Reset receiver info
-    setReceiverInfo({
-      firstName: '',
-      lastName: '',
-      country: '',
-      city: '',
-      deliveryMethod: 'BANK_DEPOSIT',
-      bankName: '',
-      accountNumber: '',
-      senderCurrency: 'USD',
-      receiverCurrency: 'EUR',
-    });
-
-    // Reset summary
-    setSummary({
-      sendAmount: 0,
-      currency: 'USD',
-      fee: TRANSFER_FEE,
-      exchangeRate: 0.02,
-      receiverGets: 920.00,
-      receiverCurrency: 'EUR',
-      exchangeType: 'BUY',
-    });
-
-    // Clear transfer data
-    setTransferPayload(null);
-    setTransactionId(null);
-    setApiResponseDoc(null);
-
-    // Go back to form step
-    setCurrentStep(Step.DETAILS);
-
-    sessionStorage.removeItem('exchangeCurrentStep');
-    sessionStorage.removeItem('exchangeReceiverInfo');
-    sessionStorage.removeItem('exchangeSummary');
-    sessionStorage.removeItem('exchangeTransferPayload');
-    sessionStorage.removeItem('exchangeTransactionId');
-    sessionStorage.removeItem('exchangeApiResponseDoc');
-    sessionStorage.removeItem('exchangeInvoiceData');
-    setFormKey(prev => prev + 1);
-
-  }, []);
+    handleCancel();
+  }, [handleCancel]);
 
   const handleDownloadReceipt = useCallback(() => {
-    // TODO: generate PDF receipt
     console.log('Download receipt for:', transactionId);
   }, [transactionId]);
 
-  // ── Step content ─────────────────────────────────────────────────────────────
   const renderStepContent = () => {
     if (currentStep === Step.REVIEW) {
       return (
         <ReviewStep
           data={transferPayload}
           senderName={senderInfo.name}
-          paymentLabel="Visa •••• 4242"
+          paymentLabel="Dealer Processing"
           fee={TRANSFER_FEE}
           onEdit={handleEditFromReview}
           onCancel={handleCancel}
@@ -565,25 +410,23 @@ const MoneyExchange = () => {
     }
 
     if (currentStep === Step.PAYMENT) {
-
       return (
         <TransferSuccess
           data={transferPayload}
           apiDoc={apiResponseDoc}
           transactionId={transactionId}
-          estimatedArrival="Today by 5:00 PM"
+          estimatedArrival="Processed immediately"
           onDashboard={handleDashboard}
           onDownloadReceipt={handleDownloadReceipt}
         />
       );
     }
 
-
     return (
       <>
-        <SenderCard sender={senderInfo} />
+        <SenderCard sender={{ ...senderInfo, name: 'Dealer Exchange Terminal' }} />
 
-        <ReceiverForm
+        <DealerForm
           key={`form-refresh-key-${formKey}`}
           initialData={receiverInfo}
           sendAmount={summary.sendAmount}
@@ -594,14 +437,11 @@ const MoneyExchange = () => {
         />
 
         <div className="text-gray-400 text-xs font-semibold max-w-2xl px-2 leading-relaxed">
-          By clicking continue, you agree to MoneyFlow's Terms of Service and Privacy Policy.
-          Funds are usually delivered within minutes, subject to bank processing times and
-          holiday schedules in the destination country.
+          By clicking continue, you agree to Dealer Exchange procedures.
         </div>
       </>
     );
   };
-
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -615,13 +455,11 @@ const MoneyExchange = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
 
-              {/* Main Column — full width on success page */}
               <div className={`${currentStep === Step.PAYMENT ? 'lg:col-span-12' : 'lg:col-span-8'} flex flex-col gap-10`}>
                 {currentStep === Step.DETAILS && (
                   <div className="flex flex-col gap-3">
                     <h1 className="text-gray-900 text-3xl sm:text-5xl font-black tracking-tight leading-none">
-                      How much money are you exchanging{" "}
-                      <span className="text-[#E00000] italic">today ?</span>
+                      Dealer Exchange <span className="text-[#E00000] italic">Portal</span>
                     </h1>
                   </div>
                 )}
@@ -629,7 +467,6 @@ const MoneyExchange = () => {
                 {renderStepContent()}
               </div>
 
-              {/* Sidebar — hidden on success page */}
               {currentStep !== Step.PAYMENT && (
                 <div className="lg:col-span-4 relative">
                   <Summary />
@@ -648,4 +485,5 @@ const MoneyExchange = () => {
   );
 };
 
-export default MoneyExchange;
+export default DealerExchange;
+

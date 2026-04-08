@@ -1,20 +1,16 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
-import { UserPlus, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { UserPlus, ArrowRight, AlertCircle } from 'lucide-react';
 import { useExchange } from '../../../context/ExchangeContext';
-
 import { useBaseCurrency, useDenomination } from '../../../hooks/useDenomination';
-import { useERPFileUpload } from '../../../hooks/useERPFileUpload';
 import { useExchangeCalculation } from '../hooks/useExchangeCalculation';
 
-import { GovernmentIdSection } from './sections/GovernmentIdSection';
-import { PersonalInfoSection } from './sections/PersonalInfoSection';
-import { ExchangeSection } from './sections/ExchangeSection';
+import { DealerPersonalInfoSection } from './sections/DealerPersonalInfoSection';
+import { DealerExchangeSection } from './sections/DealerExchangeSection';
 import { DenominationSection } from './sections/DenominationSection';
 import { SectionDivider } from './ui/FormUtilities';
-import CreditLimit from './sections/CreditLimit';
 
-export const ReceiverForm = ({
+export const DealerForm = ({
   initialData,
   sendAmount: externalSendAmount,
   onContinue,
@@ -24,55 +20,30 @@ export const ReceiverForm = ({
 }) => {
   const methods = useForm({
     defaultValues: {
-      rbfNumber: initialData?.rbfNumber || '',
-      rbfDocument: initialData?.rbfDocument || null,
-      country: initialData?.country || '',
       firstName: initialData?.firstName || '',
+      middleName: initialData?.middleName || '',
       lastName: initialData?.lastName || '',
-      city: initialData?.city || '',
-      idType: initialData?.idType || 'PASSPORT',
-      idNumber: initialData?.idNumber || '',
-      docFile: initialData?.docFile || null,
-      travelDate: initialData?.travelDate || '',
-      destination: initialData?.destination || '',
-      airwaysName: initialData?.airwaysName || '',
-      flightNumber: initialData?.flightNumber || '',
-      pnrNumber: initialData?.pnrNumber || '',
-      pastReceiver: initialData?.pastReceiver || 'New Receiver',
-      exchangeType: initialData?.exchangeType || 'BUY',
-      government_id: initialData?.government_id || 'Passport',
-      idName: initialData?.idName || '',
+      fullName: initialData?.fullName || '',
       dateOfBirth: initialData?.dateOfBirth || '',
-      idIssueCountry: initialData?.idIssueCountry || '',
-      idIssueState: initialData?.idIssueState || '',
-      occupation: initialData?.occupation || 'Accountant / Auditor',
-      secondLastName: initialData?.secondLastName || '',
+      exchangeType: initialData?.exchangeType || 'BUY',
     },
   });
 
-  const { handleSubmit, setFocus } = methods;
-  const { receiverGets } = useExchange();
-  const { uploadFile, loading: uploadLoading } = useERPFileUpload();
-  const [isCreditExceeded, setIsCreditExceeded] = useState(false);
-
+  const { handleSubmit, setFocus, watch } = methods;
+  const exchangeType = watch('exchangeType');
 
   const {
     availableCurrencies,
     loading: ratesLoading,
     error: rateError,
-    rateDate,
-    noDataForToday,
-    showUploadModal,
-    setShowUploadModal,
   } = ratesData || {};
-
-  const exchangeType = methods.watch('exchangeType');
 
   const {
     toCurrency,
     setToCurrency,
     manualRate,
     useManualRate,
+    setUseManualRate,
     setManualRate,
     sendAmount,
     setSendAmount,
@@ -84,10 +55,15 @@ export const ReceiverForm = ({
   } = useExchangeCalculation({
     availableCurrencies,
     externalSendAmount,
-    noDataForToday,
+    noDataForToday: false, // For Dealer, we always use manual
     onSummaryChange,
     exchangeType,
   });
+
+  // Force manual rate usage for Dealer Form
+  useEffect(() => {
+    setUseManualRate(true);
+  }, [setUseManualRate]);
 
   const { data: baseCurrencyInfo } = useBaseCurrency();
   const selectedDenomCountry = toCurrency?.country ?? null;
@@ -98,39 +74,34 @@ export const ReceiverForm = ({
 
   const senderDenomRowsRef = useRef([]);
   const receiverDenomRowsRef = useRef([]);
-  // { total, target } for each panel — updated on every row change
   const senderDenomStatusRef = useRef({ total: 0, target: 0 });
   const receiverDenomStatusRef = useRef({ total: 0, target: 0 });
+  
   const [denomBalanceError, setDenomBalanceError] = useState('');
   const denomErrorRef = useRef(null);
 
   const formatDate = (date) => {
     if (!date) return null;
-
-    const d = new Date(date); // ✅ convert
-    if (isNaN(d)) return null; // safety check
-
+    const d = new Date(date);
+    if (isNaN(d)) return null;
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
-
     return `${y}-${m}-${day}`;
   };
 
   const onSubmit = async (data) => {
-
     if (!sendAmount || sendAmount <= 0) {
       setSendAmountError('Please enter a valid send amount');
       return;
     }
     if (!effectiveRate || effectiveRate <= 0) {
-      setSendAmountError('Please select a currency and rate before continuing.');
+      setSendAmountError('Please enter a valid manual rate and select a currency.');
       return;
     }
-    if (useManualRate && (!manualRate || parseFloat(manualRate) <= 0)) return;
     setSendAmountError('');
 
-    // ── Denomination balance check ──────────────────────────────────────────
+    // Denomination balance check
     const senderTarget = senderDenomStatusRef.current.target;
     const senderTotal = senderDenomStatusRef.current.total;
     const receiverTarget = receiverDenomStatusRef.current.target;
@@ -158,12 +129,10 @@ export const ReceiverForm = ({
     setDenomBalanceError('');
 
     const getDenomType = (denom, notesArr = [], coinsArr = []) => {
-      if (notesArr.includes(denom)) return 'Note';
-      if (coinsArr.includes(denom)) return 'Coin';
+      if (notesArr?.includes(denom)) return 'Note';
+      if (coinsArr?.includes(denom)) return 'Coin';
       return denom >= 1 ? 'Note' : 'Coin';
     };
-
-    console.log('[RBF DEBUG] 3. onSubmit - data.rbfDocument:', data.rbfDocument, 'instanceof File:', data.rbfDocument instanceof File);
 
     onContinue?.({
       ...data,
@@ -182,15 +151,9 @@ export const ReceiverForm = ({
       exchangeRate: exchangePreview?.rate ?? 0,
       receiverGets: exchangePreview?.rawAmount ?? 0,
       totalAmount: exchangePreview?.rawAmount ?? 0,
-      rateSource: useManualRate ? 'manual' : 'erpnext',
-      rateDate: useManualRate ? null : rateDate,
-      travelDate: data.travelDate,
-      destination: data.destination,
-      airwaysName: data.airwaysName,
-      flightNumber: data.flightNumber,
-      pnrNumber: data.pnrNumber,
-      rbfNumber: data.rbfNumber || null,
-      rbfDocument: data.rbfDocument || null,
+      rateSource: 'manual',
+      rateDate: null, // manual rate has no specific rateDate from ERP
+      
       senderDenominationRows: senderDenomRowsRef.current.filter(r => r.count > 0).map(r => ({
         denomination_value: r.denom,
         denomination_type: getDenomType(r.denom, senderInfo?.notes, senderInfo?.coins),
@@ -206,28 +169,14 @@ export const ReceiverForm = ({
     });
   };
 
-  // Ordered list of fields: text-focusable ones use setFocus, file ones use element id scroll
-  const FIELD_ORDER = [
-    'idName', 'dateOfBirth', 'government_id', 'idNumber',
-    'idIssueCountry', 'idIssueState', 'docFile', 'travelDate', 'destination', 'airwaysName', 'flightNumber', 'pnrNumber',
-    'rbfNumber', 'rbfDocument',
-    'firstName', 'lastName', 'city', 'country', 'exchangeType',
-  ];
-  const FILE_FIELDS = new Set(['docFile', 'rbfDocument']);
-
+  const FIELD_ORDER = ['firstName', 'middleName', 'lastName', 'fullName', 'dateOfBirth'];
 
   const onError = (errors) => {
     const firstErrorField = FIELD_ORDER.find(f => errors[f]);
     if (!firstErrorField) return;
-    if (FILE_FIELDS.has(firstErrorField)) {
-      const el = document.getElementById(`field-${firstErrorField}`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else {
-      try { setFocus(firstErrorField); } catch (_) { }
-      const el = document.getElementById(`field-${firstErrorField}`) ||
-        document.querySelector(`[name="${firstErrorField}"]`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    try { setFocus(firstErrorField); } catch (_) {}
+    const el = document.getElementById(`field-${firstErrorField}`) || document.querySelector(`[name="${firstErrorField}"]`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
   const FJD = { code: 'FJD', symbol: 'FJ$', name: 'Fijian Dollar' };
@@ -235,24 +184,6 @@ export const ReceiverForm = ({
   return (
     <FormProvider {...methods}>
       <div className="min-h-screen bg-gray-50">
-        {showUploadModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-xl p-7 max-w-sm w-full mx-4 text-center">
-              <div className="text-4xl mb-4">📂</div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">No Exchange Rates Found</h2>
-              <p className="text-gray-500 text-sm mb-6 leading-relaxed">
-                Please contact admin to update the rates.
-              </p>
-              <button type="button" onClick={() => setShowUploadModal(false)}
-                className="w-full bg-[#E00000] hover:bg-[#B70000] text-white font-semibold text-sm py-2.5 rounded-xl transition-colors">
-                OK, Got it
-              </button>
-            </div>
-          </div>
-        )}
-
-
-
         <div className="bg-[#B70000] px-6 sm:px-10 py-7">
           <div className="max-w-5xl mx-auto flex items-start justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
@@ -260,15 +191,15 @@ export const ReceiverForm = ({
                 <UserPlus size={18} className="text-white" strokeWidth={1.75} />
               </div>
               <div>
-                <h1 className="text-white font-semibold text-xl">Customer Details</h1>
-                <p className="text-[#b5f000] text-sm mt-0.5">Currency Exchange Transaction</p>
+                <h1 className="text-white font-semibold text-xl">Dealer Details</h1>
+                <p className="text-[#b5f000] text-sm mt-0.5">Dealer Exchange Transaction</p>
               </div>
             </div>
 
             {toCurrency && effectiveRate && (
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="flex items-center gap-2 bg-white/10 border border-white/20 px-3 py-2 rounded-lg">
-                  <span className="text-[#b5f000] text-xs">Live Rate</span>
+                  <span className="text-[#b5f000] text-xs">Rate</span>
                   <span className="text-white text-sm font-semibold">
                     1 {toCurrency.code} = {FJD.symbol}{effectiveRate} {FJD.code}
                   </span>
@@ -282,40 +213,18 @@ export const ReceiverForm = ({
         </div>
 
         <form onSubmit={handleSubmit(onSubmit, onError)} className="px-4 sm:px-8 lg:px-12 py-8 flex flex-col gap-5 max-w-5xl mx-auto" noValidate>
-          {!ratesLoading && availableCurrencies?.length === 0 && (
-            <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl border border-[#E00000]/20 bg-[#E00000]/5">
-              <AlertCircle size={15} className="text-[#E00000] flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-sm text-red-800">Exchange Rates Unavailable</p>
-                <p className="text-xs text-[#E00000] mt-0.5">
-                  No rates found for today. Please contact admin to update the rates.
-                </p>
-              </div>
-            </div>
-          )}
-          {/* 
-          {effectiveRate > 0 && !ratesLoading && !noDataForToday && rateDate && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3.5 rounded-xl flex items-center gap-3 text-sm font-semibold shadow-sm">
-              <CheckCircle2 size={20} className="text-green-600 flex-shrink-0" />
-              Today's exchange rate is available (Date: {rateDate}).
-            </div>
-          )} */}
-
-          {/* <CreditLimit sendAmount={sendAmount} onLimitCheck={setIsCreditExceeded} /> */}
-          <GovernmentIdSection exchangeType={exchangeType} isCreditExceeded={isCreditExceeded} />
-
-          <SectionDivider label="Personal Information" />
-          <PersonalInfoSection />
+          
+          <DealerPersonalInfoSection />
 
           <SectionDivider label="Exchange Details" />
-          <ExchangeSection
+          <DealerExchangeSection
             exchangeType={exchangeType}
             availableCurrencies={availableCurrencies}
             ratesLoading={ratesLoading}
             rateError={rateError}
             toCurrency={toCurrency}
             setToCurrency={setToCurrency}
-            useManualRate={useManualRate}
+            manualRate={manualRate}
             setManualRate={setManualRate}
             sendAmount={sendAmount}
             setSendAmount={setSendAmount}
@@ -350,8 +259,6 @@ export const ReceiverForm = ({
             onReceiverStatusChange={s => { receiverDenomStatusRef.current = s; }}
           />
 
-
-
           <div className="flex items-center justify-between pt-2 pb-8">
             <button type="button" onClick={onClear}
               className="flex items-center gap-1.5 text-sm font-medium text-gray-400 hover:text-red-500 transition-colors px-4 py-2.5 rounded-lg hover:bg-red-50">
@@ -359,10 +266,9 @@ export const ReceiverForm = ({
             </button>
 
             <button type="submit"
-              disabled={ratesLoading || uploadLoading || (!ratesLoading && availableCurrencies?.length === 0)}
               className="flex items-center gap-2 bg-[#E00000] hover:bg-[#B70000] disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-semibold h-11 px-8 rounded-xl transition-colors group">
-              {uploadLoading ? 'Uploading...' : 'Continue'}
-              {!uploadLoading && <ArrowRight size={16} strokeWidth={2} className="group-hover:translate-x-0.5 transition-transform" />}
+              Continue
+              <ArrowRight size={16} strokeWidth={2} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
         </form>
