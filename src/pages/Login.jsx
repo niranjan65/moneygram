@@ -103,7 +103,8 @@ export default function Login() {
         setUser(sessionData);
 
         if (loginResult?.data?.message?.user_type === "Admin") {
-          navigate("/app")
+          // navigate("/app")
+          window.location.href = `https://mhmoneyexpress.anantdv.com/app`;
         } else {
           navigate("/home");
         }

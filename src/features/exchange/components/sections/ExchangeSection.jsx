@@ -89,7 +89,7 @@ export const ExchangeSection = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
               <FieldLabel required icon={Coins}>
-                {exchangeType === 'SELL' ? `Customer Gives (${toCurrency?.code ?? 'Foreign'})` : `Customer Gets (${toCurrency?.code ?? 'Foreign'})`}
+                {exchangeType === 'SELL' ? `MH Pays (${toCurrency?.code ?? 'Forex'})` : `MH Receives (${toCurrency?.code ?? 'Forex'})`}
               </FieldLabel>
 
               {rateError ? (
@@ -115,7 +115,7 @@ export const ExchangeSection = ({
                     <option value="" disabled>— Select Currency —</option>
                     {availableCurrencies?.map(c => (
                       <option key={c.code} value={c.code}>
-                        {c.code} — {exchangeType === 'BUY' ? `Buy: ${c.buyingRate ?? '—'}` : `Sell: ${c.sellingRate ?? '—'}`}
+                        {c.code} — {exchangeType === 'BUY' ? `Buy: ${Number(c.buyingRate).toFixed(4) ?? '—'}` : `Sell: ${Number(c.sellingRate).toFixed(4) ?? '—'}`}
                       </option>
                     ))}
                   </select>
@@ -147,7 +147,7 @@ export const ExchangeSection = ({
 
             <div className="flex flex-col gap-2">
               <FieldLabel icon={Wallet}>
-                {exchangeType === 'SELL' ? `Customer Receives (${FJD.code})` : `Customer Pays (${FJD.code})`}
+                {exchangeType === 'SELL' ? `MH Receives (${FJD.code})` : `MH Pays (${FJD.code})`}
               </FieldLabel>
 
               <div className="relative">
