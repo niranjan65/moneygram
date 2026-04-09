@@ -67,7 +67,7 @@ export const DealerExchangeSection = ({
         <div className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-3">
           <Coins size={15} className="text-[#E00000]" />
           <div>
-            <p className="text-sm font-semibold text-gray-800">Currency & Amount (Manual Rate)</p>
+            <p className="text-sm font-semibold text-gray-800">Currency & Amount</p>
             <p className="text-xs text-gray-400">Select currency and manually input the agreed rate</p>
           </div>
         </div>
@@ -120,7 +120,7 @@ export const DealerExchangeSection = ({
 
             <div className="flex flex-col gap-2">
               <FieldLabel required icon={Coins}>
-                {exchangeType === 'SELL' ? `Dealer Gives (${toCurrency?.code ?? 'Foreign'})` : `Dealer Gets (${toCurrency?.code ?? 'Foreign'})`}
+                {exchangeType === 'SELL' ? `MH Pays (${toCurrency?.code ?? 'Forex'})` : `MH Receives (${toCurrency?.code ?? 'Forex'})`}
               </FieldLabel>
               <div className="relative mt-1">
                 <input type="number" min="0" step="any" value={sendAmount}
@@ -146,7 +146,7 @@ export const DealerExchangeSection = ({
 
             <div className="flex flex-col gap-2">
               <FieldLabel icon={Wallet}>
-                {exchangeType === 'SELL' ? `Dealer Receives (${FJD.code})` : `Dealer Pays (${FJD.code})`}
+                {exchangeType === 'SELL' ? `MH Receives (${FJD.code})` : `MH Pays (${FJD.code})`}
               </FieldLabel>
               <div className="relative">
                 <div className={`w-full h-12 mt-1 rounded-lg flex items-center px-4 pr-16 text-lg font-semibold border transition-colors ${

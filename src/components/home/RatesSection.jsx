@@ -2,18 +2,20 @@
 // RatesSection.jsx
 import { useEffect, useState, useRef } from "react";
 import { getExchangeRates } from "../../services/exchangeRateService";
+import { useSettings } from "../../context/SettingsContext";
 
 export default function RatesSection() {
   const [currencies, setCurrencies] = useState([]);
   const [search, setSearch] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { selectedWarehouse }   = useSettings();
 
   const intervalRef = useRef(null);
 
   const fetchRates = async () => {
     try {
-      const data = await getExchangeRates();
+      const data = await getExchangeRates(selectedWarehouse);
       setCurrencies(data);
       setLastUpdated(new Date());
       setLoading(false);

@@ -26,6 +26,7 @@ const DealerExchange = () => {
   const ratesData = useERPNextRates();
   const loginUser = useUser();
   const { selectedWarehouse } = useSettings();
+  const [summaryChange, setHandleSumamryChange] = useState();
 
   const [currentStep, setCurrentStep] = useState(() => {
     const saved = sessionStorage.getItem('dealerCurrentStep');
@@ -113,6 +114,7 @@ useEffect(() => saveToSession('dealerSummary', summary), [summary]);
       receiverCurrency: incoming.receiverCurrency,
       exchangeType: incoming.exchangeType,
     }));
+    setHandleSumamryChange(incoming)
   }, []);
 
   const handleContinue = useCallback((data) => {
@@ -469,7 +471,7 @@ useEffect(() => saveToSession('dealerSummary', summary), [summary]);
 
               {currentStep !== Step.PAYMENT && (
                 <div className="lg:col-span-4 relative">
-                  <Summary />
+                  <Summary transferPayload={summaryChange} />
                 </div>
               )}
 

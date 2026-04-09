@@ -28,6 +28,8 @@ const MoneyExchange = () => {
   const { uploadFile } = useERPFileUpload();
   const ratesData = useERPNextRates();
 
+  const [summaryChange, setHandleSumamryChange] = useState();
+
   // Holds the raw rbfDocument File between DETAILS → REVIEW steps.
   // Can't use sessionStorage because File objects are not serialisable.
   const rbfDocumentFileRef = React.useRef(null);
@@ -119,7 +121,10 @@ const MoneyExchange = () => {
       fee: incoming.receiverGets * 0.02,
       receiverCurrency: incoming.receiverCurrency,
       exchangeType: incoming.exchangeType,
+      
     }));
+
+    setHandleSumamryChange(incoming)
   }, []);
 
   // Called when ReceiverForm hits Continue — save full payload and go to REVIEW
@@ -632,7 +637,7 @@ const MoneyExchange = () => {
               {/* Sidebar — hidden on success page */}
               {currentStep !== Step.PAYMENT && (
                 <div className="lg:col-span-4 relative">
-                  <Summary />
+                  <Summary transferPayload={summaryChange} />
                 </div>
               )}
 

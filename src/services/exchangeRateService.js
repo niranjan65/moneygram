@@ -1,6 +1,6 @@
 // services/exchangeRateService.js
 
-export const getExchangeRates = async () => {
+export const getExchangeRates = async (selectedWarehouse) => {
   try {
     const response = await fetch(
       "https://mhmoneyexpress.anantdv.com/api/method/moneygram.api.get_currency_exchange_rate",
@@ -11,6 +11,7 @@ export const getExchangeRates = async () => {
         },
         body: JSON.stringify({
           today_date: new Date().toISOString().split("T")[0],
+          location: selectedWarehouse
         }),
       }
     );
