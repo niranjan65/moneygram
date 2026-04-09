@@ -19,8 +19,24 @@ export function SettingsProvider({ children }) {
       joined: u.loginTime ? new Date(u.loginTime).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : "",
     };
   });
-  const [warehouses, setWarehouses] = useState([])
-  const [selectedWarehouse, setSelectedWarehouse] = useState();
+  const [warehouses, setWarehouses] = useState([]);
+  const [selectedWarehouse, setSelectedWarehouseState] = useState(() => {
+    try {
+      const stored = localStorage.getItem("selected_warehouse");
+      return stored ? JSON.parse(stored) : undefined;
+    } catch {
+      return undefined;
+    }
+  });
+
+  const setSelectedWarehouse = (wh) => {
+    setSelectedWarehouseState(wh);
+    if (wh) {
+      localStorage.setItem("selected_warehouse", JSON.stringify(wh));
+    } else {
+      localStorage.removeItem("selected_warehouse");
+    }
+  };
   const [theme, setTheme] = useState("dark");
 
   useEffect(() => {
@@ -86,11 +102,18 @@ export function SettingsProvider({ children }) {
   };
 
   useEffect(() => {
+    if (!loginUser?.user?.api_key) return;
     getWarehouseForUser().then(r => {
-      setWarehouses(r)
-      setSelectedWarehouse(r[0])
-    })
-  }, [])
+      if (r && r.length > 0) {
+        setWarehouses(r);
+        // Only overwrite the persisted warehouse if none is saved yet
+        const stored = localStorage.getItem("selected_warehouse");
+        if (!stored) {
+          setSelectedWarehouse(r[0]);
+        }
+      }
+    });
+  }, [loginUser?.user?.api_key]);
 
 
   return (
