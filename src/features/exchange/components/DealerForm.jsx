@@ -2,8 +2,11 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { UserPlus, ArrowRight, AlertCircle } from 'lucide-react';
 import { useExchange } from '../../../context/ExchangeContext';
+import { useUser } from '../../../context/UserContext';
+import { useSettings } from '../../../context/SettingsContext';
 import { useBaseCurrency, useDenomination } from '../../../hooks/useDenomination';
 import { useExchangeCalculation } from '../hooks/useExchangeCalculation';
+import { validateStockAvailability } from '../../../hooks/useStockValidation';
 
 import { DealerPersonalInfoSection } from './sections/DealerPersonalInfoSection';
 import { DealerExchangeSection } from './sections/DealerExchangeSection';
@@ -72,6 +75,49 @@ export const DealerForm = ({
   const senderInfo = exchangeType === 'BUY' ? baseCurrencyInfo : foreignCurrencyInfo;
   const receiverInfo = exchangeType === 'BUY' ? foreignCurrencyInfo : baseCurrencyInfo;
 
+  const loginUser = useUser();
+  const { selectedWarehouse } = useSettings();
+  const [stockError, setStockError] = useState('');
+  const [stockLoading, setStockLoading] = useState(false);
+  const stockErrorRef = useRef(null);
+
+  // Clear stock error when currency changes
+  useEffect(() => { setStockError(''); }, [toCurrency?.code]);
+
+  const runStockCheck = async (si = senderInfo, ri = receiverInfo) => {
+    // Stock check only applies when selling (customer brings foreign currency)
+    if (exchangeType === 'BUY') return true;
+
+    const warehouseName = selectedWarehouse?.warehouse;
+    const allItemNames = [
+      ...(si?.notes_name ?? []),
+      ...(si?.coins_name ?? []),
+      ...(ri?.notes_name ?? []),
+      ...(ri?.coins_name ?? []),
+    ];
+    if (!warehouseName || allItemNames.length === 0) return true;
+    setStockLoading(true);
+    try {
+      const { outOfStock } = await validateStockAvailability(allItemNames, warehouseName, loginUser);
+      if (outOfStock.length > 0) {
+        setStockError(
+          // `The following denominations are out of stock at ${warehouseName}: ${outOfStock.join(', ')}`
+          `Sufficient stock not available at ${warehouseName} for the denominations you've entered. Please adjust the counts or contact admin.`
+        );
+        setTimeout(() => stockErrorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+        return false;
+      }
+      setStockError('');
+      return true;
+    } catch (err) {
+      console.error('[Stock Check]', err);
+      setStockError('');
+      return true;
+    } finally {
+      setStockLoading(false);
+    }
+  };
+
   const senderDenomRowsRef = useRef([]);
   const receiverDenomRowsRef = useRef([]);
   const senderDenomStatusRef = useRef({ total: 0, target: 0 });
@@ -127,6 +173,10 @@ export const DealerForm = ({
       return;
     }
     setDenomBalanceError('');
+
+    // ── Stock availability check ───────────────────────────────────
+    const ok = await runStockCheck();
+    if (!ok) return;
 
     const getDenomType = (denom, notesArr = [], coinsArr = []) => {
       if (notesArr?.includes(denom)) return 'Note';
@@ -232,6 +282,7 @@ export const DealerForm = ({
             setSendAmountError={setSendAmountError}
             effectiveRate={effectiveRate}
             exchangePreview={exchangePreview}
+            onAmountBlur={runStockCheck}
           />
 
           <SectionDivider label="Cash Denomination Counts" />
@@ -241,6 +292,15 @@ export const DealerForm = ({
               <div>
                 <p className="font-semibold text-sm text-red-800">Denomination Imbalance</p>
                 <p className="text-xs text-[#E00000] mt-0.5">{denomBalanceError}</p>
+              </div>
+            </div>
+          )}
+          {stockError && (
+            <div ref={stockErrorRef} className="flex items-start gap-3 px-4 py-3.5 rounded-xl border border-[#E00000]/30 bg-[#E00000]/5">
+              <AlertCircle size={15} className="text-[#E00000] flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-sm text-red-800">Out of Stock</p>
+                <p className="text-xs text-[#E00000] mt-0.5">{stockError}</p>
               </div>
             </div>
           )}
@@ -266,9 +326,10 @@ export const DealerForm = ({
             </button>
 
             <button type="submit"
+              disabled={stockLoading}
               className="flex items-center gap-2 bg-[#E00000] hover:bg-[#B70000] disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-semibold h-11 px-8 rounded-xl transition-colors group">
-              Continue
-              <ArrowRight size={16} strokeWidth={2} className="group-hover:translate-x-0.5 transition-transform" />
+              {stockLoading ? 'Checking stock…' : 'Continue'}
+              {!stockLoading && <ArrowRight size={16} strokeWidth={2} className="group-hover:translate-x-0.5 transition-transform" />}
             </button>
           </div>
         </form>

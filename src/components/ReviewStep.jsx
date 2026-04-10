@@ -304,6 +304,7 @@ export const ReviewStep = ({
   onEdit,
   onCancel,
   onConfirm,
+  isDealer = false,
 }) => {
   const { selectedWarehouse } = useSettings();
   const [showNoWarehouseModal, setShowNoWarehouseModal] = useState(false);
@@ -395,7 +396,7 @@ export const ReviewStep = ({
               style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
               <Sparkles size={12} className="text-yellow-300" />
               <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">
-                {exchangeType === 'BUY' ? 'MH Receives' : 'Customer Receives'}
+                {exchangeType === 'BUY' ? 'MH Receives' : (isDealer ? 'Dealer Receives' : 'Customer Receives')}
               </span>
             </div>
 
@@ -515,7 +516,7 @@ export const ReviewStep = ({
           {/* Summary highlight card */}
           <div className="mt-2 flex flex-col gap-2">
             <ReviewRow
-              label={exchangeType === 'BUY' ? 'MH Receives' : 'Customer Receives'}
+              label={exchangeType === 'BUY' ? 'MH Receives' : (isDealer ? 'Dealer Receives' : 'Customer Receives')}
               value={`${fmt(sendAmount)} ${senderCurrency}`}
               icon={ArrowLeftRight}
               accent

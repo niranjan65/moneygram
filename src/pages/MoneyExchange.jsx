@@ -485,7 +485,7 @@ const MoneyExchange = () => {
       console.log("API Success:", result);
 
 
-      const createdDoc = result?.message || result?.data || result;
+      const createdDoc = result?.message?.data || result?.data || result;
       setApiResponseDoc(createdDoc);
 
 

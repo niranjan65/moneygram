@@ -28,11 +28,11 @@ function App() {
   //     // Update state here
   //   });
   // }, []);
-// useEffect(() => {
-//       if(location.pathname === "/") {
-//         window.location.href = `https://mhmoneyexpress.anantdv.com/home`;
-//       }
-//     }, [])
+  // useEffect(() => {
+  //   if (location.pathname === "/") {
+  //     window.location.href = `https://mhmoneyexpress.anantdv.com/home`;
+  //   }
+  // }, [])
 
 
   return (

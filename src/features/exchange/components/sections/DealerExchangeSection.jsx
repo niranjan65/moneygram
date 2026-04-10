@@ -18,6 +18,7 @@ export const DealerExchangeSection = ({
   setSendAmountError,
   effectiveRate,
   exchangePreview,
+  onAmountBlur,
 }) => {
   const { register, setValue, formState: { errors } } = useFormContext();
   const FJD = { code: 'FJD', symbol: 'FJ$' };
@@ -134,6 +135,9 @@ export const DealerExchangeSection = ({
                       setSendAmount(isNaN(val) ? '' : val);
                       setSendAmountError(val > 0 ? '' : 'Please enter a valid amount');
                     }
+                  }}
+                  onBlur={() => {
+                    if (sendAmount > 0) onAmountBlur?.();
                   }}
                   placeholder="Enter Forex amount"
                   className={`${inputBase} text-lg font-semibold pr-16 ${sendAmountError ? 'border-[#E00000]/30 bg-[#E00000]/5' : ''}`} />

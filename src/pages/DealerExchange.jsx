@@ -378,7 +378,7 @@ useEffect(() => saveToSession('dealerSummary', summary), [summary]);
       console.log("API Success:", result);
 
 
-      const createdDoc = result?.message || result?.data || result;
+      const createdDoc = result?.message?.data || result?.data || result;
       setApiResponseDoc(createdDoc); 
       setCurrentStep(Step.PAYMENT);
 
@@ -407,6 +407,7 @@ useEffect(() => saveToSession('dealerSummary', summary), [summary]);
           onEdit={handleEditFromReview}
           onCancel={handleCancel}
           onConfirm={handleConfirm}
+          isDealer={true}
         />
       );
     }
@@ -471,7 +472,7 @@ useEffect(() => saveToSession('dealerSummary', summary), [summary]);
 
               {currentStep !== Step.PAYMENT && (
                 <div className="lg:col-span-4 relative">
-                  <Summary transferPayload={summaryChange} />
+                  <Summary transferPayload={summaryChange} isDealer={true} />
                 </div>
               )}
 

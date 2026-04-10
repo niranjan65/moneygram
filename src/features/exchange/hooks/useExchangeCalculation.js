@@ -11,7 +11,7 @@ export const useExchangeCalculation = ({
   onSummaryChange,
   exchangeType,
 }) => {
-  
+
   const [toCurrency, setToCurrency] = useState(null);
   const [manualRate, setManualRate] = useState('');
   const [useManualRate, setUseManualRate] = useState(false);
@@ -28,12 +28,12 @@ export const useExchangeCalculation = ({
   // Determine the effective rate
   const effectiveRate = useMemo(() => {
     if (!toCurrency) return null;
-    if (useManualRate) { 
-      const m = parseFloat(manualRate); 
-      return !isNaN(m) && m > 0 ? m : null; 
+    if (useManualRate) {
+      const m = parseFloat(manualRate);
+      return !isNaN(m) && m > 0 ? m : null;
     }
     if (exchangeType === 'SELL') return toCurrency.sellingRate ?? null;
-    if (exchangeType === 'BUY')  return toCurrency.buyingRate  ?? null;
+    if (exchangeType === 'BUY') return toCurrency.buyingRate ?? null;
     return null;
   }, [toCurrency, exchangeType, useManualRate, manualRate]);
 
@@ -46,7 +46,7 @@ export const useExchangeCalculation = ({
     if (exchangeType === 'BUY') {
       // BUY: customer pays FJD (sendAmount), MH gives foreign currency
       // Foreign amount — no FJD rounding needed here
-      receiverAmount = sendAmount * effectiveRate;
+      receiverAmount = roundTo5Cents(sendAmount * effectiveRate);
     }
     if (exchangeType === 'SELL') {
       // SELL: customer pays foreign (sendAmount), MH gives FJD
@@ -72,11 +72,11 @@ export const useExchangeCalculation = ({
   useEffect(() => {
     if (!onSummaryChange) return;
     onSummaryChange({
-      sendAmount, 
+      sendAmount,
       currency: 'FJD',
-      exchangeRate: exchangePreview?.rate ?? 0, 
+      exchangeRate: exchangePreview?.rate ?? 0,
       receiverGets: exchangePreview?.rawAmount ?? 0,
-      receiverCurrency: toCurrency?.code ?? '', 
+      receiverCurrency: toCurrency?.code ?? '',
       exchangeType,
     });
   }, [sendAmount, toCurrency, exchangePreview, exchangeType, onSummaryChange]);
