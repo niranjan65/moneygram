@@ -16,7 +16,7 @@ export const DenominationSection = ({
   onSenderStatusChange,
   onReceiverStatusChange,
 }) => {
-
+    console.log("senderInfo", senderInfo)
   return (
     <div className="flex flex-col gap-3 mt-5">
       <div className="flex items-center gap-2.5 px-1">

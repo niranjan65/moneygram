@@ -4,6 +4,24 @@ import axios from "axios";
 import { useUser } from "../context/UserContext";
 import { useSettings } from "../context/SettingsContext";
 
+// ── Stock tab constants ─────────────────────────────────────────────────────
+const CURRENCY_CODE = {
+  Australia:     "AUD",
+  Fiji:          "FJD",
+  Malaysia:      "MYR",
+  "New Zealand": "NZD",
+  Singapore:     "SGD",
+  Thailand:      "THB",
+};
+const FLAG = {
+  Australia:     "🇦🇺",
+  Fiji:          "🇫🇯",
+  Malaysia:      "🇲🇾",
+  "New Zealand": "🇳🇿",
+  Singapore:     "🇸🇬",
+  Thailand:      "🇹🇭",
+};
+
 // ── Status Badge ───────────────────────────────────────────────────────────
 function StatusBadge({ status }) {
   const map = {
@@ -372,11 +390,190 @@ function DayEndClosingTab({ warehouse, loginUser }) {
   );
 }
 
+// ── Stock Tab ──────────────────────────────────────────────────────────────
+function StatCard({ label, value, sub, type = "default" }) {
+  const styles = {
+    default: { card: "bg-white border-gray-200",     label: "text-gray-500",  val: "text-gray-900",  sub: "text-gray-400"  },
+    green:   { card: "bg-green-50 border-green-200", label: "text-green-600", val: "text-green-700", sub: "text-green-400" },
+    red:     { card: "bg-red-50 border-red-200",     label: "text-red-500",   val: "text-red-600",   sub: "text-red-400"   },
+    muted:   { card: "bg-gray-50 border-gray-100",   label: "text-gray-400",  val: "text-gray-400",  sub: "text-gray-300"  },
+  };
+  const s = styles[type];
+  return (
+    <div className={`flex-1 min-w-[140px] rounded-2xl border px-5 py-4 flex flex-col gap-1 ${s?.card}`}>
+      <p className={`text-[11px] font-bold uppercase tracking-widest ${s?.label}`}>{label}</p>
+      <p className={`text-[28px] font-black tabular-nums leading-tight ${s?.val}`}>{value}</p>
+      {sub && <p className={`text-xs ${s.sub}`}>{sub}</p>}
+    </div>
+  );
+}
+
+function QtyBadge({ qty }) {
+  if (qty < 0)
+    return <span className="inline-block text-xs font-bold px-3 py-1 rounded-full tabular-nums bg-red-50 text-red-500 border border-red-200">{qty}</span>;
+  if (qty === 0)
+    return <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-gray-100 text-gray-400 border border-gray-200">—</span>;
+  return <span className="inline-block text-xs font-bold px-3 py-1 rounded-full tabular-nums bg-green-50 text-green-700 border border-green-200">{qty.toLocaleString()}</span>;
+}
+
+function totalQty(items)   { return items?.reduce((s, i) => s + i.stock_qty, 0); }
+function inStockQty(items) { return items?.filter(i => i.stock_qty > 0).reduce((s, i) => s + i.stock_qty, 0); }
+function totalValue(items) { return items?.reduce((sum, i) => sum + (i.stock_value || 0), 0); }
+
+function StockTab({ warehouse, loginUser }) {
+  const [data, setData]   = useState({});
+  const [active, setActive] = useState(null);
+
+  const countries = Object.keys(data).filter((c) => data[c]?.length > 0);
+
+  const fetchStock = useCallback(async () => {
+    if (!loginUser?.user || !warehouse) return;
+    try {
+      const res = await axios.request({
+        method: "POST",
+        url: "https://mhmoneyexpress.anantdv.com/api/method/moneygram.moneygram.api.get_denomination.get_all_countries_stock",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `token ${loginUser.user.api_key}:${loginUser.user.api_secret}`,
+        },
+        data: { warehouse: warehouse?.warehouse },
+      });
+      setData(res.data.message ?? {});
+    } catch (err) {
+      console.error(err);
+    }
+  }, [warehouse, loginUser]);
+
+  useEffect(() => { fetchStock(); }, [fetchStock]);
+
+  useEffect(() => {
+    if (countries.length > 0 && !active) setActive(countries[0]);
+  }, [data]);
+
+  const items         = data[active];
+  const total         = totalQty(items);
+  const positive      = inStockQty(items);
+  const inStockCount  = items?.filter(i => i.stock_qty > 0).length ?? 0;
+  const totalValueAmt = totalValue(items);
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Currency tabs */}
+      <div className="flex flex-wrap gap-2">
+        {countries.map((c) => {
+          const tot = totalValue(data[c]);
+          const isActive = c === active;
+          return (
+            <button
+              key={c}
+              onClick={() => setActive(c)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E00000]
+                ${isActive
+                  ? "bg-[#E00000] text-white border-[#E00000] shadow-md shadow-[#E00000]/25"
+                  : "bg-gray-50 text-gray-600 border-gray-200 hover:border-[#E00000]/40 hover:text-[#E00000] hover:bg-red-50"
+                }`}
+            >
+              <span className="text-base leading-none">{FLAG[c]}</span>
+              <span>{c}</span>
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-black tabular-nums
+                ${isActive ? "bg-white/20 text-white" : "bg-gray-200 text-gray-500"}`}>
+                {tot?.toLocaleString()}
+              </span>
+            </button>
+          );
+        })}
+        <button
+          onClick={fetchStock}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold text-gray-600 hover:border-[#E00000]/40 hover:text-[#E00000] hover:bg-red-50 transition-all ml-auto"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Refresh
+        </button>
+      </div>
+
+      {countries.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-gray-200 py-16 text-center text-gray-400 text-sm">
+          No stock data available for this warehouse.
+        </div>
+      ) : (
+        <>
+          {/* Stat cards */}
+          <div className="flex flex-wrap gap-3">
+            <StatCard label="Total Qty"    value={total?.toLocaleString()}    sub={`${CURRENCY_CODE[active]} · all denominations`} type="default" />
+            <StatCard label="In Stock"     value={positive?.toLocaleString()} sub={`${inStockCount} denomination${inStockCount !== 1 ? "s" : ""}`} type="green" />
+            <StatCard label="Total Value"  value={totalValueAmt?.toLocaleString()} sub={`${CURRENCY_CODE[active]} · total worth`} type="default" />
+          </div>
+
+          <div className="border-t border-gray-100" />
+
+          {/* Active currency label */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-xs font-bold tracking-widest uppercase text-[#E00000]">Denominations</p>
+            <span className="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full px-3 py-1.5 text-xs text-gray-600 font-medium">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
+              {FLAG[active]}&nbsp;
+              <span className="font-bold text-gray-900">{active}</span>
+              <span className="text-gray-400">·</span>
+              <span>{CURRENCY_CODE[active]}</span>
+              <span className="text-gray-400">·</span>
+              <span>{items?.length} items</span>
+            </span>
+          </div>
+
+          {/* Table */}
+          <div className="rounded-2xl border border-gray-200 overflow-x-auto">
+            <table className="w-full text-sm border-collapse min-w-[700px]">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  {["#", "Item Code", "Denomination", "Warehouse", "Rate", "Item Value", "Stock Qty"].map((h) => (
+                    <th key={h} className="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {items?.map((row, idx) => (
+                  <tr key={row.item_code} className={`border-b border-gray-100 transition-colors hover:bg-gray-50 ${idx % 2 === 1 ? "bg-gray-50/40" : "bg-white"}`}>
+                    <td className="px-5 py-3.5 text-xs text-gray-300 tabular-nums">{idx + 1}</td>
+                    <td className="px-5 py-3.5">
+                      <span className="inline-block border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-medium tracking-wide text-gray-700 bg-gray-50 font-mono">{row.item_code}</span>
+                    </td>
+                    <td className="px-5 py-3.5 font-bold text-gray-800">{row.item_name}</td>
+                    <td className="px-5 py-3.5 text-xs text-gray-400">{row.warehouse}</td>
+                    <td className="px-5 py-3.5 text-right"><QtyBadge qty={row.valuation_rate} /></td>
+                    <td className="px-5 py-3.5 text-right"><QtyBadge qty={row.stock_value} /></td>
+                    <td className="px-5 py-3.5 text-right"><QtyBadge qty={row.stock_qty} /></td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-gray-50 border-t-2 border-[#E00000]/15">
+                  <td colSpan={4} className="px-5 py-3 text-xs font-black uppercase tracking-widest text-[#E00000]">Total</td>
+                  <td className="px-5 py-3 text-right font-black text-gray-900 tabular-nums">{total?.toLocaleString()}</td>
+                  <td className="px-5 py-3 text-right font-black text-gray-900 tabular-nums">{totalValueAmt?.toLocaleString()}</td>
+                  <td className="px-5 py-3 text-right font-black text-gray-900 tabular-nums">{total?.toLocaleString()}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── Main Page ──────────────────────────────────────────────────────────────
 export default function Reports() {
-  const [tab, setTab]           = useState("transactions");
-  const loginUser               = useUser();
-  const { selectedWarehouse }   = useSettings();
+  const [tab, setTab]         = useState("transactions");
+  const loginUser             = useUser();
+  const { selectedWarehouse } = useSettings();
+
+  const sectionLabel = {
+    transactions: "Transaction Records",
+    dayend:       "Day End Closing Report",
+    stock:        "Currency Stock",
+  };
 
   return (
     <div>
@@ -401,6 +598,11 @@ export default function Reports() {
                 active={tab === "dayend"}
                 onClick={() => setTab("dayend")}
               />
+              <TabButton
+                label="Stock"
+                active={tab === "stock"}
+                onClick={() => setTab("stock")}
+              />
             </div>
 
             {/* Divider */}
@@ -408,14 +610,18 @@ export default function Reports() {
 
             {/* Section label */}
             <p className="text-xs font-bold tracking-widest uppercase text-[#E00000]">
-              {tab === "transactions" ? "Transaction Records" : "Day End Closing Report"}
+              {sectionLabel[tab]}
             </p>
 
             {/* Tab Content */}
-            {tab === "transactions" ? (
+            {tab === "transactions" && (
               <TransactionsTab warehouse={selectedWarehouse} loginUser={loginUser} />
-            ) : (
+            )}
+            {tab === "dayend" && (
               <DayEndClosingTab warehouse={selectedWarehouse} loginUser={loginUser} />
+            )}
+            {tab === "stock" && (
+              <StockTab warehouse={selectedWarehouse} loginUser={loginUser} />
             )}
 
           </div>
