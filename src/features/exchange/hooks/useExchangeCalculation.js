@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 
 // FJD smallest circulating coin is 5 cents — round to nearest 0.05
 export const roundTo5Cents = (amount) =>
-  Math.round(amount / 0.05) * 0.05;
+  Math.round(Math.round(amount * 100) / 5) * 0.05;
 
 export const useExchangeCalculation = ({
   availableCurrencies,
@@ -46,12 +46,12 @@ export const useExchangeCalculation = ({
     if (exchangeType === 'BUY') {
       // BUY: customer pays FJD (sendAmount), MH gives foreign currency
       // Foreign amount — no FJD rounding needed here
-      receiverAmount = roundTo5Cents(sendAmount * effectiveRate);
+      receiverAmount = roundTo5Cents(sendAmount / effectiveRate);
     }
     if (exchangeType === 'SELL') {
       // SELL: customer pays foreign (sendAmount), MH gives FJD
       // Result IS FJD — round to nearest 5 cents
-      receiverAmount = roundTo5Cents(sendAmount * effectiveRate);
+      receiverAmount = roundTo5Cents(sendAmount / effectiveRate);
     }
 
     return {

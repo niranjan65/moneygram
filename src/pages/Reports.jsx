@@ -191,7 +191,7 @@ function TransactionsTab({ warehouse, loginUser }) {
           <table className="w-full text-sm border-collapse min-w-[900px]">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                {["#", "Name", "Date", "Customer", "Grand Total", "Outstanding", "Currency", "Status", "Company", "Warehouse", "Owner"].map((h) => (
+                {["#", "Name", "Date", "OET Code", "Customer", "Grand Total", "Outstanding", "Currency", "Status", "Company", "Warehouse", "Owner"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap">
                     {h}
                   </th>
@@ -216,6 +216,11 @@ function TransactionsTab({ warehouse, loginUser }) {
                       </span>
                     </td>
                     <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">{row.posting_date}</td>
+                    <td className="px-4 py-3.5">
+                      <span className="font-mono text-xs border border-gray-200 rounded-lg px-2.5 py-1 bg-gray-50 text-gray-700 truncate inline-block">
+                        {row.oet_code}
+                      </span>
+                    </td>
                     <td className="px-4 py-3.5 font-medium text-gray-800 whitespace-nowrap">{row.party ?? "—"}</td>
                     <td className="px-4 py-3.5 text-right"><AmtCell value={row.grand_total} /></td>
                     {/* <td className="px-4 py-3.5 text-right"><AmtCell value={row.paid_amount} /></td> */}

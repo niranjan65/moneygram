@@ -328,6 +328,7 @@ useEffect(() => saveToSession('dealerSummary', summary), [summary]);
           full_name: transferPayload.fullName,
           date_of_birth: transferPayload.dateOfBirth,
           customer_name_and_dob: `${transferPayload.fullName.toLowerCase()}_${transferPayload.dateOfBirth}`,
+          oet_code: transferPayload.oet_code,
 
           local_amount: localAmount,
           local_currency_type: transferPayload.localCurrency,

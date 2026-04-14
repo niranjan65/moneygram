@@ -427,6 +427,7 @@ const MoneyExchange = () => {
           id_issue_stateprovince: transferPayload.idIssueState,
           id_issue_country: transferPayload.idIssueCountry,
           ticket: transferPayload.ticket,
+          oet_code: transferPayload.oet_code,
           ...idDocumentField,
 
 
@@ -441,7 +442,7 @@ const MoneyExchange = () => {
           balanced: 0,
 
           exchange_rate: transferPayload.exchangeRate,
-          exchangeType: transferPayload.exchangeType,
+          exchangeType: transferPayload.exchangeType === 'BUY' ? 'SELL' : 'BUY',
           transfer_fee: summary.fee,
           send_amount: transferPayload.sendAmount,
           total_amount: transferPayload.sendAmount + summary.fee,

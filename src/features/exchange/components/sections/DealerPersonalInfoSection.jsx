@@ -1,14 +1,16 @@
 import React, { useEffect } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import { User, Calendar, FileText } from 'lucide-react';
+import { User, Calendar, FileText, ChevronDown } from 'lucide-react';
 import { FieldLabel, fieldCls, ErrorMsg } from '../ui/FormUtilities';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useCustomer } from '../../hooks/useCustomer';
+import { useAppConfiguration } from '../../../../hooks/useAppConfiguration';
 
 export const DealerPersonalInfoSection = () => {
   const { register, watch, setValue, formState: { errors } } = useFormContext();
   const { fetchAndFillCustomer, loading } = useCustomer();
+  const { potOptions, loading: potLoading, error: potError } = useAppConfiguration();
 
   // Watch for changes in separate name fields to auto-populate Full Name if desired
   const firstName = watch('firstName');
@@ -16,13 +18,13 @@ export const DealerPersonalInfoSection = () => {
   const lastName = watch('lastName');
 
 
-    const triggerFetchIfReady = (name, dob) => {
+  const triggerFetchIfReady = (name, dob) => {
     if (!name || !dob) return;
-    
+
     // Format date to YYYY-MM-DD
     const d = new Date(dob);
     const formattedDob = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    
+
     // Search using the combined key
     fetchAndFillCustomer(`${name}_${formattedDob}`);
   };
@@ -111,8 +113,8 @@ export const DealerPersonalInfoSection = () => {
                 <DatePicker
                   selected={field.value}
                   onChange={(date) => {
-    field.onChange(date);
-    triggerFetchIfReady(watch('fullName'), date);
+                    field.onChange(date);
+                    triggerFetchIfReady(watch('fullName'), date);
                   }}
                   onBlur={field.onBlur}
                   dateFormat="yyyy-MM-dd"
@@ -131,6 +133,32 @@ export const DealerPersonalInfoSection = () => {
             )}
           />
           <ErrorMsg message={errors.dateOfBirth?.message} />
+        </div>
+
+        <div id="field-oetCode" className="md:col-span-2">
+          <FieldLabel required icon={FileText}>OET Code</FieldLabel>
+          {potError ? (
+            <p className="text-[#E00000] text-sm font-medium mt-1">Failed to load OET codes</p>
+          ) : potLoading ? (
+            <div className="h-12 rounded-lg animate-pulse bg-gray-100 mt-1" />
+          ) : (
+            <div className="relative mt-1">
+              <select
+                {...register('oet_code', { required: 'OET Code is required' })}
+                className={`${fieldCls(errors.oet_code)} appearance-none pr-10`}
+                defaultValue=""
+              >
+                <option value="" disabled>Select OET Code</option>
+                {potOptions.map(pot => (
+                  <option key={pot.code} value={pot.code}>{pot.label}</option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                <ChevronDown size={16} />
+              </div>
+            </div>
+          )}
+          <ErrorMsg message={errors.oet_code?.message} />
         </div>
 
       </div>

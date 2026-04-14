@@ -79,7 +79,7 @@ export const ExchangeSection = ({
               <TrendingUp size={13} className="text-[#E00000] flex-shrink-0" />
               <span className="text-gray-500 text-xs">Rate:</span>
               <span className="font-semibold text-gray-800 text-xs">
-                1 {toCurrency.code} = {FJD.symbol}{effectiveRate}
+                1 FJD = {effectiveRate} {toCurrency.code}
               </span>
               <span className="ml-auto text-[10px] font-medium text-[#E00000] bg-[#E00000]/5 border border-[#E00000]/10 px-1.5 py-0.5 rounded uppercase tracking-wide">
                 {exchangeType === 'BUY' ? 'Buy Rate' : 'Sell Rate'}
