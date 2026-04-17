@@ -18,11 +18,6 @@ const MoneyTransfer = () => {
   const { user } = useUser();
   const loginUser =  user ;
   const [metaFields, setMetaFields] = useState([]);
-  // const [transferType, setTransferType] = useState("Send");
-  // const [passportFile, setPassportFile] = useState(null);
-  // const [govtFile, setGovtFile] = useState(null);
-  // const [rbfFile, setRbfFile] = useState(null);
-
   const [form, setForm] = useState({});
   
 
@@ -32,8 +27,6 @@ const usableFields = metaFields.filter(
     !["Section Break", "Column Break"].includes(f.fieldtype)
 );
 
-// const isPassport = form.id_type === "PASSPORT";
-// const isGovtId = form.id_type === "GOVERNMENT_ID";
 
   const inputStyle =
   "w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#E00000] focus:bg-white transition-all duration-200";
@@ -181,50 +174,7 @@ useEffect(() => {
   return () => clearTimeout(delay);
 }, [form.full_name, form.dob]);
  
-// const handleSubmit = async () => {
-//   try {
-//     let documentUrl = "";
-//     let rbfDocumentUrl = "";
 
-//     // ✅ Upload ID file
-//     const idFile =
-//       form.id_type === "PASSPORT" ? passportFile : govtFile;
-
-//     if (idFile) {
-//       documentUrl = await uploadFile(idFile, { isPrivate: 1 });
-//     }
-
-//     // ✅ Upload RBF document (optional)
-//     if (rbfFile) {
-//       rbfDocumentUrl = await uploadFile(rbfFile, { isPrivate: 1 });
-//     }
-
-//     // attach to form
-//     form.rbf_document = rbfDocumentUrl;
-
-//     // ✅ STEP 1: Create Customer
-//     const customer = await createCustomer(form, documentUrl);
-
-//     const customerId = customer.name;
-
-//     // ✅ STEP 2: Create Money Transfer
-//     const transfer = await createMoneyTransfer(
-//       form,
-//       customerId,
-//       transferType,
-//       loginUser,
-//       documentUrl
-//     );
-
-//     alert(`✅ Transfer Successful!
-// Customer: ${customerId}
-// Transaction: ${transfer.name}`);
-
-//   } catch (err) {
-//     console.error(err);
-//     alert(err.message || "Error processing transfer");
-//   }
-// };
 const handleSubmit = async () => {
   try {
     let documentUrl = "";
@@ -360,28 +310,7 @@ const renderField = (field) => {
   }
 };
 
-// const getHeading = () => {
-//   if (transferType === "Send") {
-//     return {
-//       title: "Send Money",
-//       subtitle: "Enter sender details to initiate an outward transfer",
-//     };
-//   }
 
-//   if (transferType === "Receive") {
-//     return {
-//       title: "Receive Money",
-//       subtitle: "Enter recipient details to process incoming funds",
-//     };
-//   }
-
-//   return {
-//     title: "Money Transfer",
-//     subtitle: "Fill customer details for transfer",
-//   };
-// };
-
-// const heading = getHeading();
 
  return (
   <div className="min-h-screen flex flex-col bg-gray-50">
@@ -405,29 +334,6 @@ const renderField = (field) => {
   </p> */}
 </div>
 
-        {/* TRANSACTION TYPE CARD */}
-{/* <div className="rounded-xl border border-gray-200 overflow-hidden bg-white"> */}
-  {/* HEADER */}
-  {/* <div className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-3">
-    <ArrowLeftRight size={15} className="text-[#E00000]" />
-    <div>
-      <p className="text-sm font-semibold text-gray-800">Transfer Type</p>
-      <p className="text-xs text-gray-400">
-        Choose whether you are sending or receiving money
-      </p>
-    </div>
-  </div> */}
-
-  {/* OPTIONS */}
-  
-{/* </div> */}
-
-
-
-{/* <TransferAmountSection
-  form={form}
-  handleChange={handleChange}
-/> */}
         {/* FORM CARD */}
         <div className="rounded-3xl border border-gray-100 bg-white shadow-[0_10px_40px_rgba(0,0,0,0.06)] p-8 sm:p-10">
 

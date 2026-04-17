@@ -17,17 +17,11 @@ export const createMoneyTransfer = async (
    const payload = {
   doctype: "Money Transfer",
   ...form,
+  customer_id: customerId,
   document_upload: documentUrl || form.document_upload,
 };
 
-    // ✅ Attach correct document
-    // if (form.id_type === "PASSPORT") {
-    //   payload.passport_photo_file = documentUrl;
-    // }
-
-    // if (form.id_type === "GOVERNMENT_ID") {
-    //   payload.government_id_file = documentUrl;
-    // }
+  
 
     console.log("Creating Money Transfer:", payload);
 
