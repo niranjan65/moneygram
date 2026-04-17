@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useUser } from "../context/UserContext";
+import { useSettings } from '../context/SettingsContext';
 
 export function useERPNextRates() {
   const [rates, setRates] = useState({});
@@ -9,6 +10,7 @@ export function useERPNextRates() {
   const [rateDate, setRateDate] = useState(null);
   const [noDataForToday, setNoDataForToday] = useState(false);
    const [showUploadModal, setShowUploadModal] = useState(false);
+   const { selectedWarehouse }   = useSettings();
 
    const loginUser = useUser();
 
@@ -33,6 +35,7 @@ export function useERPNextRates() {
             // credentials: "include", 
             body: JSON.stringify({
               today_date: today,
+              location: selectedWarehouse.warehouse
             }),
           }
         );

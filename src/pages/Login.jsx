@@ -95,14 +95,21 @@ export default function Login() {
           ...nestedPayload
         };
 
-        // If message was an object, we flattened it. We can optionally delete the nested message to keep it clean.
+        
         if (typeof sessionData.message === 'object') {
            delete sessionData.message;
         }
 
         setUser(sessionData);
 
-        navigate("/home");
+        if (loginResult?.data?.message?.user_type === "Admin") {
+          // navigate("/app")
+          window.location.href = `https://mhmoneyexpress.anantdv.com/app`;
+        } else {
+          navigate("/home");
+        }
+
+        
       } else {
         setError(
           loginResult?.data?.message || "Invalid credentials"

@@ -13,6 +13,8 @@ import SoldiLanding from "./components/SoldiLanding";
 import SettingsPanel from "./components/Settingspanel";
 import CurrencyBalanceReport from "./components/CurrencyBalanceReport";
 import Stocks from "./pages/Stocks";
+import DealerExchange from "./pages/DealerExchange";
+import Reports from "./pages/Reports";
 
 function App() {
 
@@ -26,16 +28,21 @@ function App() {
   //     // Update state here
   //   });
   // }, []);
+  useEffect(() => {
+    if (location.pathname === "/") {
+      window.location.href = `https://mhmoneyexpress.anantdv.com/home`;
+    }
+  }, [])
 
-  
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/home">
       <Routes>
 
+        <Route path="/" element={<SoldiLanding />} />
         {/* Public Route */}
         <Route
-          path="/"
+          path="/login"
           element={
             <PublicRoute>
               <Login />
@@ -82,10 +89,10 @@ function App() {
         />
 
         <Route
-          path="/contact-us"
+          path="/dealer-exchange"
           element={
             <ProtectedRoute>
-              <Contact />
+              <DealerExchange />
             </ProtectedRoute>
           }
         />
@@ -99,14 +106,14 @@ function App() {
           }
         />
 
-        <Route
+        {/* <Route
           path="/report"
           element={
             <ProtectedRoute>
               <CurrencyBalanceReport />
             </ProtectedRoute>
           }
-        />
+        /> */}
         <Route
           path="/settings"
           element={
@@ -121,6 +128,15 @@ function App() {
           element={
             <ProtectedRoute>
               <Stocks />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/report"
+          element={
+            <ProtectedRoute>
+              <Reports />
             </ProtectedRoute>
           }
         />

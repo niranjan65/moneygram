@@ -304,6 +304,7 @@ export const ReviewStep = ({
   onEdit,
   onCancel,
   onConfirm,
+  isDealer = false,
 }) => {
   const { selectedWarehouse } = useSettings();
   const [showNoWarehouseModal, setShowNoWarehouseModal] = useState(false);
@@ -318,8 +319,10 @@ export const ReviewStep = ({
 
   const {
     sendAmount       = 0,
-    senderCurrency   = 'USD',
-    receiverCurrency = 'EUR',
+    senderCurrency   : _senderCurrency,
+    receiverCurrency : _receiverCurrency,
+    foreignCurrency,
+    localCurrency,
     exchangeRate     = 0,
     receiverGets     = 0,
     firstName        = '',
@@ -332,6 +335,15 @@ export const ReviewStep = ({
     totalDispensed,
     denominationRows = [],
   } = data;
+
+  // Support both old field names (senderCurrency/receiverCurrency) and
+  // the current payload field names (foreignCurrency/localCurrency).
+  // sendAmount always represents the forex (foreign currency) amount regardless
+  // of exchange type, so senderCurrency is always foreignCurrency.
+  const senderCurrency =
+    _senderCurrency ?? foreignCurrency ?? 'USD';
+  const receiverCurrency =
+    _receiverCurrency ?? localCurrency ?? 'EUR';
 
   const isCash = deliveryMethod === 'CASH_PICKUP';
 
@@ -384,7 +396,7 @@ export const ReviewStep = ({
               style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
               <Sparkles size={12} className="text-yellow-300" />
               <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">
-                {exchangeType === 'BUY' ? 'MH Receives' : 'Customer Receives'}
+                {exchangeType === 'BUY' ? 'MH Receives' : (isDealer ? 'Dealer Receives' : 'Customer Receives')}
               </span>
             </div>
 
@@ -504,7 +516,7 @@ export const ReviewStep = ({
           {/* Summary highlight card */}
           <div className="mt-2 flex flex-col gap-2">
             <ReviewRow
-              label={exchangeType === 'BUY' ? 'MH Receives' : 'Customer Receives'}
+              label={exchangeType === 'BUY' ? 'MH Receives' : (isDealer ? 'Dealer Receives' : 'Customer Receives')}
               value={`${fmt(sendAmount)} ${senderCurrency}`}
               icon={ArrowLeftRight}
               accent

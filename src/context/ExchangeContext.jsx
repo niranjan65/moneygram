@@ -10,6 +10,8 @@ export const ExchangeProvider = ({
     gstRate: 0.15,
   },
 }) => {
+
+  console.log('ExchangeProvider render', { summary, config });
   const calculations = useMemo(() => {
     const receiverGets = Number(summary?.receiverGets || 0);
     const sendAmount   = Number(summary?.sendAmount || 0);

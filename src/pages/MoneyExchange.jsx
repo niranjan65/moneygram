@@ -28,6 +28,8 @@ const MoneyExchange = () => {
   const { uploadFile } = useERPFileUpload();
   const ratesData = useERPNextRates();
 
+  const [summaryChange, setHandleSumamryChange] = useState();
+
   // Holds the raw rbfDocument File between DETAILS → REVIEW steps.
   // Can't use sessionStorage because File objects are not serialisable.
   const rbfDocumentFileRef = React.useRef(null);
@@ -119,7 +121,10 @@ const MoneyExchange = () => {
       fee: incoming.receiverGets * 0.02,
       receiverCurrency: incoming.receiverCurrency,
       exchangeType: incoming.exchangeType,
+      
     }));
+
+    setHandleSumamryChange(incoming)
   }, []);
 
   // Called when ReceiverForm hits Continue — save full payload and go to REVIEW
@@ -141,10 +146,10 @@ const MoneyExchange = () => {
     setSummary(prev => ({
       ...prev,
       sendAmount: data.sendAmount,
-      currency: data.senderCurrency,
+      currency: data.exchangeType === 'BUY' ? data.foreignCurrency : data.localCurrency,
       exchangeRate: data.exchangeRate,
       receiverGets: data.receiverGets,
-      receiverCurrency: data.receiverCurrency,
+      receiverCurrency: data.exchangeType === 'BUY' ? data.localCurrency : data.foreignCurrency,
     }));
 
     // Go to REVIEW (step 4) instead of PAYMENT
@@ -166,8 +171,8 @@ const MoneyExchange = () => {
       deliveryMethod: 'BANK_DEPOSIT',
       bankName: '',
       accountNumber: '',
-      senderCurrency: 'USD',
-      receiverCurrency: 'EUR',
+      localCurrency: 'FJD',
+      foreignCurrency: 'USD',
     });
     setSummary({
       sendAmount: 0,
@@ -223,27 +228,21 @@ const MoneyExchange = () => {
     }
 
     // Upload the RBF document (PDF) and capture the returned URL.
-    // NOTE: If the server's Frappe file upload is misconfigured (FileNotFoundError),
-    // this will fail gracefully — the transaction still proceeds without the document URL.
-    let rbfDocumentUrl = null;
-    const rbfFile = rbfDocumentFileRef.current;
-    console.log('[RBF DEBUG] 5. handleConfirm - rbfDocumentFileRef.current:', rbfFile?.name ?? 'null/undefined ❌');
-    if (rbfFile) {
-      console.log('[RBF DEBUG] 5a. Calling uploadFile for RBF doc...');
-      try {
-        rbfDocumentUrl = await uploadFile(rbfFile, {
-          isPrivate: 0,
-          doctype: "Currency Exchange For Customer",
-        });
-        console.log('[RBF DEBUG] 6. RBF document upload result URL:', rbfDocumentUrl ?? 'null — server upload failed ❌ (check server Frappe path config)');
-      } catch (uploadErr) {
-        console.warn('[RBF DEBUG] RBF upload failed (non-blocking):', uploadErr.message, '— proceeding without document URL');
-      }
-    } else {
-      console.log('[RBF DEBUG] 5b. Skipping RBF upload — no file in ref');
-    }
+    // let rbfDocumentUrl = null;
+    // const rbfFile = rbfDocumentFileRef.current;
+    // console.log('[RBF DEBUG] 5. handleConfirm - rbfDocumentFileRef.current:', rbfFile?.name ?? 'null/undefined ❌');
+    // if (rbfFile) {
+    //   console.log('[RBF DEBUG] 5a. Calling uploadFile for RBF doc...');
+    //   rbfDocumentUrl = await uploadFile(rbfFile, {
+    //     isPrivate: 0,
+    //     doctype: "Currency Exchange For Customer",
+    //   });
+    //   console.log('[RBF DEBUG] 6. RBF document upload result URL:', rbfDocumentUrl ?? 'null — upload may have failed ❌');
+    // } else {
+    //   console.log('[RBF DEBUG] 5b. Skipping RBF upload — no file in ref ❌');
+    // }
 
-    console.log("transfer payload", transferPayload)
+    // console.log("transfer payload", transferPayload)
 
     try {
       // Decide which field to use
@@ -405,6 +404,9 @@ const MoneyExchange = () => {
       }
 
 
+      const localAmount = transferPayload.exchangeType === 'BUY' ? transferPayload.sendAmount : transferPayload.receiverGets;
+      const foreignAmount = transferPayload.exchangeType === 'BUY' ? transferPayload.receiverGets : transferPayload.sendAmount;
+
       const apiPayload = {
         data: {
           custom_available_currency_transfer_balance: 2000,
@@ -425,28 +427,29 @@ const MoneyExchange = () => {
           id_issue_stateprovince: transferPayload.idIssueState,
           id_issue_country: transferPayload.idIssueCountry,
           ticket: transferPayload.ticket,
+          oet_code: transferPayload.oet_code,
           ...idDocumentField,
 
 
-          you_send: transferPayload.sendAmount,
-          you_send_currency_type: transferPayload.senderCurrency,
+          local_amount: localAmount,
+          local_currency_type: transferPayload.localCurrency,
 
-          they_receive: transferPayload.receiverGets,
-          they_receive_currency_type: transferPayload.receiverCurrency,
+          foreign_amount: foreignAmount,
+          foreign_currency_type: transferPayload.foreignCurrency,
 
-          expected: transferPayload.sendAmount,
-          counted: transferPayload.sendAmount,
+          expected: localAmount,
+          counted: localAmount,
           balanced: 0,
 
           exchange_rate: transferPayload.exchangeRate,
-          exchangeType: transferPayload.exchangeType,
+          exchangeType: transferPayload.exchangeType === 'BUY' ? 'SELL' : 'BUY',
           transfer_fee: summary.fee,
           send_amount: transferPayload.sendAmount,
           total_amount: transferPayload.sendAmount + summary.fee,
 
-          rbf_number: transferPayload.rbfNumber || null,
+          // rbf_number: transferPayload.rbfNumber || null,
           // Use the uploaded file URL, not the raw File object.
-          rbf_document: rbfDocumentUrl || null,
+          // rbf_document: rbfDocumentUrl || null,
 
           purposeOfTransaction: transferPayload.purposeOfTransaction,
           travelDate: transferPayload.travelDate,
@@ -483,7 +486,7 @@ const MoneyExchange = () => {
       console.log("API Success:", result);
 
 
-      const createdDoc = result?.message || result?.data || result;
+      const createdDoc = result?.message?.data || result?.data || result;
       setApiResponseDoc(createdDoc);
 
 
@@ -635,7 +638,7 @@ const MoneyExchange = () => {
               {/* Sidebar — hidden on success page */}
               {currentStep !== Step.PAYMENT && (
                 <div className="lg:col-span-4 relative">
-                  <Summary />
+                  <Summary transferPayload={summaryChange} />
                 </div>
               )}
 

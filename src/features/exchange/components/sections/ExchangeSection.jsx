@@ -18,6 +18,7 @@ export const ExchangeSection = ({
   setSendAmountError,
   effectiveRate,
   exchangePreview,
+  onAmountBlur,
 }) => {
   const { register, setValue, formState: { errors } } = useFormContext();
   const FJD = { code: 'FJD', symbol: 'FJ$' };
@@ -78,7 +79,7 @@ export const ExchangeSection = ({
               <TrendingUp size={13} className="text-[#E00000] flex-shrink-0" />
               <span className="text-gray-500 text-xs">Rate:</span>
               <span className="font-semibold text-gray-800 text-xs">
-                1 {toCurrency.code} = {FJD.symbol}{effectiveRate}
+                1 FJD = {effectiveRate} {toCurrency.code}
               </span>
               <span className="ml-auto text-[10px] font-medium text-[#E00000] bg-[#E00000]/5 border border-[#E00000]/10 px-1.5 py-0.5 rounded uppercase tracking-wide">
                 {exchangeType === 'BUY' ? 'Buy Rate' : 'Sell Rate'}
@@ -89,7 +90,7 @@ export const ExchangeSection = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
               <FieldLabel required icon={Coins}>
-                {exchangeType === 'SELL' ? `Customer Gives (${toCurrency?.code ?? 'Foreign'})` : `Customer Gets (${toCurrency?.code ?? 'Foreign'})`}
+                {exchangeType === 'SELL' ? `MH Pays (${toCurrency?.code ?? 'Forex'})` : `MH Receives (${toCurrency?.code ?? 'Forex'})`}
               </FieldLabel>
 
               {rateError ? (
@@ -115,7 +116,7 @@ export const ExchangeSection = ({
                     <option value="" disabled>— Select Currency —</option>
                     {availableCurrencies?.map(c => (
                       <option key={c.code} value={c.code}>
-                        {c.code} — {exchangeType === 'BUY' ? `Buy: ${c.buyingRate ?? '—'}` : `Sell: ${c.sellingRate ?? '—'}`}
+                        {c.code} — {exchangeType === 'BUY' ? `Buy: ${Number(c.buyingRate).toFixed(4) ?? '—'}` : `Sell: ${Number(c.sellingRate).toFixed(4) ?? '—'}`}
                       </option>
                     ))}
                   </select>
@@ -136,6 +137,9 @@ export const ExchangeSection = ({
                       setSendAmountError(val > 0 ? '' : 'Please enter a valid amount');
                     }
                   }}
+                  onBlur={() => {
+                    if (sendAmount > 0) onAmountBlur?.();
+                  }}
                   placeholder="Enter Forex amount"
                   className={`${inputBase} text-lg font-semibold pr-16 ${sendAmountError ? 'border-[#E00000]/30 bg-[#E00000]/5' : ''}`} />
                 <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-xs font-medium text-gray-400">
@@ -147,7 +151,7 @@ export const ExchangeSection = ({
 
             <div className="flex flex-col gap-2">
               <FieldLabel icon={Wallet}>
-                {exchangeType === 'SELL' ? `Customer Receives (${FJD.code})` : `Customer Pays (${FJD.code})`}
+                {exchangeType === 'SELL' ? `MH Receives (${FJD.code})` : `MH Pays (${FJD.code})`}
               </FieldLabel>
 
               <div className="relative">

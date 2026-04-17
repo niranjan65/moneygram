@@ -472,6 +472,8 @@ import { io } from 'socket.io-client';
 import { useExchange } from '../context/ExchangeContext';
 import { InvoiceDocument } from './SalesInvoice';
 import { printThermalReceipt } from './ThermalReceiptPrint';
+import { useUser } from '../context/UserContext';
+import axios from 'axios';
 
 // const socket_server = 'http://182.71.135.110:8079';
 const socket_server = 'http://187.127.109.162:5000';
@@ -616,6 +618,7 @@ export const TransferSuccess = ({
   onDashboard,
 }) => {
   const exchange = useExchange();
+  const loginUser = useUser();
   const [invoiceData, setInvoiceData] = useState(() => {
     const saved = sessionStorage.getItem('exchangeInvoiceData');
     return saved ? JSON.parse(saved) : null;
@@ -625,26 +628,56 @@ export const TransferSuccess = ({
     return saved ? false : true;
   });
 
+  const getInvoiceData = async (invoice_id) => {
+    try {
+      const response = await axios.get(`https://mhmoneyexpress.anantdv.com/api/resource/Sales%20Invoice/${invoice_id}`, {
+        headers: {
+          Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
+        },
+      });
+      return response.data.data;
+    } catch (error) {
+      
+    }
+  }
+
+  useEffect(() => {
+  if (!apiDoc?.invoice) return;
+
+  console.log('Fetching invoice:', apiDoc.invoice);
+
+  getInvoiceData(apiDoc.invoice)
+    .then(data => {
+      setInvoiceData(data);
+      setIsLoading(false);
+    })
+    .catch((err) => {
+      console.error('Error fetching invoice:', err);
+      setIsLoading(false);
+    });
+
+}, [apiDoc]);
+  
   useEffect(() => {
     if (invoiceData) {
       sessionStorage.setItem('exchangeInvoiceData', JSON.stringify(invoiceData));
     }
   }, [invoiceData]);
 
-  useEffect(() => {
-    socket.on('connect', () => console.log('Socket connected'));
-    socket.on('new-sales-invoice', (payload) => {
-      console.log('Invoice received from socket:', payload);
-      setInvoiceData(payload);
-      setIsLoading(false);
-    });
-    socket.on('disconnect', () => console.log('Socket disconnected'));
-    return () => {
-      socket.off('new-sales-invoice');
-      socket.off('connect');
-      socket.off('disconnect');
-    };
-  }, []);
+  // useEffect(() => {
+  //   socket.on('connect', () => console.log('Socket connected'));
+  //   socket.on('new-sales-invoice', (payload) => {
+  //     console.log('Invoice received from socket:', payload);
+  //     setInvoiceData(payload);
+  //     setIsLoading(false);
+  //   });
+  //   socket.on('disconnect', () => console.log('Socket disconnected'));
+  //   return () => {
+  //     socket.off('new-sales-invoice');
+  //     socket.off('connect');
+  //     socket.off('disconnect');
+  //   };
+  // }, []);
 
   // ── Loading Screen ────────────────────────────────────────────────────────
   if (isLoading) {
@@ -673,36 +706,36 @@ export const TransferSuccess = ({
       maximumFractionDigits: decimals,
     });
 
-  const currency      = finalData?.currency ?? 'FJD';
-  const company       = finalData?.company ?? 'MH Money Express';
-  const senderName    = finalData?.contact_email
+  const currency = finalData?.currency ?? 'FJD';
+  const company = finalData?.company ?? 'MH Money Express';
+  const senderName = finalData?.contact_email
     ? finalData.contact_email.split('@')[0].replace(/\./g, ' ').replace(/\b\w/g, c => c.toUpperCase())
     : 'Sender';
   const recipientName = finalData?.customer_name ?? finalData?.customer ?? 'Recipient';
-  const txnId         = transactionId ?? finalData?.name ?? '—';
-  const rawTime       = (finalData?.posting_time ?? '').split('.')[0];
-  const txnDate       = finalData?.posting_date
+  const txnId = transactionId ?? finalData?.name ?? '—';
+  const rawTime = (finalData?.posting_time ?? '').split('.')[0];
+  const txnDate = finalData?.posting_date
     ? `${finalData.posting_date}${rawTime ? ' | ' + rawTime : ''}`
     : '—';
   // const txnStatus     = finalData?.status ?? 'Unpaid';
-  const txnStatus     = 'Paid';
-  const exchangeRate  = finalData?.exchange_rate ?? data?.exchangeRate ?? null;
+  const txnStatus = 'Paid';
+  const exchangeRate = finalData?.exchange_rate ?? data?.exchangeRate ?? null;
   const senderCurrency = finalData?.you_send_currency_type ?? data?.senderCurrency ?? null;
   const receiverCurrency = finalData?.they_receive_currency_type ?? data?.receiverCurrency ?? 'FJD';
 
   const rows = (finalData?.items ?? []).map(item => ({
-    label:  item.item_code ?? item.item_name ?? '—',
-    qty:    item.qty    ?? 0,
-    rate:   item.rate   ?? 0,
+    label: item.item_code ?? item.item_name ?? '—',
+    qty: item.qty ?? 0,
+    rate: item.rate ?? 0,
     amount: item.amount ?? 0,
   }));
 
-  const netAmount    = finalData?.net_total ?? finalData?.total ?? 0;
-  const taxAmount    = finalData?.total_taxes_and_charges
+  const netAmount = finalData?.net_total ?? finalData?.total ?? 0;
+  const taxAmount = finalData?.total_taxes_and_charges
     ?? (Array.isArray(finalData?.taxes)
       ? finalData.taxes.reduce((s, t) => s + (t.tax_amount ?? 0), 0)
       : 0);
-  const grandTotal   = finalData?.grand_total ?? exchange?.total ?? 0;
+  const grandTotal = finalData?.grand_total ?? exchange?.total ?? 0;
   const roundedTotal = finalData?.rounded_total ?? grandTotal;
 
   return (
@@ -714,7 +747,7 @@ export const TransferSuccess = ({
 
           {/* ── Hero Section ────────────────────────────────────────────── */}
           <div className="flex flex-col items-center text-center gap-4 mt-6">
-            
+
             <div className="w-20 h-20 rounded-full bg-green-500 text-white flex items-center justify-center ring-8 ring-green-500/30 mt-2 shadow-xl shadow-green-500/20">
               <Icon name="check_circle" size={48} />
             </div>
@@ -761,9 +794,9 @@ export const TransferSuccess = ({
               )}
             </div>
 
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 py-8">
-              
+
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-white/10 text-white flex items-center justify-center flex-shrink-0 border border-white/20">
                   <Icon name="person_pin" size={22} />
@@ -861,7 +894,7 @@ export const TransferSuccess = ({
                 <Icon name="pdf" size={22} />
               </button>
 
-              <button 
+              <button
                 onClick={() => printThermalReceipt(finalData, exchange)}
                 className="w-14 h-14 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold transition-all border border-white/10 shadow-lg"
                 title="Print Thermal Receipt"

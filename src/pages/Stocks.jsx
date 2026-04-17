@@ -3,86 +3,7 @@ import Navbar from "../components/layout/Navbar";
 import axios from "axios";
 // import React from "react";
 import { useUser } from "../context/UserContext";
-
-// const data = {
-//   Australia: [
-//     { item_code: "AUD $1",   item_name: "$1",   stock_qty: 550  },
-//     { item_code: "AUD 5c",   item_name: "5c",   stock_qty: 0    },
-//     { item_code: "AUD 10c",  item_name: "10c",  stock_qty: 550  },
-//     { item_code: "AUD 20c",  item_name: "20c",  stock_qty: 550  },
-//     { item_code: "AUD 50c",  item_name: "50c",  stock_qty: 550  },
-//     { item_code: "AUD $2",   item_name: "$2",   stock_qty: 550  },
-//     { item_code: "AUD $5",   item_name: "$5",   stock_qty: 472  },
-//     { item_code: "AUD $10",  item_name: "$10",  stock_qty: 542  },
-//     { item_code: "AUD $20",  item_name: "$20",  stock_qty: 513  },
-//     { item_code: "AUD $50",  item_name: "$50",  stock_qty: 42   },
-//     { item_code: "AUD $100", item_name: "$100", stock_qty: 138  },
-//   ],
-//   Fiji: [
-//     { item_code: "FJD $100", item_name: "$100", stock_qty: 501  },
-//     { item_code: "FJD $50",  item_name: "$50",  stock_qty: 501  },
-//     { item_code: "FJD $20",  item_name: "$20",  stock_qty: 600  },
-//     { item_code: "FJD $10",  item_name: "$10",  stock_qty: 501  },
-//     { item_code: "FJD $5",   item_name: "$5",   stock_qty: 503  },
-//     { item_code: "FJD 5c",   item_name: "5c",   stock_qty: -1   },
-//     { item_code: "FJD 10c",  item_name: "10c",  stock_qty: 498  },
-//     { item_code: "FJD 20c",  item_name: "20c",  stock_qty: 498  },
-//     { item_code: "FJD 50c",  item_name: "50c",  stock_qty: 1    },
-//     { item_code: "FJD $2",   item_name: "$2",   stock_qty: 498  },
-//     { item_code: "FJD $1",   item_name: "$1",   stock_qty: 495  },
-//   ],
-//   Malaysia: [
-//     { item_code: "MYR RM0.05",  item_name: "RM0.05",  stock_qty: 0   },
-//     { item_code: "MYR RM0.10",  item_name: "RM0.10",  stock_qty: 50  },
-//     { item_code: "MYR RM0.20",  item_name: "RM0.20",  stock_qty: 0   },
-//     { item_code: "MYR RM0.50",  item_name: "RM0.50",  stock_qty: 500 },
-//     { item_code: "MYR RM1",     item_name: "RM1",     stock_qty: 0   },
-//     { item_code: "MYR RM5",     item_name: "RM5",     stock_qty: 0   },
-//     { item_code: "MYR RM10",    item_name: "RM10",    stock_qty: 50  },
-//     { item_code: "MYR RM20",    item_name: "RM20",    stock_qty: 500 },
-//     { item_code: "MYR RM50",    item_name: "RM50",    stock_qty: 0   },
-//     { item_code: "MYR RM100",   item_name: "RM100",   stock_qty: 500 },
-//   ],
-//   "New Zealand": [
-//     { item_code: "NZD $1",   item_name: "$1",   stock_qty: 50  },
-//     { item_code: "NZD $2",   item_name: "$2",   stock_qty: 0   },
-//     { item_code: "NZD 50c",  item_name: "50c",  stock_qty: 0   },
-//     { item_code: "NZD 20c",  item_name: "20c",  stock_qty: 0   },
-//     { item_code: "NZD 10c",  item_name: "10c",  stock_qty: 0   },
-//     { item_code: "NZD 5c",   item_name: "5c",   stock_qty: 0   },
-//     { item_code: "NZD $5",   item_name: "$5",   stock_qty: 60  },
-//     { item_code: "NZD $10",  item_name: "$10",  stock_qty: 54  },
-//     { item_code: "NZD $20",  item_name: "$20",  stock_qty: 0   },
-//     { item_code: "NZD $50",  item_name: "$50",  stock_qty: 0   },
-//     { item_code: "NZD $100", item_name: "$100", stock_qty: 504 },
-//   ],
-//   Singapore: [
-//     { item_code: "SGD S$0.05",  item_name: "S$0.05",  stock_qty: 0  },
-//     { item_code: "SGD S$0.10",  item_name: "S$0.10",  stock_qty: 0  },
-//     { item_code: "SGD S$0.20",  item_name: "S$0.20",  stock_qty: 0  },
-//     { item_code: "SGD S$0.50",  item_name: "S$0.50",  stock_qty: 0  },
-//     { item_code: "SGD S$1",     item_name: "S$1",     stock_qty: 0  },
-//     { item_code: "SGD S$2",     item_name: "S$2",     stock_qty: 0  },
-//     { item_code: "SGD S$5",     item_name: "S$5",     stock_qty: 0  },
-//     { item_code: "SGD S$10",    item_name: "S$10",    stock_qty: 0  },
-//     { item_code: "SGD S$50",    item_name: "S$50",    stock_qty: 0  },
-//     { item_code: "SGD S$100",   item_name: "S$100",   stock_qty: -1 },
-//     { item_code: "SGD S$1000",  item_name: "S$1000",  stock_qty: -1 },
-//   ],
-//   Thailand: [
-//     { item_code: "THB ฿0.25",  item_name: "฿0.25",  stock_qty: 0 },
-//     { item_code: "THB ฿0.50",  item_name: "฿0.50",  stock_qty: 0 },
-//     { item_code: "THB ฿1",     item_name: "฿1",     stock_qty: 0 },
-//     { item_code: "THB ฿2",     item_name: "฿2",     stock_qty: 0 },
-//     { item_code: "THB ฿5",     item_name: "฿5",     stock_qty: 0 },
-//     { item_code: "THB ฿10",    item_name: "฿10",    stock_qty: 0 },
-//     { item_code: "THB ฿20",    item_name: "฿20",    stock_qty: 0 },
-//     { item_code: "THB ฿50",    item_name: "฿50",    stock_qty: 0 },
-//     { item_code: "THB ฿100",   item_name: "฿100",   stock_qty: 0 },
-//     { item_code: "THB ฿500",   item_name: "฿500",   stock_qty: 0 },
-//     { item_code: "THB ฿1000",  item_name: "฿1000",  stock_qty: 0 },
-//   ],
-// };
+import { useSettings } from "../context/SettingsContext";
 
 const CURRENCY_CODE = {
   Australia:     "AUD",
@@ -106,6 +27,7 @@ const FLAG = {
 
 function totalQty(items)   { return items?.reduce((s, i) => s + i.stock_qty, 0); }
 function inStockQty(items) { return items?.filter(i => i.stock_qty > 0).reduce((s, i) => s + i.stock_qty, 0); }
+
 
 // ── Stat Card ─────────────────────────────────────────────────────────────
 function StatCard({ label, value, sub, type = "default" }) {
@@ -138,6 +60,9 @@ function QtyBadge({ qty }) {
 export default function Stocks() {
   
   const [data, setData] = useState({})
+  const { selectedWarehouse } = useSettings();
+
+  console.log("Selected warehouse", selectedWarehouse?.warehouse)
   const countries = Object.keys(data).filter(
   (country) => data[country]?.length > 0
 );
@@ -153,7 +78,7 @@ export default function Stocks() {
           "Content-Type": "application/json",
           Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
         },
-        data: { warehouse: 'Stores - MME' }
+        data: { warehouse: selectedWarehouse?.warehouse }
       };
 
       axios
@@ -165,6 +90,10 @@ export default function Stocks() {
     }
   }
 
+  function totalValue(items) {
+  return items?.reduce((sum, i) => sum + (i.stock_value || 0), 0);
+}
+
   useEffect(() => {
   if (countries.length > 0 && !active) {
     setActive(countries[0]);
@@ -173,7 +102,7 @@ export default function Stocks() {
 
   useEffect(() => {
     currencyStock()
-  }, [])
+  }, [selectedWarehouse])
   
 
   const items        = data[active];
@@ -182,6 +111,7 @@ export default function Stocks() {
   const negCount     = items?.filter(i => i.stock_qty < 0).length;
   const zeroCount    = items?.filter(i => i.stock_qty === 0).length;
   const inStockCount = items?.filter(i => i.stock_qty > 0).length;
+  const totalValuecount = totalValue(items);
 
   return (
     <div>
@@ -199,7 +129,7 @@ export default function Stocks() {
           {/* Tabs */}
           <div className="flex flex-wrap gap-2">
             {countries.map((c) => {
-              const tot = totalQty(data[c]);
+              const tot = totalValue(data[c]);
               const isActive = c === active;
               return (
                 <button
@@ -232,8 +162,14 @@ export default function Stocks() {
           <div className="flex flex-wrap gap-3">
             <StatCard label="Total Qty"  value={total?.toLocaleString()}    sub={`${CURRENCY_CODE[active]} · all denominations`} type="default" />
             <StatCard label="In Stock"   value={positive?.toLocaleString()} sub={`${inStockCount} denomination${inStockCount !== 1 ? "s" : ""}`} type="green" />
-            <StatCard label="Zero Stock" value={zeroCount}                 sub="denominations at 0"                             type="muted"  />
-            <StatCard label="Negative"   value={negCount}                  sub="denominations below 0"                         type={negCount > 0 ? "red" : "muted"} />
+            {/* <StatCard label="Zero Stock" value={zeroCount}                 sub="denominations at 0"                             type="muted"  />
+            <StatCard label="Negative"   value={negCount}                  sub="denominations below 0"                         type={negCount > 0 ? "red" : "muted"} /> */}
+              <StatCard
+                label="Total Value"
+                value={totalValuecount?.toLocaleString()}
+                sub={`${CURRENCY_CODE[active]} · total worth`}
+                type="default"
+/>
           </div>
 
           {/* Divider */}
@@ -262,6 +198,8 @@ export default function Stocks() {
                   <th className="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400">Item Code</th>
                   <th className="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400">Denomination</th>
                   <th className="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400 hidden sm:table-cell">Warehouse</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400">Rate</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400">Item Value</th>
                   <th className="px-5 py-3 text-right text-[11px] font-bold uppercase tracking-widest text-gray-400">Stock Qty</th>
                 </tr>
               </thead>
@@ -278,7 +216,9 @@ export default function Stocks() {
                       </span>
                     </td>
                     <td className="px-5 py-3.5 font-bold text-gray-800">{row.item_name}</td>
-                    <td className="px-5 py-3.5 text-xs text-gray-400 hidden sm:table-cell">Stores - MME</td>
+                    <td className="px-5 py-3.5 text-xs text-gray-400 hidden sm:table-cell">{row.warehouse}</td>
+                    <td className="px-5 py-3.5 text-right"><QtyBadge qty={row.valuation_rate} /></td>
+                    <td className="px-5 py-3.5 text-right"><QtyBadge qty={row.stock_value} /></td>
                     <td className="px-5 py-3.5 text-right"><QtyBadge qty={row.stock_qty} /></td>
                   </tr>
                 ))}
@@ -287,6 +227,12 @@ export default function Stocks() {
                 <tr className="bg-gray-50 border-t-2 border-[#E00000]/15">
                   <td colSpan={4} className="px-5 py-3 text-xs font-black uppercase tracking-widest text-[#E00000]">
                     Total
+                  </td>
+                  <td className="px-5 py-3 text-right font-black text-gray-900 tabular-nums">
+                    {total?.toLocaleString()}
+                  </td>
+                  <td className="px-5 py-3 text-right font-black text-gray-900 tabular-nums">
+                    {totalValuecount?.toLocaleString()}
                   </td>
                   <td className="px-5 py-3 text-right font-black text-gray-900 tabular-nums">
                     {total?.toLocaleString()}

@@ -17,7 +17,7 @@ export function useCurrentUser() {
 
 
   async function fetchUser() {
-    console.log("loginUser", loginUser.user)
+    
     const API_URL =
       "https://mhmoneyexpress.anantdv.com/api/method/frappe.auth.get_logged_user";
 
@@ -33,15 +33,27 @@ export function useCurrentUser() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}`);
+        const error = new Error(`HTTP error ${response.status}`);
+        error.status = response.status;
+        throw error;
       }
 
       const result = await response.json();
+
+      console.log(`current logged in user ${result}`)
       setUser(result.message || {});
     } catch (err) {
-      console.error("Failed to fetch user", err);
-      setError(err);
-    } finally {
+  console.error("Failed to fetch user", err);
+
+  console.log("Status code:", err.status); 
+
+  if(err.status === 401) {
+     localStorage.removeItem("erpnext_session");
+    window.location.href = "/home";
+  }
+
+  setError(err);
+} finally {
       setLoading(false);
     }
   }

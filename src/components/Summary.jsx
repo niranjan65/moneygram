@@ -279,7 +279,7 @@ import React from 'react';
 import { ShieldCheck, TrendingUp, Wallet, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useExchange } from '../context/ExchangeContext';
 
-export const Summary = () => {
+export const Summary = ({transferPayload, isDealer = false}) => {
   const {
     receiverGets,
     serviceFee,
@@ -289,6 +289,9 @@ export const Summary = () => {
     gstRate,
     exchangeType,
   } = useExchange();
+  
+
+  console.log('Summary render', transferPayload);
 
   const roundToNearestFiveCents = (amount) => {
     if (!amount) return 0;
@@ -344,11 +347,16 @@ export const Summary = () => {
             <div className="flex items-center gap-2">
               <Wallet size={13} className="text-[#E00000]" strokeWidth={2} />
               <span className="text-sm font-medium text-[#B70000]">
-                {exchangeType === 'BUY' ? 'Total to Pay' : 'Total Customer Gets'}
+                {exchangeType === 'BUY' ? (isDealer ? 'Dealer Pays' : 'Customer Pays') : (isDealer ? 'Dealer Pays' : 'Customer Pays')}
               </span>
             </div>
             <span className="font-semibold text-sm text-[#B70000]">
-              {fmt(receiverGets)}
+              {/* {fmt(receiverGets)} */}
+              {/* {exchangeType === 'BUY' ? `${transferPayload?.sendAmount} ${transferPayload?.receiverCurrency}` : fmt(receiverGets)} */}
+              {exchangeType === 'BUY'
+  ? `${transferPayload?.sendAmount ?? 0} ${transferPayload?.receiverCurrency ?? ''}`
+  : fmt(receiverGets ?? 0)
+}
             </span>
           </div>
 
@@ -357,11 +365,12 @@ export const Summary = () => {
             <div className="flex items-center gap-1.5 mb-1.5">
               <CheckCircle2 size={12} className="text-[#b5f000]" strokeWidth={2.5} />
               <span className="text-[#b5f000] text-[10px] font-semibold uppercase tracking-widest">
-                Final Local Amount
+                {/* MH {exchangeType === 'SELL' ? 'Gets' : 'Pays'} */}
+                MH Pays
               </span>
             </div>
             <div className="text-white font-bold text-2xl tracking-tight">
-              {fmt(receiverGets)}
+              {exchangeType === 'BUY' ? fmt(receiverGets ?? 0) : `${transferPayload?.receiverCurrency ?? ''} ${transferPayload?.sendAmount ?? 0}`}
             </div>
             {/* <p className="text-white/80 text-xs mt-1">Fijian Dollar · FJD</p> */}
           </div>
