@@ -12,7 +12,11 @@ const FileUploadBox = ({ label, file, setFile }) => {
         <UploadCloud className="text-gray-400 group-hover:text-[#E00000]" />
 
         <span className="text-sm mt-2 font-semibold text-gray-600">
-          {file ? file.name : "Click to upload or drag file"}
+          {file
+  ? typeof file === "string"
+    ? file.split("/").pop()   // show file name from URL
+    : file.name
+  : "Click to upload or drag file"}
         </span>
 
         <span className="text-xs text-gray-400 mt-1">

@@ -148,18 +148,26 @@ useEffect(() => {
       if (customer) {
         console.log("Customer Auto-filled:", customer);
 
-        setForm((prev) => ({
+       setForm((prev) => ({
   ...prev,
   full_name: customer.custom_full_name || prev.full_name,
   dob: customer.custom_date_of_birth || prev.dob,
+  passport_number: customer.custom_passport_number || "",
+  document_upload: customer.custom_government_document || "",
+
+  government_id_type: customer.custom_government_id || "",
+
+  // ✅ MAP BACK TO SINGLE FIELD
   government_id_number:
     customer.custom_drivers_license_number ||
     customer.custom_tin_number ||
     customer.custom_voter_id_number ||
     "",
+
   document_type: customer.custom_passport_number
     ? "Passport"
     : "Government ID",
+
   customer: customer.name || "",
 }));
       } else {
@@ -198,6 +206,7 @@ if (form.document_upload instanceof File) {
     alert(`✅ Success!
 Customer: ${customerId}
 Transaction: ${transfer.name}`);
+ resetForm();
   } catch (err) {
     console.error(err);
     alert(err.message || "Error processing");
@@ -214,6 +223,10 @@ const shouldShowField = (field) => {
     console.warn("depends_on error:", field.fieldname);
     return true;
   }
+};
+
+const resetForm = () => {
+  setForm({});
 };
 
 const renderField = (field) => {
@@ -286,14 +299,27 @@ const renderField = (field) => {
 
     case "Attach":
       return (
+        // <FileUploadBox
+        //   key={field.fieldname}
+        //   label={field.label}
+        //   file={form[field.fieldname]}
+        //   setFile={(file) =>
+        //     handleChange(field.fieldname, file)
+        //   }
+        // />
         <FileUploadBox
-          key={field.fieldname}
-          label={field.label}
-          file={form[field.fieldname]}
-          setFile={(file) =>
-            handleChange(field.fieldname, file)
-          }
-        />
+  key={field.fieldname}
+  label={field.label}
+  file={form[field.fieldname]}
+  existingFileUrl={
+    typeof form[field.fieldname] === "string"
+      ? form[field.fieldname]
+      : null
+  }
+  setFile={(file) =>
+    handleChange(field.fieldname, file)
+  }
+/>
       );
 
     case "Section Break":

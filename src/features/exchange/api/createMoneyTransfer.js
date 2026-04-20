@@ -16,9 +16,23 @@ export const createMoneyTransfer = async (
 
    const payload = {
   doctype: "Money Transfer",
-  ...form,
+
   customer_id: customerId,
+  full_name: form.full_name,
+  dob: form.dob,
+
+  document_type: form.document_type,
+  passport_number: form.passport_number,
+
+  government_id_type: form.government_id_type,
+  government_id_number: form.government_id_number,
+
   document_upload: documentUrl || form.document_upload,
+  transaction_id: form.transaction_id,
+
+  sending_amount: form.sending_amount,
+  transfer_fee: form.transfer_fee,
+  total_amount: form.total_amount,
 };
 
   
