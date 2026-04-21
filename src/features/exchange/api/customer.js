@@ -39,7 +39,7 @@ export const createCustomer = async (form, documentUrl) => {
     };
 
     const cleanName = form.full_name.trim().replace(/\s+/g, " ");
-    const customerId = `${cleanName}_${formatDate(form.date_of_birth)}`;
+    const customerId = `${cleanName}_${formatDate(form.dob)}`;
 
     const payload = {
       customer_name: customerId,
@@ -48,10 +48,10 @@ export const createCustomer = async (form, documentUrl) => {
       territory: "All Territories",
 
       custom_full_name: form.full_name,
-      custom_date_of_birth: form.date_of_birth,
+      custom_date_of_birth: form.dob,
       custom_government_id: form.government_id,
       custom_passport_number: form.passport_number,
-      custom_government_document: documentUrl, // ✅ NOW WORKS
+      custom_government_document: documentUrl, 
     };
 
     // ✅ Dynamic ID mapping
@@ -75,7 +75,7 @@ export const createCustomer = async (form, documentUrl) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `token ab5bd602e5f2950:47a1752c33990d9`,
+          Authorization: `token ab5bd602e5f2950:d5f1770a2ce69e2`,
         },
         body: JSON.stringify(payload),
       }
