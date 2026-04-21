@@ -362,7 +362,7 @@ useEffect(() => saveToSession('dealerSummary', summary), [summary]);
       setTransactionId(txId);
 
       const response = await fetch(
-        "https://mhmoneyexpress.anantdv.com/api/method/moneygram.moneygram.api.create_dealer_exchange.create_dealer_exchange",
+        "http://192.168.101.182:81/api/method/moneygram.moneygram.api.create_dealer_exchange.create_dealer_exchange",
         {
           method: "POST",
           headers: {

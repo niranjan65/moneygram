@@ -523,7 +523,7 @@ export const ReviewStep = ({
             />
             <ReviewRow
               label="Exchange Rate"
-              value={exchangeRate > 0 ? `1 ${senderCurrency} = ${exchangeRate.toFixed(4)} FJD` : '—'}
+              value={exchangeRate > 0 ? `1 FJD = ${exchangeRate.toFixed(4)} ${senderCurrency}` : '—'}
               icon={TrendingUp}
               accent
             />

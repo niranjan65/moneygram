@@ -26,7 +26,7 @@ const CONFIG = {
   },
 
   [ERP_ENV.PROD]: {
-    baseURL: "https://mhmoneyexpress.anantdv.com",
+    baseURL: "http://192.168.101.182:81",
     getAuthHeaders: (loginUser) => ({
       "Content-Type": "application/json",
       Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,

@@ -8,7 +8,7 @@
 
 //   const [userDetail, setUserDetail] = useState(null)
 //   const API_URL =
-//   "https://mhmoneyexpress.anantdv.com/api/method/frappe.auth.get_logged_user";
+//   "http://192.168.101.182:81/api/method/frappe.auth.get_logged_user";
 
 // const HEADERS = {
 //   "Content-Type": "application/json",
