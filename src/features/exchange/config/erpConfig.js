@@ -21,12 +21,13 @@ const CONFIG = {
     baseURL: "http://192.168.101.182:81",
     getAuthHeaders: () => ({
       "Content-Type": "application/json",
-      Authorization: `token ab5bd602e5f2950:47a1752c33990d9`,
+      Authorization: `token ab5bd602e5f2950:d5f1770a2ce69e2`,
+      
     }),
   },
 
   [ERP_ENV.PROD]: {
-    baseURL: "https://mhmoneyexpress.anantdv.com",
+    baseURL: "http://192.168.101.182:81",
     getAuthHeaders: (loginUser) => ({
       "Content-Type": "application/json",
       Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,

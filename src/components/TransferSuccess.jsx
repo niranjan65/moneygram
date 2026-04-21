@@ -473,6 +473,7 @@ import { useExchange } from '../context/ExchangeContext';
 import { InvoiceDocument } from './SalesInvoice';
 import { printThermalReceipt } from './ThermalReceiptPrint';
 import { useUser } from '../context/UserContext';
+import axios from 'axios';
 
 // const socket_server = 'http://182.71.135.110:8079';
 const socket_server = 'http://187.127.109.162:5000';
@@ -627,26 +628,56 @@ export const TransferSuccess = ({
     return saved ? false : true;
   });
 
+  const getInvoiceData = async (invoice_id) => {
+    try {
+      const response = await axios.get(`http://192.168.101.182:81/api/resource/Sales%20Invoice/${invoice_id}`, {
+        headers: {
+          Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
+        },
+      });
+      return response.data.data;
+    } catch (error) {
+      
+    }
+  }
+
+  useEffect(() => {
+  if (!apiDoc?.invoice) return;
+
+  console.log('Fetching invoice:', apiDoc.invoice);
+
+  getInvoiceData(apiDoc.invoice)
+    .then(data => {
+      setInvoiceData(data);
+      setIsLoading(false);
+    })
+    .catch((err) => {
+      console.error('Error fetching invoice:', err);
+      setIsLoading(false);
+    });
+
+}, [apiDoc]);
+  
   useEffect(() => {
     if (invoiceData) {
       sessionStorage.setItem('exchangeInvoiceData', JSON.stringify(invoiceData));
     }
   }, [invoiceData]);
 
-  useEffect(() => {
-    socket.on('connect', () => console.log('Socket connected'));
-    socket.on('new-sales-invoice', (payload) => {
-      console.log('Invoice received from socket:', payload);
-      setInvoiceData(payload);
-      setIsLoading(false);
-    });
-    socket.on('disconnect', () => console.log('Socket disconnected'));
-    return () => {
-      socket.off('new-sales-invoice');
-      socket.off('connect');
-      socket.off('disconnect');
-    };
-  }, []);
+  // useEffect(() => {
+  //   socket.on('connect', () => console.log('Socket connected'));
+  //   socket.on('new-sales-invoice', (payload) => {
+  //     console.log('Invoice received from socket:', payload);
+  //     setInvoiceData(payload);
+  //     setIsLoading(false);
+  //   });
+  //   socket.on('disconnect', () => console.log('Socket disconnected'));
+  //   return () => {
+  //     socket.off('new-sales-invoice');
+  //     socket.off('connect');
+  //     socket.off('disconnect');
+  //   };
+  // }, []);
 
   // ── Loading Screen ────────────────────────────────────────────────────────
   if (isLoading) {

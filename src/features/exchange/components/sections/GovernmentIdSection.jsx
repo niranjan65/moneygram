@@ -4,11 +4,13 @@ import { ChevronDown, BadgeCheck, Upload, FileText, CheckCircle2, ShieldCheck, X
 import { FieldLabel, fieldCls, ErrorMsg } from '../ui/FormUtilities';
 import { useCustomer } from '../../hooks/useCustomer';
 import { useCountries } from '../../../../hooks/useCountry';
+import { useAppConfiguration } from '../../../../hooks/useAppConfiguration';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
 export const GovernmentIdSection = ({ exchangeType, isCreditExceeded }) => {
   const { countries, loading: countryLoading, error: countryError } = useCountries();
+  const { potOptions, loading: potLoading, error: potError } = useAppConfiguration();
   const { register, watch, setValue, getValues, formState: { errors } } = useFormContext();
   const [dragOver, setDragOver] = useState(false);
   const [rbfFileName, setRbfFileName] = useState('');  // display name for the selected RBF file
@@ -213,6 +215,32 @@ export const GovernmentIdSection = ({ exchangeType, isCreditExceeded }) => {
             })}
             className={`${fieldCls(errors.idIssueCountry)} mt-1`} />
           <ErrorMsg message={errors.idIssueCountry?.message} />
+        </div>
+
+        <div id="field-oetCode">
+          <FieldLabel required icon={FileText}>OET Code</FieldLabel>
+          {potError ? (
+            <p className="text-[#E00000] text-sm font-medium mt-1">Failed to load OET codes</p>
+          ) : potLoading ? (
+            <div className="h-12 rounded-lg animate-pulse bg-gray-100 mt-1" />
+          ) : (
+            <div className="relative mt-1">
+              <select
+                {...register('oet_code', { required: 'OET Code is required' })}
+                className={`${fieldCls(errors.oet_code)} appearance-none pr-10`}
+                defaultValue="18"
+              >
+                <option value="" disabled>Select OET Code</option>
+                {potOptions.map(pot => (
+                  <option key={pot.code} value={pot.code}>{pot.label}</option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                <ChevronDown size={16} />
+              </div>
+            </div>
+          )}
+          <ErrorMsg message={errors.oet_code?.message} />
         </div>
 
         <div id="field-docFile">

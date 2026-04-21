@@ -279,7 +279,7 @@ import React from 'react';
 import { ShieldCheck, TrendingUp, Wallet, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useExchange } from '../context/ExchangeContext';
 
-export const Summary = ({transferPayload}) => {
+export const Summary = ({transferPayload, isDealer = false}) => {
   const {
     receiverGets,
     serviceFee,
@@ -347,7 +347,7 @@ export const Summary = ({transferPayload}) => {
             <div className="flex items-center gap-2">
               <Wallet size={13} className="text-[#E00000]" strokeWidth={2} />
               <span className="text-sm font-medium text-[#B70000]">
-                {exchangeType === 'BUY' ? 'Customer Pays' : 'Customer pays'}
+                {exchangeType === 'BUY' ? (isDealer ? 'Dealer Pays' : 'Customer Pays') : (isDealer ? 'Dealer Pays' : 'Customer Pays')}
               </span>
             </div>
             <span className="font-semibold text-sm text-[#B70000]">

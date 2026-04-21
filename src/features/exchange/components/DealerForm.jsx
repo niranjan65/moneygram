@@ -2,8 +2,11 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { UserPlus, ArrowRight, AlertCircle } from 'lucide-react';
 import { useExchange } from '../../../context/ExchangeContext';
+import { useUser } from '../../../context/UserContext';
+import { useSettings } from '../../../context/SettingsContext';
 import { useBaseCurrency, useDenomination } from '../../../hooks/useDenomination';
 import { useExchangeCalculation } from '../hooks/useExchangeCalculation';
+import { validateStockAvailability } from '../../../hooks/useStockValidation';
 
 import { DealerPersonalInfoSection } from './sections/DealerPersonalInfoSection';
 import { DealerExchangeSection } from './sections/DealerExchangeSection';
@@ -72,11 +75,89 @@ export const DealerForm = ({
   const senderInfo = exchangeType === 'BUY' ? baseCurrencyInfo : foreignCurrencyInfo;
   const receiverInfo = exchangeType === 'BUY' ? foreignCurrencyInfo : baseCurrencyInfo;
 
+  const loginUser = useUser();
+  const { selectedWarehouse } = useSettings();
+  const [stockError, setStockError] = useState('');
+  const [stockLoading, setStockLoading] = useState(false);
+  const stockErrorRef = useRef(null);
+
+  // Clear stock error when currency changes
+  useEffect(() => { setStockError(''); }, [toCurrency?.code]);
+
+  const runStockCheck = async (si = senderInfo, ri = receiverInfo) => {
+
+    // Stock check only applies when selling (customer brings foreign currency)
+
+
+    const warehouseName = selectedWarehouse?.warehouse;
+
+
+    const getSelectedItems = (info, rows) => {
+      if (!info || !rows) return [];
+      return rows.filter(r => r.count > 0).map(r => {
+        const nIdx = info.notes?.indexOf(r.denom) ?? -1;
+        if (nIdx !== -1 && info.notes_name?.[nIdx]) return { item_code: info.notes_name[nIdx], requested_qty: r.count };
+        const cIdx = info.coins?.indexOf(r.denom) ?? -1;
+        if (cIdx !== -1 && info.coins_name?.[cIdx]) return { item_code: info.coins_name[cIdx], requested_qty: r.count };
+        return null;
+      }).filter(Boolean);
+    };
+
+    if (exchangeType === 'BUY') {
+      const selectedItems = getSelectedItems(si, senderDenomRowsRef.current);
+      if (!warehouseName || selectedItems.length === 0) return true; // nothing to check
+      setStockLoading(true);
+      try {
+        const { outOfStock } = await validateStockAvailability(selectedItems, warehouseName, loginUser);
+        if (outOfStock.length > 0) {
+          setStockError(
+            `Sufficient stock for ${si?.currency} not available at ${warehouseName} for the denominations you've entered. (Check: ${outOfStock.join(', ')}) Please adjust the counts or contact admin.`
+          );
+          setTimeout(() => stockErrorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+          return false;
+        }
+        setStockError('');
+        return true;
+      } catch (err) {
+        console.error('[Stock Check]', err);
+        setStockError('');
+        return true; // non-blocking on API error
+      } finally {
+        setStockLoading(false);
+      }
+    } else if (exchangeType === 'SELL') {
+      const selectedItems = getSelectedItems(si, senderDenomRowsRef.current);
+      if (!warehouseName || selectedItems.length === 0) return true; // nothing to check
+      setStockLoading(true);
+      try {
+        const { outOfStock } = await validateStockAvailability(selectedItems, warehouseName, loginUser);
+        if (outOfStock.length > 0) {
+          setStockError(
+            `Sufficient stock for ${si?.currency} not available at ${warehouseName} for the denominations you've entered. (Check: ${outOfStock.join(', ')}) Please adjust the counts or contact admin.`
+          );
+          setTimeout(() => stockErrorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+          return false;
+        }
+        setStockError('');
+        return true;
+      } catch (err) {
+        console.error('[Stock Check]', err);
+        setStockError('');
+        return true; // non-blocking on API error
+      } finally {
+        setStockLoading(false);
+      }
+    }
+
+
+
+  };
+
   const senderDenomRowsRef = useRef([]);
   const receiverDenomRowsRef = useRef([]);
   const senderDenomStatusRef = useRef({ total: 0, target: 0 });
   const receiverDenomStatusRef = useRef({ total: 0, target: 0 });
-  
+
   const [denomBalanceError, setDenomBalanceError] = useState('');
   const denomErrorRef = useRef(null);
 
@@ -128,6 +209,10 @@ export const DealerForm = ({
     }
     setDenomBalanceError('');
 
+    // ── Stock availability check ───────────────────────────────────
+    const ok = await runStockCheck();
+    if (!ok) return;
+
     const getDenomType = (denom, notesArr = [], coinsArr = []) => {
       if (notesArr?.includes(denom)) return 'Note';
       if (coinsArr?.includes(denom)) return 'Coin';
@@ -153,7 +238,7 @@ export const DealerForm = ({
       totalAmount: exchangePreview?.rawAmount ?? 0,
       rateSource: 'manual',
       rateDate: null, // manual rate has no specific rateDate from ERP
-      
+
       senderDenominationRows: senderDenomRowsRef.current.filter(r => r.count > 0).map(r => ({
         denomination_value: r.denom,
         denomination_type: getDenomType(r.denom, senderInfo?.notes, senderInfo?.coins),
@@ -174,7 +259,7 @@ export const DealerForm = ({
   const onError = (errors) => {
     const firstErrorField = FIELD_ORDER.find(f => errors[f]);
     if (!firstErrorField) return;
-    try { setFocus(firstErrorField); } catch (_) {}
+    try { setFocus(firstErrorField); } catch (_) { }
     const el = document.getElementById(`field-${firstErrorField}`) || document.querySelector(`[name="${firstErrorField}"]`);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
@@ -213,7 +298,7 @@ export const DealerForm = ({
         </div>
 
         <form onSubmit={handleSubmit(onSubmit, onError)} className="px-4 sm:px-8 lg:px-12 py-8 flex flex-col gap-5 max-w-5xl mx-auto" noValidate>
-          
+
           <DealerPersonalInfoSection />
 
           <SectionDivider label="Exchange Details" />
@@ -232,6 +317,7 @@ export const DealerForm = ({
             setSendAmountError={setSendAmountError}
             effectiveRate={effectiveRate}
             exchangePreview={exchangePreview}
+            onAmountBlur={runStockCheck}
           />
 
           <SectionDivider label="Cash Denomination Counts" />
@@ -241,6 +327,15 @@ export const DealerForm = ({
               <div>
                 <p className="font-semibold text-sm text-red-800">Denomination Imbalance</p>
                 <p className="text-xs text-[#E00000] mt-0.5">{denomBalanceError}</p>
+              </div>
+            </div>
+          )}
+          {stockError && (
+            <div ref={stockErrorRef} className="flex items-start gap-3 px-4 py-3.5 rounded-xl border border-[#E00000]/30 bg-[#E00000]/5">
+              <AlertCircle size={15} className="text-[#E00000] flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-sm text-red-800">Out of Stock</p>
+                <p className="text-xs text-[#E00000] mt-0.5">{stockError}</p>
               </div>
             </div>
           )}
@@ -266,9 +361,10 @@ export const DealerForm = ({
             </button>
 
             <button type="submit"
+              disabled={stockLoading}
               className="flex items-center gap-2 bg-[#E00000] hover:bg-[#B70000] disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-semibold h-11 px-8 rounded-xl transition-colors group">
-              Continue
-              <ArrowRight size={16} strokeWidth={2} className="group-hover:translate-x-0.5 transition-transform" />
+              {stockLoading ? 'Checking stock…' : 'Continue'}
+              {!stockLoading && <ArrowRight size={16} strokeWidth={2} className="group-hover:translate-x-0.5 transition-transform" />}
             </button>
           </div>
         </form>

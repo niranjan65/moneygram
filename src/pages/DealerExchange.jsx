@@ -328,6 +328,7 @@ useEffect(() => saveToSession('dealerSummary', summary), [summary]);
           full_name: transferPayload.fullName,
           date_of_birth: transferPayload.dateOfBirth,
           customer_name_and_dob: `${transferPayload.fullName.toLowerCase()}_${transferPayload.dateOfBirth}`,
+          oet_code: transferPayload.oet_code,
 
           local_amount: localAmount,
           local_currency_type: transferPayload.localCurrency,
@@ -361,7 +362,7 @@ useEffect(() => saveToSession('dealerSummary', summary), [summary]);
       setTransactionId(txId);
 
       const response = await fetch(
-        "https://mhmoneyexpress.anantdv.com/api/method/moneygram.moneygram.api.create_dealer_exchange.create_dealer_exchange",
+        "http://192.168.101.182:81/api/method/moneygram.moneygram.api.create_dealer_exchange.create_dealer_exchange",
         {
           method: "POST",
           headers: {
@@ -378,7 +379,7 @@ useEffect(() => saveToSession('dealerSummary', summary), [summary]);
       console.log("API Success:", result);
 
 
-      const createdDoc = result?.message || result?.data || result;
+      const createdDoc = result?.message?.data || result?.data || result;
       setApiResponseDoc(createdDoc); 
       setCurrentStep(Step.PAYMENT);
 
@@ -407,6 +408,7 @@ useEffect(() => saveToSession('dealerSummary', summary), [summary]);
           onEdit={handleEditFromReview}
           onCancel={handleCancel}
           onConfirm={handleConfirm}
+          isDealer={true}
         />
       );
     }
@@ -471,7 +473,7 @@ useEffect(() => saveToSession('dealerSummary', summary), [summary]);
 
               {currentStep !== Step.PAYMENT && (
                 <div className="lg:col-span-4 relative">
-                  <Summary transferPayload={summaryChange} />
+                  <Summary transferPayload={summaryChange} isDealer={true} />
                 </div>
               )}
 

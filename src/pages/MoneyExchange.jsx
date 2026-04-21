@@ -427,6 +427,7 @@ const MoneyExchange = () => {
           id_issue_stateprovince: transferPayload.idIssueState,
           id_issue_country: transferPayload.idIssueCountry,
           ticket: transferPayload.ticket,
+          oet_code: transferPayload.oet_code,
           ...idDocumentField,
 
 
@@ -441,7 +442,7 @@ const MoneyExchange = () => {
           balanced: 0,
 
           exchange_rate: transferPayload.exchangeRate,
-          exchangeType: transferPayload.exchangeType,
+          exchangeType: transferPayload.exchangeType === 'BUY' ? 'SELL' : 'BUY',
           transfer_fee: summary.fee,
           send_amount: transferPayload.sendAmount,
           total_amount: transferPayload.sendAmount + summary.fee,
@@ -468,7 +469,7 @@ const MoneyExchange = () => {
 
 
       const response = await fetch(
-        "https://mhmoneyexpress.anantdv.com/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
+        "http://192.168.101.182:81/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
         {
           method: "POST",
           headers: {
@@ -485,7 +486,7 @@ const MoneyExchange = () => {
       console.log("API Success:", result);
 
 
-      const createdDoc = result?.message || result?.data || result;
+      const createdDoc = result?.message?.data || result?.data || result;
       setApiResponseDoc(createdDoc);
 
 

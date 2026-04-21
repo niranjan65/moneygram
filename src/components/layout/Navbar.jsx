@@ -156,8 +156,8 @@ export default function Navbar() {
     { label: "Money Transfer", href: "/money-transfer" },
     { label: "Currency Exchange", href: "/exchange" },
     { label: "Dealer Exchange", href: "/dealer-exchange" },
-    { label: "Stocks", href: "/stocks" },
-    // { label: "Report", href: "/report" },
+    // { label: "Stocks", href: "/stocks" },
+    { label: "Report", href: "/report" },
     { label: "Settings", href: "/settings" },
   ];
 

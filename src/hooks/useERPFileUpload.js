@@ -46,7 +46,7 @@ export const useERPFileUpload = () => {
       formData.append("is_private", isPrivate);
 
       const response = await fetch(
-        "https://mhmoneyexpress.anantdv.com/api/method/upload_file",
+        "http://192.168.101.182:81/api/method/upload_file",
         {
           method: "POST",
           headers: {
