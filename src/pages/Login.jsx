@@ -5,7 +5,7 @@ import mhlogo from "../assets/mhlogo.png";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 
-const ERPNEXT_BASE_URL = "https://mhmoneyexpress.anantdv.com";
+const ERPNEXT_BASE_URL = "http://192.168.101.182:81";
 
 import { useUser } from "../context/UserContext";
 
@@ -104,7 +104,7 @@ export default function Login() {
 
         if (loginResult?.data?.message?.user_type === "Admin") {
           // navigate("/app")
-          window.location.href = `https://mhmoneyexpress.anantdv.com/app`;
+          window.location.href = `http://192.168.101.182:81/app`;
         } else {
           navigate("/home");
         }

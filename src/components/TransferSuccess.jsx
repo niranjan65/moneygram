@@ -630,7 +630,7 @@ export const TransferSuccess = ({
 
   const getInvoiceData = async (invoice_id) => {
     try {
-      const response = await axios.get(`https://mhmoneyexpress.anantdv.com/api/resource/Sales%20Invoice/${invoice_id}`, {
+      const response = await axios.get(`http://192.168.101.182:81/api/resource/Sales%20Invoice/${invoice_id}`, {
         headers: {
           Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
         },

@@ -114,7 +114,7 @@ function TransactionsTab({ warehouse, loginUser }) {
     setLoading(true);
     try {
       const res = await axios.post(
-        "https://mhmoneyexpress.anantdv.com/api/method/moneygram.moneygram.api.get_transactions.get_all_transactions",
+        "http://192.168.101.182:81/api/method/moneygram.moneygram.api.get_transactions.get_all_transactions",
         { 
             //  from_date: "2026-04-01",
 //   to_date: "2026-04-08",
@@ -269,8 +269,11 @@ function DayEndClosingTab({ warehouse, loginUser }) {
     setLoading(true);
     try {
       const res = await axios.post(
-        "https://mhmoneyexpress.anantdv.com/api/method/moneygram.moneygram.api.get_day_end.get_report",
-        { warehouse: warehouse?.warehouse, date },
+        "http://192.168.101.182:81/api/method/frappe.desk.query_report.run",
+        { report_name: "MH Day End Report",
+          filters: {"company":"MH Money Express","from_date":"2026-04-14","to_date":"2026-04-14"}
+
+         },
         {
           headers: {
             "Content-Type": "application/json",
@@ -336,59 +339,34 @@ function DayEndClosingTab({ warehouse, loginUser }) {
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="border-b border-gray-100">
-                  <th className="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400">Metric</th>
-                  <th className="px-5 py-3 text-right text-[11px] font-bold uppercase tracking-widest text-gray-400">Value</th>
-                  <th className="px-5 py-3 text-right text-[11px] font-bold uppercase tracking-widest text-gray-400">Note</th>
+                  {
+                    report?.columns?.map((col) => (
+                      <th key={col.fieldname} className="px-5 py-3 text-right text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                        {col.label}
+                      </th>
+                    ))
+                  }
                 </tr>
               </thead>
               <tbody>
-                <DayEndRow label="Total Invoices"        value={report.total_invoices}                                                                           />
-                <DayEndRow label="Total Grand Total"     value={report.total_grand_total?.toLocaleString(undefined, { minimumFractionDigits: 2 })}               />
-                <DayEndRow label="Total Paid"            value={report.total_paid?.toLocaleString(undefined, { minimumFractionDigits: 2 })}     highlight         />
-                <DayEndRow label="Total Outstanding"     value={report.total_outstanding?.toLocaleString(undefined, { minimumFractionDigits: 2 })} sub="Unpaid"  />
-                <DayEndRow label="Cash Collections"      value={report.cash_collections?.toLocaleString(undefined, { minimumFractionDigits: 2 })}               />
-                <DayEndRow label="Opening Balance"       value={report.opening_balance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}                />
-                <DayEndRow label="Closing Balance"       value={report.closing_balance?.toLocaleString(undefined, { minimumFractionDigits: 2 })} highlight       />
-                {/* Fallback: render any other keys returned */}
-                {Object.entries(report)
-                  .filter(([k]) => !["total_invoices","total_grand_total","total_paid","total_outstanding","cash_collections","opening_balance","closing_balance","transactions"].includes(k))
-                  .map(([k, v]) => (
-                    <DayEndRow key={k} label={k.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())} value={typeof v === "number" ? v.toLocaleString() : String(v)} />
-                  ))}
+                
+                {
+                  report?.result?.map((row, idx) => (
+                    <tr key={idx} className={`border-b border-gray-100 ${idx % 2 === 1 ? "bg-gray-50/40" : "bg-white"}`}>
+                      {report.columns.map((col) => (
+                        <td key={col.fieldname} className="px-5 py-3 text-right text-sm">
+                          {row[col.fieldname] ?? "-"}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+
+                }
               </tbody>
             </table>
           </div>
 
-          {/* Transactions breakdown if nested */}
-          {Array.isArray(report.transactions) && report.transactions.length > 0 && (
-            <div className="rounded-2xl border border-gray-200 overflow-x-auto md:col-span-2">
-              <div className="bg-gray-50 border-b border-gray-200 px-5 py-3">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-[#E00000]">Transaction Breakdown</p>
-              </div>
-              <table className="w-full text-sm border-collapse min-w-[700px]">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    {["#", "Name", "Customer", "Grand Total", "Paid", "Outstanding", "Status"].map((h) => (
-                      <th key={h} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-400">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.transactions.map((row, idx) => (
-                    <tr key={row.name} className={`border-b border-gray-100 hover:bg-gray-50 ${idx % 2 === 1 ? "bg-gray-50/40" : "bg-white"}`}>
-                      <td className="px-4 py-3 text-xs text-gray-300">{idx + 1}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-700">{row.name}</td>
-                      <td className="px-4 py-3 text-gray-800">{row.customer ?? "—"}</td>
-                      <td className="px-4 py-3 text-right"><AmtCell value={row.grand_total} /></td>
-                      <td className="px-4 py-3 text-right"><AmtCell value={row.paid_amount} /></td>
-                      <td className="px-4 py-3 text-right"><AmtCell value={row.outstanding_amount} /></td>
-                      <td className="px-4 py-3"><StatusBadge status={row.status} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          
         </div>
       )}
     </div>
@@ -436,7 +414,7 @@ function StockTab({ warehouse, loginUser }) {
     try {
       const res = await axios.request({
         method: "POST",
-        url: "https://mhmoneyexpress.anantdv.com/api/method/moneygram.moneygram.api.get_denomination.get_all_countries_stock",
+        url: "http://192.168.101.182:81/api/method/moneygram.moneygram.api.get_denomination.get_all_countries_stock",
         headers: {
           "Content-Type": "application/json",
           Authorization: `token ${loginUser.user.api_key}:${loginUser.user.api_secret}`,

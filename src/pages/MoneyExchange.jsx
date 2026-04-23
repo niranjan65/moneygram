@@ -469,7 +469,7 @@ const MoneyExchange = () => {
 
 
       const response = await fetch(
-        "https://mhmoneyexpress.anantdv.com/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
+        "http://192.168.101.182:81/api/method/moneygram.moneygram.api.create_currency_exchange.create_currency_exchange",
         {
           method: "POST",
           headers: {

@@ -61,7 +61,7 @@ export const useCustomer = () => {
       if (customer.image) {
         const url = customer.image.startsWith('http') 
           ? customer.image 
-          : `https://mhmoneyexpress.anantdv.com${customer.image}`;
+          : `http://192.168.101.182:81${customer.image}`;
           
         setPreviewUrl(url);
         setPreviewFile(null);
