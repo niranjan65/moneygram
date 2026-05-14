@@ -30,7 +30,7 @@ function App() {
   // }, []);
   useEffect(() => {
     if (location.pathname === "/") {
-      window.location.href = `http://192.168.101.182:81/home`;
+      // window.location.href = `http://192.168.101.182:81/home`;
     }
   }, [])
 

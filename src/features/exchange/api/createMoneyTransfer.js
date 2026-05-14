@@ -2,7 +2,7 @@
 import { getBaseURL, getHeaders, ERP_ENV } from "../config/erpConfig";
 
 // 👉 Always use DEMO for Money Transfer (as per your setup)
-const MONEY_TRANSFER_ENV = ERP_ENV.DEMO;
+const MONEY_TRANSFER_BASE_ENV = ERP_ENV.DEMO;
 
 export const createMoneyTransfer = async (
   form,
@@ -11,10 +11,16 @@ export const createMoneyTransfer = async (
   documentUrl
 ) => {
   try {
-    const baseURL = getBaseURL(MONEY_TRANSFER_ENV);
-    const headers = getHeaders(loginUser, MONEY_TRANSFER_ENV);
+    const baseURL = getBaseURL(MONEY_TRANSFER_BASE_ENV);
+    const headers = getHeaders(loginUser, ERP_ENV.PROD); // use loginUser credentials the same way fetchMeta does
 
-   const payload = {
+    console.log("Creating Money Transfer using loginUser:", {
+      api_key: loginUser?.api_key,
+      api_secret: loginUser?.api_secret,
+      headers,
+    });
+
+    const payload = {
   doctype: "Money Transfer",
 
   customer_id: customerId,

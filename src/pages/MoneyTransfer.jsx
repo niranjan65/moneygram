@@ -19,6 +19,8 @@ const MoneyTransfer = () => {
   const loginUser =  user ;
   const [metaFields, setMetaFields] = useState([]);
   const [form, setForm] = useState({});
+
+  console.log("Current User:", loginUser);
   
 
 const usableFields = metaFields.filter(
@@ -45,7 +47,8 @@ const usableFields = metaFields.filter(
   const fetchMeta = async () => {
   try {
     const baseURL = getBaseURL(ERP_ENV.DEMO);
-    const headers = getHeaders(loginUser, ERP_ENV.DEMO);
+    // const headers = getHeaders(loginUser.api_key, loginUser.api_secret);
+    const headers = getHeaders(loginUser, ERP_ENV.PROD);
 
     const url = `${baseURL}/api/resource/DocType/${encodeURIComponent("Money Transfer")}`;
 
@@ -150,19 +153,27 @@ useEffect(() => {
 
        setForm((prev) => ({
   ...prev,
-  full_name: customer.custom_full_name || prev.full_name,
-  dob: customer.custom_date_of_birth || prev.dob,
-  passport_number: customer.custom_passport_number || "",
-  document_upload: customer.custom_government_document || "",
+  full_name: customer.custom_full_name || customer.full_name || prev.full_name,
+  custom_full_name: customer.custom_full_name || customer.full_name || "",
+  dob: customer.custom_date_of_birth || customer.dob || prev.dob,
+  custom_date_of_birth: customer.custom_date_of_birth || customer.dob || "",
+  passport_number: customer.custom_passport_number || customer.passport_number || "",
+  custom_passport_number: customer.custom_passport_number || customer.passport_number || "",
+  document_upload:
+    customer.custom_government_document || customer.document_upload || "",
+  custom_government_document: customer.custom_government_document || "",
 
-  government_id_type: customer.custom_government_id || "",
+  government_id_type: customer.custom_government_id || customer.government_id_type || "",
+  custom_government_id: customer.custom_government_id || customer.government_id_type || "",
 
-  // ✅ MAP BACK TO SINGLE FIELD
   government_id_number:
-    customer.custom_drivers_license_number ||
+    customer.custom_drivers_licence_number ||
     customer.custom_tin_number ||
     customer.custom_voter_id_number ||
-    "",
+    prev.government_id_number || "",
+  custom_drivers_licence_number: customer.custom_drivers_licence_number || "",
+  custom_tin_number: customer.custom_tin_number || "",
+  custom_voter_id_number: customer.custom_voter_id_number || "",
 
   document_type: customer.custom_passport_number
     ? "Passport"
@@ -187,12 +198,14 @@ const handleSubmit = async () => {
   try {
     let documentUrl = "";
 
-if (form.document_upload instanceof File) {
-  documentUrl = await uploadFile(form.document_upload, { isPrivate: 1 });
-}
+    if (form.document_upload instanceof File) {
+      documentUrl = await uploadFile(form.document_upload, { isPrivate: 1 });
+    }
+
+    console.log("Using loginUser for createCustomer:", loginUser);
 
     // ✅ Create / Fetch Customer
-    const customer = await createCustomer(form, documentUrl);
+    const customer = await createCustomer(form, documentUrl, loginUser);
     const customerId = customer.name;
 
     // ✅ Create Transaction
@@ -373,7 +386,7 @@ const renderField = (field) => {
             className="mt-10 w-full bg-[#E00000] hover:opacity-90 text-white rounded-2xl py-4 font-black transition"
           >
             Submit Transfer
-          </button>
+          </button> 
         </div>
       </div>
     </main>
