@@ -11,6 +11,8 @@ import "react-datepicker/dist/react-datepicker.css";
 import { ArrowUpRight, ArrowDownLeft, ArrowLeftRight, CheckCircle2 } from "lucide-react";
 import { createMoneyTransfer } from "../features/exchange/api/createMoneyTransfer";
 import TransferAmountSection from "../features/exchange/components/TransferAmountSection";
+import { DenominationPanel } from "../features/exchange/components/sections/DenominationPanel";
+import { useBaseCurrency } from "../hooks/useDenomination";
 import { getBaseURL, getHeaders, ERP_ENV } from "../features/exchange/config/erpConfig";
 
 const MoneyTransfer = () => {
@@ -19,8 +21,12 @@ const MoneyTransfer = () => {
   const loginUser =  user ;
   const [metaFields, setMetaFields] = useState([]);
   const [form, setForm] = useState({});
+  const [currencyDenominationRows, setCurrencyDenominationRows] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successInfo, setSuccessInfo] = useState(null);
+  const { data: baseCurrencyData, loading: baseDenomLoading, error: baseDenomError } = useBaseCurrency();
 
-  console.log("Current User:", loginUser);
+  // console.log("Current User:", loginUser);
   
 
 const usableFields = metaFields.filter(
@@ -89,15 +95,17 @@ const usableFields = metaFields.filter(
   fetchMeta();
 }, [loginUser]);
 
+
+
 useEffect(() => {
-  const amount = parseFloat(form.sending_amount || 0);
+  const amount = parseFloat(form.amount || 0);
   const fee = parseFloat(form.transfer_fee || 0);
 
   setForm(prev => ({
     ...prev,
     total_amount: amount + fee
   }));
-}, [form.sending_amount, form.transfer_fee]);
+}, [form.amount, form.transfer_fee]);
 
 const getOptions = (fieldname) => {
   const field = metaFields.find(f => f.fieldname === fieldname);
@@ -195,6 +203,9 @@ useEffect(() => {
  
 
 const handleSubmit = async () => {
+  setIsSubmitting(true);
+  setSuccessInfo(null);
+
   try {
     let documentUrl = "";
 
@@ -203,26 +214,37 @@ const handleSubmit = async () => {
     }
 
     console.log("Using loginUser for createCustomer:", loginUser);
+    console.log("Currency Denomination Rows:", currencyDenominationRows);
 
-    // ✅ Create / Fetch Customer
+    // Create / Fetch Customer
     const customer = await createCustomer(form, documentUrl, loginUser);
     const customerId = customer.name;
 
-    // ✅ Create Transaction
+    // Create Transaction
     const transfer = await createMoneyTransfer(
       form,
       customerId,
       loginUser,
-      documentUrl
+      documentUrl,
+      currencyDenominationRows
     );
 
-    alert(`✅ Success!
-Customer: ${customerId}
-Transaction: ${transfer.name}`);
- resetForm();
+    // Premium success info (rendered in-page)
+    setSuccessInfo({
+      customer: customerId,
+      transaction: transfer.name,
+      amount: Number(form.amount || 0),
+      message: `Your transfer of ${Number(form.amount || 0)} has been securely processed. Your transaction ${transfer.name} is confirmed `,
+    });
+
+    resetForm();
+    setCurrencyDenominationRows([]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (err) {
     console.error(err);
     alert(err.message || "Error processing");
+  } finally {
+    setIsSubmitting(false);
   }
 };
 const shouldShowField = (field) => {
@@ -376,17 +398,97 @@ const renderField = (field) => {
         {/* FORM CARD */}
         <div className="rounded-3xl border border-gray-100 bg-white shadow-[0_10px_40px_rgba(0,0,0,0.06)] p-8 sm:p-10">
 
+          {successInfo && (
+            <div className="mb-6 rounded-2xl border border-green-100 bg-gradient-to-r from-white to-green-50 p-6 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="text-green-600 text-3xl">✓</div>
+                <div className="flex-1">
+                  <h2 className="text-lg font-extrabold text-gray-800">Transfer Complete</h2>
+                  <p className="text-sm text-gray-600 mt-1">{successInfo.message}</p>
+                  <p className="mt-3 text-sm text-gray-700">
+                    <strong>Customer:</strong> {successInfo.customer} &nbsp;•&nbsp; <strong>Transaction:</strong> {successInfo.transaction}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSuccessInfo(null)}
+                  className="text-sm text-gray-500 hover:text-gray-700"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="grid md:grid-cols-2 gap-6">
   {usableFields.map((field) => renderField(field))}
 </div>
 
+          {/* CURRENCY DENOMINATION PANEL */}
+          <div className="mt-8 col-span-2">
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-gray-700">
+                Currency Denomination
+              </h3>
+            </div>
+
+            {baseDenomLoading ? (
+              <div className="rounded-3xl border border-gray-200 bg-white p-8 text-center text-gray-500">
+                Loading denomination panel...
+              </div>
+            ) : baseDenomError ? (
+              <div className="rounded-3xl border border-red-200 bg-red-50 p-8 text-center text-red-600">
+                {baseDenomError}
+              </div>
+            ) : baseCurrencyData ? (
+              <DenominationPanel
+                title="Local FJD Denomination"
+                subtitle="Enter note counts for Fiji Dollars"
+                flag={baseCurrencyData.flag}
+                symbol={baseCurrencyData.symbol}
+                currency={baseCurrencyData.currency}
+                notes={baseCurrencyData.notes}
+                coins={baseCurrencyData.coins}
+                targetAmount={parseFloat(form.amount || 0)}
+               onRowsChange={(rows) => {
+  setCurrencyDenominationRows(
+    rows
+      .filter((row) => row.count > 0)
+      .map((row) => ({
+        // Must match ERPNext Item Code exactly
+        denomination: `FJD $${row.denom}`,
+
+        qty: Number(row.count),
+        amount: Number(row.denom) * Number(row.count),
+      }))
+  );
+}}
+                accentColor="#E00000"
+              />
+            ) : (
+              <div className="rounded-3xl border border-gray-200 bg-white p-8 text-center text-gray-500">
+                Fiji denomination data is not available.
+              </div>
+            )}
+          </div>
+
           {/* BUTTON */}
           <button
             onClick={handleSubmit}
-            className="mt-10 w-full bg-[#E00000] hover:opacity-90 text-white rounded-2xl py-4 font-black transition"
+            disabled={isSubmitting}
+            className={`mt-10 w-full bg-[#E00000] ${isSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:opacity-90'} text-white rounded-2xl py-4 font-black transition`}
           >
-            Submit Transfer
-          </button> 
+            {isSubmitting ? (
+              <span className="flex items-center justify-center gap-3">
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                Processing Transfer...
+              </span>
+            ) : (
+              'Submit Transfer'
+            )}
+          </button>
         </div>
       </div>
     </main>
