@@ -73,7 +73,7 @@ export default function Stocks() {
 
       const options = {
         method: 'POST',
-        url: 'http://192.168.101.182:81/api/method/moneygram.moneygram.api.get_denomination.get_all_countries_stock',
+        url: 'http://182.71.135.110:82/api/method/moneygram.moneygram.api.get_denomination.get_all_countries_stock',
         headers: {
           "Content-Type": "application/json",
           Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,

@@ -38,9 +38,22 @@ export const createMoneyTransfer = async (
         };
       });
 
+    const enableCurrencyDenomination =
+      form.enable_currency_denomination === 1 ||
+      form.enable_currency_denomination === "1" ||
+      form.enable_currency_denomination === true
+        ? 1
+        : 0;
+console.log(
+  "Enable Currency Denomination:",
+  form.enable_currency_denomination,
+  "=> Sent as:",
+  enableCurrencyDenomination
+);
     // Main payload
     const payload = {
       doctype: "Money Transfer",
+      enable_currency_denomination: enableCurrencyDenomination,
 
       customer_id: customerId,
       full_name: form.full_name,
@@ -56,9 +69,7 @@ export const createMoneyTransfer = async (
       transaction_id: form.transaction_id,
 
       amount: form.amount ? Number(form.amount) : 0,
-
-      // Child table fieldname in Money Transfer DocType
-      currency_denomination: currencyDenomination,
+      currency_denomination: enableCurrencyDenomination ? currencyDenomination : [],
     };
 
     console.log(

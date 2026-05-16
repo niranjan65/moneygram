@@ -114,7 +114,7 @@ function TransactionsTab({ warehouse, loginUser }) {
     setLoading(true);
     try {
       const res = await axios.post(
-        "http://192.168.101.182:81/api/method/moneygram.moneygram.api.get_transactions.get_all_transactions",
+        "http://182.71.135.110:82/api/method/moneygram.moneygram.api.get_transactions.get_all_transactions",
         { 
             //  from_date: "2026-04-01",
 //   to_date: "2026-04-08",
@@ -269,7 +269,7 @@ function DayEndClosingTab({ warehouse, loginUser }) {
     setLoading(true);
     try {
       const res = await axios.post(
-        "http://192.168.101.182:81/api/method/frappe.desk.query_report.run",
+        "http://182.71.135.110:82/api/method/frappe.desk.query_report.run",
         { report_name: "MH Day End Report",
           filters: {"company":"MH Money Express","from_date":"2026-04-14","to_date":"2026-04-14"}
 
@@ -414,7 +414,7 @@ function StockTab({ warehouse, loginUser }) {
     try {
       const res = await axios.request({
         method: "POST",
-        url: "http://192.168.101.182:81/api/method/moneygram.moneygram.api.get_denomination.get_all_countries_stock",
+        url: "http://182.71.135.110:82/api/method/moneygram.moneygram.api.get_denomination.get_all_countries_stock",
         headers: {
           "Content-Type": "application/json",
           Authorization: `token ${loginUser.user.api_key}:${loginUser.user.api_secret}`,

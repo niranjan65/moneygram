@@ -1,5 +1,5 @@
 //MoneyTransfer.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import { useERPFileUpload } from "../hooks/useERPFileUpload";
@@ -14,11 +14,12 @@ import TransferAmountSection from "../features/exchange/components/TransferAmoun
 import { DenominationPanel } from "../features/exchange/components/sections/DenominationPanel";
 import { useBaseCurrency } from "../hooks/useDenomination";
 import { getBaseURL, getHeaders, ERP_ENV } from "../features/exchange/config/erpConfig";
+import { useSettings } from "../context/SettingsContext";
+import { validateStockAvailability } from "../hooks/useStockValidation";
 
 const MoneyTransfer = () => {
   const { uploadFile } = useERPFileUpload();
-  const { user } = useUser();
-  const loginUser =  user ;
+  const loginUser = useUser();
   const [metaFields, setMetaFields] = useState([]);
   const [form, setForm] = useState({});
   const [currencyDenominationRows, setCurrencyDenominationRows] = useState([]);
@@ -27,8 +28,174 @@ const MoneyTransfer = () => {
   const { data: baseCurrencyData, loading: baseDenomLoading, error: baseDenomError } = useBaseCurrency();
 
   // console.log("Current User:", loginUser);
-  
+ const settings = useSettings();
+const selectedWarehouse =
+  settings?.selectedWarehouse ||
+  (settings?.warehouses?.length > 0 ? settings.warehouses[0] : null);
 
+// Stock validation states
+const [stockError, setStockError] = useState("");
+const [stockLoading, setStockLoading] = useState(false);
+
+const handleDenominationRowsChange = useCallback((rows) => {
+  setCurrencyDenominationRows(
+    rows
+      .filter((row) => row.count > 0)
+      .map((row) => {
+        const denom = Number(row.denom);
+        const itemCode = denom >= 1
+          ? `FJD $${denom}`
+          : `FJD ${Math.round(denom * 100)}c`;
+
+        return {
+          denomination: itemCode,
+          qty: Number(row.count),
+          amount: denom * Number(row.count),
+        };
+      })
+  );
+}, []);
+
+useEffect(() => {
+  console.log("⚙️ Settings Context:", settings);
+  console.log("🏬 Selected Warehouse from Context:", settings?.selectedWarehouse);
+  console.log(
+    "💾 selected_warehouse from localStorage:",
+    localStorage.getItem("selected_warehouse")
+  );
+}, [settings]);
+
+const runStockCheck = async () => {
+  // -----------------------------------------
+  // 1. Get warehouse from Settings Context
+  // -----------------------------------------
+  let warehouseObj = selectedWarehouse;
+
+  // -----------------------------------------
+  // 2. Fallback to localStorage if context is not yet loaded
+  // -----------------------------------------
+  if (!warehouseObj) {
+    try {
+      const stored = localStorage.getItem("selected_warehouse");
+
+      if (stored) {
+        warehouseObj = JSON.parse(stored);
+        console.log("💾 Loaded warehouse from localStorage:", warehouseObj);
+      }
+    } catch (err) {
+      console.error("❌ Failed to parse selected_warehouse:", err);
+    }
+  }
+
+  // -----------------------------------------
+  // 3. Resolve warehouse name
+  // Supports:
+  // - { warehouse: "Main Branch - MG" }
+  // - { name: "Main Branch - MG" }
+  // - { label: "Main Branch - MG" }
+  // - "Main Branch - MG"
+  // -----------------------------------------
+  const warehouseName =
+    warehouseObj?.warehouse ||
+    warehouseObj?.name ||
+    warehouseObj?.label ||
+    (typeof warehouseObj === "string" ? warehouseObj : "") ||
+    "";
+
+  console.log("🏬 Selected Warehouse Object:", warehouseObj);
+  console.log("🏬 Resolved Warehouse Name:", warehouseName);
+  console.log("💰 Currency Denomination Rows:", currencyDenominationRows);
+
+  // -----------------------------------------
+  // 4. Warehouse is mandatory
+  // -----------------------------------------
+  if (!warehouseName) {
+    console.error("❌ No warehouse selected in Settings.");
+
+    setStockError(
+      "No warehouse is selected. Please select a warehouse before submitting."
+    );
+
+    return false;
+  }
+
+  // -----------------------------------------
+  // 5. If no denomination rows, skip validation
+  // -----------------------------------------
+  if (!currencyDenominationRows.length) {
+    console.log("ℹ️ No denomination rows entered. Stock validation skipped.");
+    setStockError("");
+    return true;
+  }
+
+  // -----------------------------------------
+  // 6. Prepare items array exactly as required
+  // validateStockAvailability(items, warehouse, loginUser)
+  // -----------------------------------------
+  const items = currencyDenominationRows.map((row) => ({
+    item_code: row.denomination,
+    requested_qty: Number(row.qty || 0),
+  }));
+
+  console.log("📤 Sending Stock Validation Request:");
+  console.table(items);
+
+  setStockLoading(true);
+
+  try {
+    // IMPORTANT:
+    // validateStockAvailability expects:
+    // 1. items      -> array
+    // 2. warehouse  -> string
+    // 3. loginUser  -> actual loginUser object (NOT { user })
+    const result = await validateStockAvailability(
+      items,
+      warehouseName,
+      loginUser
+    );
+
+    console.log("📥 Stock Validation Response:", result);
+
+    const { outOfStock = [], qtyMap = {} } = result;
+
+    // Log stock availability for each denomination
+    items.forEach((item) => {
+      const availableQty = qtyMap[item.item_code] ?? 0;
+
+      console.log(
+        `📦 ${item.item_code}: Requested ${item.requested_qty}, Available ${availableQty}`
+      );
+    });
+
+    // If any item is out of stock, block submission
+    if (outOfStock.length > 0) {
+      console.warn("❌ Out of Stock Items:", outOfStock);
+
+      setStockError(
+        `Insufficient stock available in ${warehouseName} for: ${outOfStock.join(
+          ", "
+        )}`
+      );
+
+      return false;
+    }
+
+    // Success
+    console.log("✅ All selected denominations have sufficient stock.");
+    setStockError("");
+    return true;
+  } catch (err) {
+    console.error("❌ Stock validation failed:", err);
+
+    setStockError(
+      err.message || "Unable to validate stock. Please try again."
+    );
+
+    return false;
+  } finally {
+    setStockLoading(false);
+  }
+};
 const usableFields = metaFields.filter(
   (f) =>
     !f.hidden &&
@@ -200,7 +367,11 @@ useEffect(() => {
   const delay = setTimeout(fetchCustomer, 500);
   return () => clearTimeout(delay);
 }, [form.full_name, form.dob]);
- 
+
+// Replace your existing warehouse extraction logic in MoneyTransfer.jsx
+// inside runStockCheck() with the following:
+
+
 
 const handleSubmit = async () => {
   setIsSubmitting(true);
@@ -216,6 +387,25 @@ const handleSubmit = async () => {
     console.log("Using loginUser for createCustomer:", loginUser);
     console.log("Currency Denomination Rows:", currencyDenominationRows);
 
+    // If the user disables denomination, make sure rows are cleared before submitting.
+    const denominationsEnabled =
+      form.enable_currency_denomination === 1 ||
+      form.enable_currency_denomination === "1" ||
+      form.enable_currency_denomination === true;
+
+    // const rowsToSubmit = denominationsEnabled ? currencyDenominationRows : [];
+    const rowsToSubmit = denominationsEnabled ? currencyDenominationRows : [];
+
+// Run stock validation only when denomination is enabled
+if (denominationsEnabled && rowsToSubmit.length > 0) {
+  const stockOk = await runStockCheck();
+
+  if (!stockOk) {
+    setIsSubmitting(false);
+    return; // Stop submission if stock is insufficient
+  }
+}
+
     // Create / Fetch Customer
     const customer = await createCustomer(form, documentUrl, loginUser);
     const customerId = customer.name;
@@ -226,7 +416,7 @@ const handleSubmit = async () => {
       customerId,
       loginUser,
       documentUrl,
-      currencyDenominationRows
+      rowsToSubmit
     );
 
     // Premium success info (rendered in-page)
@@ -247,6 +437,18 @@ const handleSubmit = async () => {
     setIsSubmitting(false);
   }
 };
+
+useEffect(() => {
+  const denominationsEnabled =
+    form.enable_currency_denomination === 1 ||
+    form.enable_currency_denomination === "1" ||
+    form.enable_currency_denomination === true;
+
+  if (!denominationsEnabled && currencyDenominationRows.length > 0) {
+    setCurrencyDenominationRows([]);
+  }
+}, [form.enable_currency_denomination]);
+
 const shouldShowField = (field) => {
   if (!field.depends_on) return true;
 
@@ -280,6 +482,28 @@ const renderField = (field) => {
         <div key={field.fieldname}>
           <label className={labelStyle}>{field.label}</label>
           <input {...commonProps} />
+        </div>
+      );
+
+    case "Check":
+      return (
+        <div key={field.fieldname} className="col-span-2 flex items-center gap-3 py-1">
+          <input
+            id={field.fieldname}
+            type="checkbox"
+            className="h-4 w-4 rounded border-gray-300 text-[#E00000] focus:ring-[#E00000]"
+            checked={
+              form[field.fieldname] === 1 ||
+              form[field.fieldname] === "1" ||
+              form[field.fieldname] === true
+            }
+            onChange={(e) =>
+              handleChange(field.fieldname, e.target.checked ? 1 : 0)
+            }
+          />
+          <label htmlFor={field.fieldname} className="text-sm font-semibold text-gray-700">
+            {field.label}
+          </label>
         </div>
       );
 
@@ -377,7 +601,7 @@ const renderField = (field) => {
   <div className="min-h-screen flex flex-col bg-gray-50">
     <Navbar />
 
-    <main className="flex-grow py-10 px-4 sm:px-6 lg:px-12">
+    <main className="grow py-10 px-4 sm:px-6 lg:px-12">
       <div className="max-w-6xl mx-auto flex flex-col gap-10">
      
 
@@ -399,7 +623,7 @@ const renderField = (field) => {
         <div className="rounded-3xl border border-gray-100 bg-white shadow-[0_10px_40px_rgba(0,0,0,0.06)] p-8 sm:p-10">
 
           {successInfo && (
-            <div className="mb-6 rounded-2xl border border-green-100 bg-gradient-to-r from-white to-green-50 p-6 shadow-sm">
+            <div className="mb-6 rounded-2xl border border-green-100 bg-linear-to-r from-white to-green-50 p-6 shadow-sm">
               <div className="flex items-start gap-4">
                 <div className="text-green-600 text-3xl">✓</div>
                 <div className="flex-1">
@@ -424,58 +648,58 @@ const renderField = (field) => {
 </div>
 
           {/* CURRENCY DENOMINATION PANEL */}
-          <div className="mt-8 col-span-2">
-            <div className="mb-4">
-              <h3 className="text-lg font-bold text-gray-700">
-                Currency Denomination
-              </h3>
-            </div>
+          
+{form.enable_currency_denomination === 1 ||
+ form.enable_currency_denomination === "1" ||
+ form.enable_currency_denomination === true ? (
+  <div className="mt-8 col-span-2">
+    <div className="mb-4">
+      <h3 className="text-lg font-bold text-gray-700">
+        Currency Denomination
+      </h3>
+    </div>
 
-            {baseDenomLoading ? (
-              <div className="rounded-3xl border border-gray-200 bg-white p-8 text-center text-gray-500">
-                Loading denomination panel...
-              </div>
-            ) : baseDenomError ? (
-              <div className="rounded-3xl border border-red-200 bg-red-50 p-8 text-center text-red-600">
-                {baseDenomError}
-              </div>
-            ) : baseCurrencyData ? (
-              <DenominationPanel
-                title="Local FJD Denomination"
-                subtitle="Enter note counts for Fiji Dollars"
-                flag={baseCurrencyData.flag}
-                symbol={baseCurrencyData.symbol}
-                currency={baseCurrencyData.currency}
-                notes={baseCurrencyData.notes}
-                coins={baseCurrencyData.coins}
-                targetAmount={parseFloat(form.amount || 0)}
-               onRowsChange={(rows) => {
-  setCurrencyDenominationRows(
-    rows
-      .filter((row) => row.count > 0)
-      .map((row) => ({
-        // Must match ERPNext Item Code exactly
-        denomination: `FJD $${row.denom}`,
+    {baseDenomLoading ? (
+      <div className="rounded-3xl border border-gray-200 bg-white p-8 text-center text-gray-500">
+        Loading denomination panel...
+      </div>
+    ) : baseDenomError ? (
+      <div className="rounded-3xl border border-red-200 bg-red-50 p-8 text-center text-red-600">
+        {baseDenomError}
+      </div>
+    ) : baseCurrencyData ? (
+      <DenominationPanel
+        title="Local FJD Denomination"
+        subtitle="Enter note counts for Fiji Dollars"
+        flag={baseCurrencyData.flag}
+        symbol={baseCurrencyData.symbol}
+        currency={baseCurrencyData.currency}
+        notes={baseCurrencyData.notes}
+        coins={baseCurrencyData.coins}
+        targetAmount={parseFloat(form.amount || 0)}
+        onRowsChange={handleDenominationRowsChange}
+        accentColor="#E00000"
+      />
+    ) : (
+      <div className="rounded-3xl border border-gray-200 bg-white p-8 text-center text-gray-500">
+        Fiji denomination data is not available.
+      </div>
+    )}
 
-        qty: Number(row.count),
-        amount: Number(row.denom) * Number(row.count),
-      }))
-  );
-}}
-                accentColor="#E00000"
-              />
-            ) : (
-              <div className="rounded-3xl border border-gray-200 bg-white p-8 text-center text-gray-500">
-                Fiji denomination data is not available.
-              </div>
-            )}
-          </div>
+    {stockError ? (
+      <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="font-semibold">Stock validation issue</div>
+        <p>{stockError}</p>
+      </div>
+    ) : null}
+  </div>
+) : null}
 
           {/* BUTTON */}
           <button
             onClick={handleSubmit}
-            disabled={isSubmitting}
-            className={`mt-10 w-full bg-[#E00000] ${isSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:opacity-90'} text-white rounded-2xl py-4 font-black transition`}
+            disabled={isSubmitting || stockLoading}
+            className={`mt-10 w-full bg-[#E00000] ${isSubmitting || stockLoading ? 'opacity-60 cursor-not-allowed' : 'hover:opacity-90'} text-white rounded-2xl py-4 font-black transition`}
           >
             {isSubmitting ? (
               <span className="flex items-center justify-center gap-3">
