@@ -12,7 +12,7 @@ export function useAppConfiguration() {
       try {
         setLoading(true);
         const response = await fetch(
-          "http://192.168.101.182:81/api/method/moneygram.moneygram.api.app_configuration.get_app_configuration",
+          "http://182.71.135.110:82/api/method/moneygram.moneygram.api.app_configuration.get_app_configuration",
           {
             method: "GET",
             headers: {

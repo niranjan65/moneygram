@@ -1,5 +1,5 @@
 //MoneyTransfer.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import { useERPFileUpload } from "../hooks/useERPFileUpload";
@@ -11,16 +11,191 @@ import "react-datepicker/dist/react-datepicker.css";
 import { ArrowUpRight, ArrowDownLeft, ArrowLeftRight, CheckCircle2 } from "lucide-react";
 import { createMoneyTransfer } from "../features/exchange/api/createMoneyTransfer";
 import TransferAmountSection from "../features/exchange/components/TransferAmountSection";
+import { DenominationPanel } from "../features/exchange/components/sections/DenominationPanel";
+import { useBaseCurrency } from "../hooks/useDenomination";
 import { getBaseURL, getHeaders, ERP_ENV } from "../features/exchange/config/erpConfig";
+import { useSettings } from "../context/SettingsContext";
+import { validateStockAvailability } from "../hooks/useStockValidation";
 
 const MoneyTransfer = () => {
   const { uploadFile } = useERPFileUpload();
-  const { user } = useUser();
-  const loginUser =  user ;
+  const loginUser = useUser();
   const [metaFields, setMetaFields] = useState([]);
   const [form, setForm] = useState({});
-  
+  const [currencyDenominationRows, setCurrencyDenominationRows] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successInfo, setSuccessInfo] = useState(null);
+  const { data: baseCurrencyData, loading: baseDenomLoading, error: baseDenomError } = useBaseCurrency();
 
+  // console.log("Current User:", loginUser);
+ const settings = useSettings();
+const selectedWarehouse =
+  settings?.selectedWarehouse ||
+  (settings?.warehouses?.length > 0 ? settings.warehouses[0] : null);
+
+// Stock validation states
+const [stockError, setStockError] = useState("");
+const [stockLoading, setStockLoading] = useState(false);
+
+const handleDenominationRowsChange = useCallback((rows) => {
+  setCurrencyDenominationRows(
+    rows
+      .filter((row) => row.count > 0)
+      .map((row) => {
+        const denom = Number(row.denom);
+        const itemCode = denom >= 1
+          ? `FJD $${denom}`
+          : `FJD ${Math.round(denom * 100)}c`;
+
+        return {
+          denomination: itemCode,
+          qty: Number(row.count),
+          amount: denom * Number(row.count),
+        };
+      })
+  );
+}, []);
+
+useEffect(() => {
+  console.log("⚙️ Settings Context:", settings);
+  console.log("🏬 Selected Warehouse from Context:", settings?.selectedWarehouse);
+  console.log(
+    "💾 selected_warehouse from localStorage:",
+    localStorage.getItem("selected_warehouse")
+  );
+}, [settings]);
+
+const runStockCheck = async () => {
+  // -----------------------------------------
+  // 1. Get warehouse from Settings Context
+  // -----------------------------------------
+  let warehouseObj = selectedWarehouse;
+
+  // -----------------------------------------
+  // 2. Fallback to localStorage if context is not yet loaded
+  // -----------------------------------------
+  if (!warehouseObj) {
+    try {
+      const stored = localStorage.getItem("selected_warehouse");
+
+      if (stored) {
+        warehouseObj = JSON.parse(stored);
+        console.log("💾 Loaded warehouse from localStorage:", warehouseObj);
+      }
+    } catch (err) {
+      console.error("❌ Failed to parse selected_warehouse:", err);
+    }
+  }
+
+  // -----------------------------------------
+  // 3. Resolve warehouse name
+  // Supports:
+  // - { warehouse: "Main Branch - MG" }
+  // - { name: "Main Branch - MG" }
+  // - { label: "Main Branch - MG" }
+  // - "Main Branch - MG"
+  // -----------------------------------------
+  const warehouseName =
+    warehouseObj?.warehouse ||
+    warehouseObj?.name ||
+    warehouseObj?.label ||
+    (typeof warehouseObj === "string" ? warehouseObj : "") ||
+    "";
+
+  console.log("🏬 Selected Warehouse Object:", warehouseObj);
+  console.log("🏬 Resolved Warehouse Name:", warehouseName);
+  console.log("💰 Currency Denomination Rows:", currencyDenominationRows);
+
+  // -----------------------------------------
+  // 4. Warehouse is mandatory
+  // -----------------------------------------
+  if (!warehouseName) {
+    console.error("❌ No warehouse selected in Settings.");
+
+    setStockError(
+      "No warehouse is selected. Please select a warehouse before submitting."
+    );
+
+    return false;
+  }
+
+  // -----------------------------------------
+  // 5. If no denomination rows, skip validation
+  // -----------------------------------------
+  if (!currencyDenominationRows.length) {
+    console.log("ℹ️ No denomination rows entered. Stock validation skipped.");
+    setStockError("");
+    return true;
+  }
+
+  // -----------------------------------------
+  // 6. Prepare items array exactly as required
+  // validateStockAvailability(items, warehouse, loginUser)
+  // -----------------------------------------
+  const items = currencyDenominationRows.map((row) => ({
+    item_code: row.denomination,
+    requested_qty: Number(row.qty || 0),
+  }));
+
+  console.log("📤 Sending Stock Validation Request:");
+  console.table(items);
+
+  setStockLoading(true);
+
+  try {
+    // IMPORTANT:
+    // validateStockAvailability expects:
+    // 1. items      -> array
+    // 2. warehouse  -> string
+    // 3. loginUser  -> actual loginUser object (NOT { user })
+    const result = await validateStockAvailability(
+      items,
+      warehouseName,
+      loginUser
+    );
+
+    console.log("📥 Stock Validation Response:", result);
+
+    const { outOfStock = [], qtyMap = {} } = result;
+
+    // Log stock availability for each denomination
+    items.forEach((item) => {
+      const availableQty = qtyMap[item.item_code] ?? 0;
+
+      console.log(
+        `📦 ${item.item_code}: Requested ${item.requested_qty}, Available ${availableQty}`
+      );
+    });
+
+    // If any item is out of stock, block submission
+    if (outOfStock.length > 0) {
+      console.warn("❌ Out of Stock Items:", outOfStock);
+
+      setStockError(
+        `Insufficient stock available in ${warehouseName} for: ${outOfStock.join(
+          ", "
+        )}`
+      );
+
+      return false;
+    }
+
+    // Success
+    console.log("✅ All selected denominations have sufficient stock.");
+    setStockError("");
+    return true;
+  } catch (err) {
+    console.error("❌ Stock validation failed:", err);
+
+    setStockError(
+      err.message || "Unable to validate stock. Please try again."
+    );
+
+    return false;
+  } finally {
+    setStockLoading(false);
+  }
+};
 const usableFields = metaFields.filter(
   (f) =>
     !f.hidden &&
@@ -45,7 +220,8 @@ const usableFields = metaFields.filter(
   const fetchMeta = async () => {
   try {
     const baseURL = getBaseURL(ERP_ENV.DEMO);
-    const headers = getHeaders(loginUser, ERP_ENV.DEMO);
+    // const headers = getHeaders(loginUser.api_key, loginUser.api_secret);
+    const headers = getHeaders(loginUser, ERP_ENV.PROD);
 
     const url = `${baseURL}/api/resource/DocType/${encodeURIComponent("Money Transfer")}`;
 
@@ -86,15 +262,17 @@ const usableFields = metaFields.filter(
   fetchMeta();
 }, [loginUser]);
 
+
+
 useEffect(() => {
-  const amount = parseFloat(form.sending_amount || 0);
+  const amount = parseFloat(form.amount || 0);
   const fee = parseFloat(form.transfer_fee || 0);
 
   setForm(prev => ({
     ...prev,
     total_amount: amount + fee
   }));
-}, [form.sending_amount, form.transfer_fee]);
+}, [form.amount, form.transfer_fee]);
 
 const getOptions = (fieldname) => {
   const field = metaFields.find(f => f.fieldname === fieldname);
@@ -148,18 +326,34 @@ useEffect(() => {
       if (customer) {
         console.log("Customer Auto-filled:", customer);
 
-        setForm((prev) => ({
+       setForm((prev) => ({
   ...prev,
-  full_name: customer.custom_full_name || prev.full_name,
-  dob: customer.custom_date_of_birth || prev.dob,
+  full_name: customer.custom_full_name || customer.full_name || prev.full_name,
+  custom_full_name: customer.custom_full_name || customer.full_name || "",
+  dob: customer.custom_date_of_birth || customer.dob || prev.dob,
+  custom_date_of_birth: customer.custom_date_of_birth || customer.dob || "",
+  passport_number: customer.custom_passport_number || customer.passport_number || "",
+  custom_passport_number: customer.custom_passport_number || customer.passport_number || "",
+  document_upload:
+    customer.custom_government_document || customer.document_upload || "",
+  custom_government_document: customer.custom_government_document || "",
+
+  government_id_type: customer.custom_government_id || customer.government_id_type || "",
+  custom_government_id: customer.custom_government_id || customer.government_id_type || "",
+
   government_id_number:
-    customer.custom_drivers_license_number ||
+    customer.custom_drivers_licence_number ||
     customer.custom_tin_number ||
     customer.custom_voter_id_number ||
-    "",
+    prev.government_id_number || "",
+  custom_drivers_licence_number: customer.custom_drivers_licence_number || "",
+  custom_tin_number: customer.custom_tin_number || "",
+  custom_voter_id_number: customer.custom_voter_id_number || "",
+
   document_type: customer.custom_passport_number
     ? "Passport"
     : "Government ID",
+
   customer: customer.name || "",
 }));
       } else {
@@ -173,36 +367,88 @@ useEffect(() => {
   const delay = setTimeout(fetchCustomer, 500);
   return () => clearTimeout(delay);
 }, [form.full_name, form.dob]);
- 
+
+// Replace your existing warehouse extraction logic in MoneyTransfer.jsx
+// inside runStockCheck() with the following:
+
+
 
 const handleSubmit = async () => {
+  setIsSubmitting(true);
+  setSuccessInfo(null);
+
   try {
     let documentUrl = "";
 
-if (form.document_upload instanceof File) {
-  documentUrl = await uploadFile(form.document_upload, { isPrivate: 1 });
+    if (form.document_upload instanceof File) {
+      documentUrl = await uploadFile(form.document_upload, { isPrivate: 1 });
+    }
+
+    console.log("Using loginUser for createCustomer:", loginUser);
+    console.log("Currency Denomination Rows:", currencyDenominationRows);
+
+    // If the user disables denomination, make sure rows are cleared before submitting.
+    const denominationsEnabled =
+      form.enable_currency_denomination === 1 ||
+      form.enable_currency_denomination === "1" ||
+      form.enable_currency_denomination === true;
+
+    // const rowsToSubmit = denominationsEnabled ? currencyDenominationRows : [];
+    const rowsToSubmit = denominationsEnabled ? currencyDenominationRows : [];
+
+// Run stock validation only when denomination is enabled
+if (denominationsEnabled && rowsToSubmit.length > 0) {
+  const stockOk = await runStockCheck();
+
+  if (!stockOk) {
+    setIsSubmitting(false);
+    return; // Stop submission if stock is insufficient
+  }
 }
 
-    // ✅ Create / Fetch Customer
-    const customer = await createCustomer(form, documentUrl);
+    // Create / Fetch Customer
+    const customer = await createCustomer(form, documentUrl, loginUser);
     const customerId = customer.name;
 
-    // ✅ Create Transaction
+    // Create Transaction
     const transfer = await createMoneyTransfer(
       form,
       customerId,
       loginUser,
-      documentUrl
+      documentUrl,
+      rowsToSubmit
     );
 
-    alert(`✅ Success!
-Customer: ${customerId}
-Transaction: ${transfer.name}`);
+    // Premium success info (rendered in-page)
+    setSuccessInfo({
+      customer: customerId,
+      transaction: transfer.name,
+      amount: Number(form.amount || 0),
+      message: `Your transfer of ${Number(form.amount || 0)} has been securely processed. Your transaction ${transfer.name} is confirmed `,
+    });
+
+    resetForm();
+    setCurrencyDenominationRows([]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (err) {
     console.error(err);
     alert(err.message || "Error processing");
+  } finally {
+    setIsSubmitting(false);
   }
 };
+
+useEffect(() => {
+  const denominationsEnabled =
+    form.enable_currency_denomination === 1 ||
+    form.enable_currency_denomination === "1" ||
+    form.enable_currency_denomination === true;
+
+  if (!denominationsEnabled && currencyDenominationRows.length > 0) {
+    setCurrencyDenominationRows([]);
+  }
+}, [form.enable_currency_denomination]);
+
 const shouldShowField = (field) => {
   if (!field.depends_on) return true;
 
@@ -214,6 +460,10 @@ const shouldShowField = (field) => {
     console.warn("depends_on error:", field.fieldname);
     return true;
   }
+};
+
+const resetForm = () => {
+  setForm({});
 };
 
 const renderField = (field) => {
@@ -232,6 +482,28 @@ const renderField = (field) => {
         <div key={field.fieldname}>
           <label className={labelStyle}>{field.label}</label>
           <input {...commonProps} />
+        </div>
+      );
+
+    case "Check":
+      return (
+        <div key={field.fieldname} className="col-span-2 flex items-center gap-3 py-1">
+          <input
+            id={field.fieldname}
+            type="checkbox"
+            className="h-4 w-4 rounded border-gray-300 text-[#E00000] focus:ring-[#E00000]"
+            checked={
+              form[field.fieldname] === 1 ||
+              form[field.fieldname] === "1" ||
+              form[field.fieldname] === true
+            }
+            onChange={(e) =>
+              handleChange(field.fieldname, e.target.checked ? 1 : 0)
+            }
+          />
+          <label htmlFor={field.fieldname} className="text-sm font-semibold text-gray-700">
+            {field.label}
+          </label>
         </div>
       );
 
@@ -286,14 +558,27 @@ const renderField = (field) => {
 
     case "Attach":
       return (
+        // <FileUploadBox
+        //   key={field.fieldname}
+        //   label={field.label}
+        //   file={form[field.fieldname]}
+        //   setFile={(file) =>
+        //     handleChange(field.fieldname, file)
+        //   }
+        // />
         <FileUploadBox
-          key={field.fieldname}
-          label={field.label}
-          file={form[field.fieldname]}
-          setFile={(file) =>
-            handleChange(field.fieldname, file)
-          }
-        />
+  key={field.fieldname}
+  label={field.label}
+  file={form[field.fieldname]}
+  existingFileUrl={
+    typeof form[field.fieldname] === "string"
+      ? form[field.fieldname]
+      : null
+  }
+  setFile={(file) =>
+    handleChange(field.fieldname, file)
+  }
+/>
       );
 
     case "Section Break":
@@ -316,7 +601,7 @@ const renderField = (field) => {
   <div className="min-h-screen flex flex-col bg-gray-50">
     <Navbar />
 
-    <main className="flex-grow py-10 px-4 sm:px-6 lg:px-12">
+    <main className="grow py-10 px-4 sm:px-6 lg:px-12">
       <div className="max-w-6xl mx-auto flex flex-col gap-10">
      
 
@@ -337,16 +622,96 @@ const renderField = (field) => {
         {/* FORM CARD */}
         <div className="rounded-3xl border border-gray-100 bg-white shadow-[0_10px_40px_rgba(0,0,0,0.06)] p-8 sm:p-10">
 
+          {successInfo && (
+            <div className="mb-6 rounded-2xl border border-green-100 bg-linear-to-r from-white to-green-50 p-6 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="text-green-600 text-3xl">✓</div>
+                <div className="flex-1">
+                  <h2 className="text-lg font-extrabold text-gray-800">Transfer Complete</h2>
+                  <p className="text-sm text-gray-600 mt-1">{successInfo.message}</p>
+                  <p className="mt-3 text-sm text-gray-700">
+                    <strong>Customer:</strong> {successInfo.customer} &nbsp;•&nbsp; <strong>Transaction:</strong> {successInfo.transaction}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSuccessInfo(null)}
+                  className="text-sm text-gray-500 hover:text-gray-700"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="grid md:grid-cols-2 gap-6">
   {usableFields.map((field) => renderField(field))}
 </div>
 
+          {/* CURRENCY DENOMINATION PANEL */}
+          
+{form.enable_currency_denomination === 1 ||
+ form.enable_currency_denomination === "1" ||
+ form.enable_currency_denomination === true ? (
+  <div className="mt-8 col-span-2">
+    <div className="mb-4">
+      <h3 className="text-lg font-bold text-gray-700">
+        Currency Denomination
+      </h3>
+    </div>
+
+    {baseDenomLoading ? (
+      <div className="rounded-3xl border border-gray-200 bg-white p-8 text-center text-gray-500">
+        Loading denomination panel...
+      </div>
+    ) : baseDenomError ? (
+      <div className="rounded-3xl border border-red-200 bg-red-50 p-8 text-center text-red-600">
+        {baseDenomError}
+      </div>
+    ) : baseCurrencyData ? (
+      <DenominationPanel
+        title="Local FJD Denomination"
+        subtitle="Enter note counts for Fiji Dollars"
+        flag={baseCurrencyData.flag}
+        symbol={baseCurrencyData.symbol}
+        currency={baseCurrencyData.currency}
+        notes={baseCurrencyData.notes}
+        coins={baseCurrencyData.coins}
+        targetAmount={parseFloat(form.amount || 0)}
+        onRowsChange={handleDenominationRowsChange}
+        accentColor="#E00000"
+      />
+    ) : (
+      <div className="rounded-3xl border border-gray-200 bg-white p-8 text-center text-gray-500">
+        Fiji denomination data is not available.
+      </div>
+    )}
+
+    {stockError ? (
+      <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="font-semibold">Stock validation issue</div>
+        <p>{stockError}</p>
+      </div>
+    ) : null}
+  </div>
+) : null}
+
           {/* BUTTON */}
           <button
             onClick={handleSubmit}
-            className="mt-10 w-full bg-[#E00000] hover:opacity-90 text-white rounded-2xl py-4 font-black transition"
+            disabled={isSubmitting || stockLoading}
+            className={`mt-10 w-full bg-[#E00000] ${isSubmitting || stockLoading ? 'opacity-60 cursor-not-allowed' : 'hover:opacity-90'} text-white rounded-2xl py-4 font-black transition`}
           >
-            Submit Transfer
+            {isSubmitting ? (
+              <span className="flex items-center justify-center gap-3">
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                Processing Transfer...
+              </span>
+            ) : (
+              'Submit Transfer'
+            )}
           </button>
         </div>
       </div>

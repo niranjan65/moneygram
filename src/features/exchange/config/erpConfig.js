@@ -1,47 +1,49 @@
-// erpConfig.js
-
 export const ERP_ENV = {
   DEMO: "DEMO",
   PROD: "PROD",
 };
 
-// 🔥 Change this to switch environment
 let CURRENT_ENV = ERP_ENV.PROD;
 
-// 👉 Optional: allow runtime switching
 export const setERPEnv = (env) => {
   CURRENT_ENV = env;
 };
 
 export const getERPEnv = () => CURRENT_ENV;
 
-// ✅ Base URLs
 const CONFIG = {
   [ERP_ENV.DEMO]: {
-    baseURL: "http://192.168.101.182:81",
+    baseURL: "http://182.71.135.110:82",
     getAuthHeaders: () => ({
       "Content-Type": "application/json",
-      Authorization: `token ab5bd602e5f2950:d5f1770a2ce69e2`,
-      
+      Authorization: `token ab5bd602e5f2950:f06904f1b3b1afe`,
     }),
   },
 
   [ERP_ENV.PROD]: {
-    baseURL: "http://192.168.101.182:81",
-    getAuthHeaders: (loginUser) => ({
-      "Content-Type": "application/json",
-      Authorization: `token ${loginUser?.user?.api_key}:${loginUser?.user?.api_secret}`,
-    }),
+    baseURL: "http://182.71.135.110:82",
+    getAuthHeaders: (loginUser) => {
+      const apiKey =
+        loginUser?.api_key ||
+        loginUser?.message?.api_key ||
+        loginUser?.user?.api_key;
+
+      const apiSecret =
+        loginUser?.api_secret ||
+        loginUser?.message?.api_secret ||
+        loginUser?.user?.api_secret;
+
+      if (!apiKey || !apiSecret) {
+        throw new Error("API Key or API Secret not found in loginUser");
+      }
+
+      return {
+        "Content-Type": "application/json",
+        Authorization: `token ${apiKey}:${apiSecret}`,
+      };
+    },
   },
 };
-
-// ✅ Helpers
-// export const getBaseURL = () => CONFIG[CURRENT_ENV].baseURL;
-
-// export const getHeaders = (loginUser) =>
-//   CONFIG[CURRENT_ENV].getAuthHeaders(loginUser);
-
-// ✅ Helpers (UPDATED)
 
 export const getBaseURL = (envOverride) => {
   const env = envOverride || CURRENT_ENV;
