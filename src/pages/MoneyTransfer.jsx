@@ -284,7 +284,19 @@ const getOptions = (fieldname) => {
   }));
 };
 
+useEffect(() => {
+  const enabled =
+    form.enable_currency_denomination === 1 ||
+    form.enable_currency_denomination === "1" ||
+    form.enable_currency_denomination === true;
 
+  if (!enabled && form.amount) {
+    setForm((prev) => ({
+      ...prev,
+      amount: "",
+    }));
+  }
+}, [form.enable_currency_denomination]);
 
 const formatLocalDate = (date) => {
   if (!date) return "";
@@ -419,13 +431,18 @@ if (denominationsEnabled && rowsToSubmit.length > 0) {
       rowsToSubmit
     );
 
-    // Premium success info (rendered in-page)
+    // success info
     setSuccessInfo({
-      customer: customerId,
-      transaction: transfer.name,
-      amount: Number(form.amount || 0),
-      message: `Your transfer of ${Number(form.amount || 0)} has been securely processed. Your transaction ${transfer.name} is confirmed `,
-    });
+  customer: customerId,
+  transaction: transfer.name,
+  amount: Number(form.amount || 0),
+  message:
+    form.enable_currency_denomination === 1 ||
+    form.enable_currency_denomination === "1" ||
+    form.enable_currency_denomination === true
+      ? `Your transfer of ${Number(form.amount || 0)} has been securely processed. Your transaction ${transfer.name} is confirmed.`
+      : `Your transaction ${transfer.name} has been securely processed and confirmed.`,
+});
 
     resetForm();
     setCurrencyDenominationRows([]);

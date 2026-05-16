@@ -1,7 +1,7 @@
 import { useUser } from "../context/UserContext";
 
 const API_URL =
-  "http://192.168.101.182:81/api/method/moneygram.moneygram.api.stock_validation.validate_stock_availability";
+  "http://182.71.135.110:82/api/method/moneygram.moneygram.api.stock_validation.validate_stock_availability";
 
 /**
  * Validates whether a list of denomination items have enough stock.
