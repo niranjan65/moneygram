@@ -12,6 +12,7 @@ import { ArrowUpRight, ArrowDownLeft, ArrowLeftRight, CheckCircle2 } from "lucid
 import { createMoneyTransfer } from "../features/exchange/api/createMoneyTransfer";
 import TransferAmountSection from "../features/exchange/components/TransferAmountSection";
 import { DenominationPanel } from "../features/exchange/components/sections/DenominationPanel";
+import { InvoiceDocument } from "../components/SalesInvoice";
 import { useBaseCurrency } from "../hooks/useDenomination";
 import { getBaseURL, getHeaders, ERP_ENV } from "../features/exchange/config/erpConfig";
 import { useSettings } from "../context/SettingsContext";
@@ -25,6 +26,8 @@ const MoneyTransfer = () => {
   const [currencyDenominationRows, setCurrencyDenominationRows] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successInfo, setSuccessInfo] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [submitError, setSubmitError] = useState("");
   const { data: baseCurrencyData, loading: baseDenomLoading, error: baseDenomError } = useBaseCurrency();
 
   // console.log("Current User:", loginUser);
@@ -210,11 +213,18 @@ const usableFields = metaFields.filter(
     "text-xs uppercase font-bold text-gray-400 mb-2 block";
 
   const handleChange = (key, value) => {
-  setForm((prev) => ({
-    ...prev,
-    [key]: value,
-  }));
-};
+    setForm((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+
+    setFieldErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
 
   useEffect(() => {
   const fetchMeta = async () => {
@@ -350,22 +360,23 @@ useEffect(() => {
     customer.custom_government_document || customer.document_upload || "",
   custom_government_document: customer.custom_government_document || "",
 
-  government_id_type: customer.custom_government_id || customer.government_id_type || "",
+  // government_id_type: customer.custom_government_id || customer.government_id_type || "",
   custom_government_id: customer.custom_government_id || customer.government_id_type || "",
 
-  government_id_number:
-    customer.custom_drivers_licence_number ||
-    customer.custom_tin_number ||
-    customer.custom_voter_id_number ||
-    prev.government_id_number || "",
-  custom_drivers_licence_number: customer.custom_drivers_licence_number || "",
-  custom_tin_number: customer.custom_tin_number || "",
-  custom_voter_id_number: customer.custom_voter_id_number || "",
+  government_id_type:
+  customer.custom_government_id ||
+  customer.government_id_type ||
+  "",
 
-  document_type: customer.custom_passport_number
-    ? "Passport"
-    : "Government ID",
+government_id_number:
+  customer.custom_passport_number ||
+  customer.custom_drivers_licence_number ||
+  customer.custom_tin_number ||
+  customer.custom_voter_id_number ||
+  prev.government_id_number ||
+  "",
 
+  
   customer: customer.name || "",
 }));
       } else {
@@ -388,6 +399,12 @@ useEffect(() => {
 const handleSubmit = async () => {
   setIsSubmitting(true);
   setSuccessInfo(null);
+  setSubmitError("");
+
+  if (!validateForm()) {
+    setIsSubmitting(false);
+    return;
+  }
 
   try {
     let documentUrl = "";
@@ -433,23 +450,24 @@ if (denominationsEnabled && rowsToSubmit.length > 0) {
 
     // success info
     setSuccessInfo({
-  customer: customerId,
-  transaction: transfer.name,
-  amount: Number(form.amount || 0),
-  message:
-    form.enable_currency_denomination === 1 ||
-    form.enable_currency_denomination === "1" ||
-    form.enable_currency_denomination === true
-      ? `Your transfer of ${Number(form.amount || 0)} has been securely processed. Your transaction ${transfer.name} is confirmed.`
-      : `Your transaction ${transfer.name} has been securely processed and confirmed.`,
-});
+      customer: customerId,
+      transaction: transfer.name,
+      amount: Number(form.amount || 0),
+      transfer,
+      message:
+        form.enable_currency_denomination === 1 ||
+        form.enable_currency_denomination === "1" ||
+        form.enable_currency_denomination === true
+          ? `Your transfer of ${Number(form.amount || 0)} has been securely processed. Your transaction ${transfer.name} is confirmed.`
+          : `Your transaction ${transfer.name} has been securely processed and confirmed.`,
+    });
 
     resetForm();
     setCurrencyDenominationRows([]);
     window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (err) {
     console.error(err);
-    alert(err.message || "Error processing");
+    setSubmitError(err.message || "Error processing transfer. Please try again.");
   } finally {
     setIsSubmitting(false);
   }
@@ -481,7 +499,157 @@ const shouldShowField = (field) => {
 
 const resetForm = () => {
   setForm({});
+  setFieldErrors({});
+  setSubmitError("");
 };
+
+const buildMoneyTransferInvoiceData = (transfer) => {
+  if (!transfer) return null;
+
+  const amount = Number(transfer.amount || 0);
+  const rows = Array.isArray(transfer.currency_denomination)
+    ? transfer.currency_denomination.map((row, idx) => ({
+        item_code: row.denomination || row.item_name || `Denomination ${idx + 1}`,
+        qty: Number(row.qty || 0),
+        rate:
+          Number(row.qty || 0) > 0
+            ? Number(row.amount || 0) / Number(row.qty || 0)
+            : Number(row.amount || 0),
+        amount: Number(row.amount || 0),
+      }))
+    : [];
+
+  return {
+    ...transfer,
+    company: transfer.company || "MoneyGram",
+    currency: transfer.currency || "FJD",
+    customer_name: transfer.full_name || transfer.customer_name || transfer.customer_id,
+    customer: transfer.customer_id || transfer.customer || "",
+    name: transfer.name || transfer.transaction_id || "",
+    posting_date:
+      transfer.posting_date || transfer.modified || transfer.creation || new Date().toISOString().split("T")[0],
+    posting_time: transfer.posting_time || transfer.modified_time || "",
+    net_total: amount,
+    grand_total: amount,
+    rounded_total: amount,
+    total_taxes_and_charges: Number(transfer.total_taxes_and_charges || 0),
+    items: rows,
+  };
+};
+
+const handlePrintInvoice = (transfer) => {
+  if (!transfer) {
+    setSubmitError("Cannot print invoice: transfer data is unavailable.");
+    return;
+  }
+
+  const printData = buildMoneyTransferInvoiceData(transfer);
+  const hidden = document.getElementById("invoice-print-area");
+
+  if (!hidden) {
+    setSubmitError("Print template is not ready yet. Please try again.");
+    return;
+  }
+
+  const invoiceHTML = hidden.innerHTML;
+  const printWindow = window.open("", "_blank", "width=900,height=700");
+
+  if (!printWindow) {
+    setSubmitError("Unable to open print window. Please allow pop-ups.");
+    return;
+  }
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Invoice - ${printData.name}</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+          body { margin: 0; padding: 0; background: #fff; }
+          .print-hidden { display: none; }
+        </style>
+      </head>
+      <body>
+        ${invoiceHTML}
+      </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+  printWindow.onload = () => {
+    printWindow.focus();
+    printWindow.print();
+  };
+};
+
+const validateForm = () => {
+  const errors = {};
+
+  usableFields.forEach((field) => {
+    if (!field.reqd || !shouldShowField(field)) return;
+
+    const value = form[field.fieldname];
+    const isEmpty =
+      value === undefined ||
+      value === null ||
+      value === "" ||
+      (field.fieldtype === "Attach" && !value);
+
+    if (isEmpty) {
+      errors[field.fieldname] = `${field.label || field.fieldname} is required.`;
+      return;
+    }
+
+    if (field.fieldname === "amount") {
+      const amount = Number(value);
+      if (Number.isNaN(amount) || amount <= 0) {
+        errors[field.fieldname] = "Amount must be greater than zero.";
+      }
+    }
+
+    if (field.fieldtype === "Date" && !formatDate(value)) {
+      errors[field.fieldname] = `${field.label || "Date"} is required.`;
+    }
+  });
+
+  const denominationsEnabled =
+    form.enable_currency_denomination === 1 ||
+    form.enable_currency_denomination === "1" ||
+    form.enable_currency_denomination === true;
+
+  if (denominationsEnabled && currencyDenominationRows.length === 0) {
+    errors.currency_denomination =
+      "Please enter at least one currency denomination row or disable denomination.";
+  }
+
+  setFieldErrors(errors);
+  setSubmitError(
+    Object.keys(errors).length
+      ? "Please complete the highlighted required fields before saving."
+      : ""
+  );
+
+  return Object.keys(errors).length === 0;
+};
+
+/**
+ * Render field label with red mandatory asterisk
+ */
+const renderLabel = (field) => (
+  <label className={labelStyle}>
+    {field.label}
+    {field.reqd ? (
+      <span className="text-red-500 ml-1">*</span>
+    ) : null}
+  </label>
+);
+
+const renderFieldError = (fieldname) =>
+  fieldErrors[fieldname] ? (
+    <p className="mt-2 text-sm text-red-600">{fieldErrors[fieldname]}</p>
+  ) : null;
 
 const renderField = (field) => {
   if (!shouldShowField(field)) return null;
@@ -497,8 +665,9 @@ const renderField = (field) => {
     case "Data":
       return (
         <div key={field.fieldname}>
-          <label className={labelStyle}>{field.label}</label>
+          {renderLabel(field)}
           <input {...commonProps} />
+          {renderFieldError(field.fieldname)}
         </div>
       );
 
@@ -527,7 +696,7 @@ const renderField = (field) => {
     case "Date":
   return (
     <div key={field.fieldname}>
-      <label className={labelStyle}>{field.label}</label>
+      {renderLabel(field)}
       <DatePicker
         selected={
           form[field.fieldname]
@@ -553,6 +722,7 @@ const renderField = (field) => {
         // ✅ Optional: open calendar around 2000 instead of today
         openToDate={new Date(2000, 0, 1)}
       />
+      {renderFieldError(field.fieldname)}
     </div>
   );
 
@@ -561,42 +731,51 @@ const renderField = (field) => {
 
       return (
         <div key={field.fieldname}>
-          <label className={labelStyle}>{field.label}</label>
+          {renderLabel(field)}
           <select {...commonProps}>
-            <option value="">Select {field.label}</option>
+            <option value="">Select <>
+  {field.label}
+  {field.reqd ? (
+    <span className="text-red-500 ml-1">*</span>
+  ) : null}
+</></option>
             {options.map((opt) => (
               <option key={opt} value={opt}>
                 {opt}
               </option>
             ))}
           </select>
+          {renderFieldError(field.fieldname)}
         </div>
       );
 
-    case "Attach":
-      return (
-        // <FileUploadBox
-        //   key={field.fieldname}
-        //   label={field.label}
-        //   file={form[field.fieldname]}
-        //   setFile={(file) =>
-        //     handleChange(field.fieldname, file)
-        //   }
-        // />
-        <FileUploadBox
-  key={field.fieldname}
-  label={field.label}
-  file={form[field.fieldname]}
-  existingFileUrl={
-    typeof form[field.fieldname] === "string"
-      ? form[field.fieldname]
-      : null
-  }
-  setFile={(file) =>
-    handleChange(field.fieldname, file)
-  }
-/>
-      );
+   case "Attach":
+  return (
+    <div key={field.fieldname}>
+      {/* Do NOT render renderLabel(field) here because FileUploadBox
+          already displays the label internally. Instead, pass the
+          mandatory asterisk directly in the label prop. */}
+      <FileUploadBox
+        label={
+          field.reqd
+            ? `${field.label} *`
+            : field.label
+        }
+        file={form[field.fieldname]}
+        existingFileUrl={
+          typeof form[field.fieldname] === "string"
+            ? form[field.fieldname]
+            : null
+        }
+        setFile={(file) =>
+          handleChange(field.fieldname, file)
+        }
+      />
+
+      {renderFieldError(field.fieldname)}
+    </div>
+  );
+
 
     case "Section Break":
       return (
@@ -650,13 +829,27 @@ const renderField = (field) => {
                     <strong>Customer:</strong> {successInfo.customer} &nbsp;•&nbsp; <strong>Transaction:</strong> {successInfo.transaction}
                   </p>
                 </div>
-                <button
-                  onClick={() => setSuccessInfo(null)}
-                  className="text-sm text-gray-500 hover:text-gray-700"
-                >
-                  Dismiss
-                </button>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={() => handlePrintInvoice(successInfo.transfer)}
+                    className="rounded-2xl bg-[#E00000] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#c70000]"
+                  >
+                    Print Invoice
+                  </button>
+                  <button
+                    onClick={() => setSuccessInfo(null)}
+                    className="rounded-2xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                  >
+                    Dismiss
+                  </button>
+                </div>
               </div>
+            </div>
+          )}
+
+          {submitError && (
+            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {submitError}
             </div>
           )}
 
@@ -703,6 +896,12 @@ const renderField = (field) => {
       </div>
     )}
 
+    {fieldErrors.currency_denomination ? (
+      <div className="mt-4 text-sm text-red-600">
+        {fieldErrors.currency_denomination}
+      </div>
+    ) : null}
+
     {stockError ? (
       <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
         <div className="font-semibold">Stock validation issue</div>
@@ -731,6 +930,17 @@ const renderField = (field) => {
             )}
           </button>
         </div>
+      </div>
+
+      {/* Hidden print template for Money Transfer invoice */}
+      <div className="hidden">
+        <InvoiceDocument
+          invoiceData={
+            successInfo?.transfer
+              ? buildMoneyTransferInvoiceData(successInfo.transfer)
+              : {}
+          }
+        />
       </div>
     </main>
 

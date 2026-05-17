@@ -30,7 +30,7 @@ export const createMoneyTransfer = async (
         ).trim();
 
         return {
-          doctype: "Currency Dinomination", // REQUIRED for child table rows
+          doctype: "Currency Denomination", // REQUIRED for child table rows
           denomination: itemValue,
           qty: Number(row.qty || row.quantity || 0),
           amount: Number(row.amount ?? row.rate ?? 0),
@@ -52,25 +52,22 @@ console.log(
 );
     // Main payload
     const payload = {
-      doctype: "Money Transfer",
-      enable_currency_denomination: enableCurrencyDenomination,
+  doctype: "Money Transfer",
+  enable_currency_denomination: enableCurrencyDenomination,
 
-      customer_id: customerId,
-      full_name: form.full_name,
-      dob: form.dob,
+  customer_id: customerId,
+  full_name: form.full_name,
+  dob: form.dob,
 
-      document_type: form.document_type,
-      passport_number: form.passport_number,
+  government_id_type: form.government_id_type,
+  government_id_number: form.government_id_number,
 
-      government_id_type: form.government_id_type,
-      government_id_number: form.government_id_number,
+  document_upload: documentUrl || form.document_upload,
+  transaction_id: form.transaction_id,
 
-      document_upload: documentUrl || form.document_upload,
-      transaction_id: form.transaction_id,
-
-      amount: form.amount ? Number(form.amount) : 0,
-      currency_denomination: enableCurrencyDenomination ? currencyDenomination : [],
-    };
+  amount: form.amount ? Number(form.amount) : 0,
+  currency_denomination: enableCurrencyDenomination ? currencyDenomination : [],
+};
 
     console.log(
       "Creating Money Transfer Payload:",
