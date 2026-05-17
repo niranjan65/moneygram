@@ -205,6 +205,52 @@ const usableFields = metaFields.filter(
     !["Section Break", "Column Break"].includes(f.fieldtype)
 );
 
+const orderedFields = React.useMemo(() => {
+  const getParentFieldname = (field) => {
+    if (!field.depends_on) return null;
+    const condition = field.depends_on.replace("eval:", "");
+    const matches = [...condition.matchAll(/doc\.([a-zA-Z0-9_]+)/g)];
+    const parents = matches.map((m) => m[1]).filter((name) => name && name !== field.fieldname);
+    return parents.length ? parents[0] : null;
+  };
+
+  const dependents = new Map();
+  const roots = [];
+
+  usableFields.forEach((field) => {
+    const parent = getParentFieldname(field);
+    if (parent) {
+      dependents.set(parent, [...(dependents.get(parent) || []), field]);
+    } else {
+      roots.push(field);
+    }
+  });
+
+  const sorted = [];
+  const visited = new Set();
+
+  const addFieldWithDependents = (field) => {
+    if (visited.has(field.fieldname)) return;
+    visited.add(field.fieldname);
+    sorted.push(field);
+    const children = dependents.get(field.fieldname) || [];
+    children.forEach(addFieldWithDependents);
+  };
+
+  usableFields.forEach((field) => {
+    if (!visited.has(field.fieldname) && !getParentFieldname(field)) {
+      addFieldWithDependents(field);
+    }
+  });
+
+  usableFields.forEach((field) => {
+    if (!visited.has(field.fieldname)) {
+      addFieldWithDependents(field);
+    }
+  });
+
+  return sorted;
+}, [usableFields]);
 
   const inputStyle =
   "w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#E00000] focus:bg-white transition-all duration-200";
@@ -854,7 +900,7 @@ const renderField = (field) => {
           )}
 
           <div className="grid md:grid-cols-2 gap-6">
-  {usableFields.map((field) => renderField(field))}
+  {orderedFields.map((field) => renderField(field))}
 </div>
 
           {/* CURRENCY DENOMINATION PANEL */}
